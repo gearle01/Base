@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin - Site Builder CMS</title>
+        <link rel="stylesheet" href="assets/css/admin.css">
+    </head>
+    <body>
+        <div style="display: flex; height: 100vh;">
+            <div class="admin-panel active" style="position: relative; right: 0; width: 500px;">
+                <div class="admin-header">
+                    <h2>Painel Administrativo</h2>
+                </div>
+                <div class="admin-content">
+                    
+                    <!-- Configurações Gerais -->
+                    <div class="admin-section">
+                        <h3>⚙️ Configurações Gerais</h3>
+                        <div class="form-group">
+                            <label>Nome da Empresa</label>
+                            <input type="text" id="empresaNome" value="MinhaEmpresa" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>Logo da Empresa (URL ou Texto)</label>
+                            <input type="text" id="empresaLogo" value="" onchange="updateSite()">
+                            <input type="file" id="empresaLogoFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'empresaLogo')">
+                            <button class="btn-admin" onclick="document.getElementById('empresaLogoFile').click()">Carregar Imagem</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Título Banner Principal</label>
+                            <input type="text" id="bannerTitulo" value="Transforme Seu Negócio" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>Subtítulo Banner</label>
+                            <input type="text" id="bannerSubtitulo" value="Soluções modernas e eficientes para sua empresa crescer" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>Imagem do Banner</label>
+                            <input type="text" id="bannerImagem" value="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200" onchange="updateSite()">
+                            <input type="file" id="bannerImagemFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'bannerImagem')">
+                            <button class="btn-admin" onclick="document.getElementById('bannerImagemFile').click()">Carregar Imagem</button>
+                        </div>
+                    </div>
+
+                    <!-- Banner de Alerta -->
+                    <div class="admin-section">
+                        <h3>📢 Banner de Alerta (Topo)</h3>
+                        <div class="module-item">
+                            <span>Ativar Banner de Alerta</span>
+                            <div class="toggle-switch active" id="toggleBanner" onclick="toggleModule('banner')"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Texto do Banner</label>
+                            <input type="text" id="bannerTexto" value="Promoção especial! 20% de desconto neste final de semana" onchange="updateSite()">
+                        </div>
+                    </div>
+
+                    <!-- Paleta de Cores -->
+                    <div class="admin-section">
+                        <h3>🎨 Paleta de Cores</h3>
+                        <div class="color-picker-group">
+                            <div class="form-group">
+                                <label>Cor Primária</label>
+                                <div class="color-input">
+                                    <input type="color" id="corPrimaria" value="#3b82f6" onchange="updateColors()">
+                                    <input type="text" value="#3b82f6" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Cor Secundária</label>
+                                <div class="color-input">
+                                    <input type="color" id="corSecundaria" value="#f59e0b" onchange="updateColors()">
+                                    <input type="text" value="#f59e0b" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Cor do Texto</label>
+                                <div class="color-input">
+                                    <input type="color" id="corTexto" value="#1f2937" onchange="updateColors()">
+                                    <input type="text" value="#1f2937" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Cor de Fundo</label>
+                                <div class="color-input">
+                                    <input type="color" id="corFundo" value="#f9fafb" onchange="updateColors()">
+                                    <input type="text" value="#f9fafb" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulos do Site -->
+                    <div class="admin-section">
+                        <h3>📦 Módulos do Site</h3>
+                        <div class="module-item">
+                            <span>Seção Sobre</span>
+                            <div class="toggle-switch active" id="toggleSobre" onclick="toggleModule('sobre')"></div>
+                        </div>
+                        <div class="module-item">
+                            <span>Seção Horários</span>
+                            <div class="toggle-switch active" id="toggleHorarios" onclick="toggleModule('horarios')"></div>
+                        </div>
+                        <div class="module-item">
+                            <span>Seção Produtos/Cardápio</span>
+                            <div class="toggle-switch active" id="toggleProdutos" onclick="toggleModule('produtos')"></div>
+                        </div>
+                        <div class="module-item">
+                            <span>Seção Contato</span>
+                            <div class="toggle-switch active" id="toggleContato" onclick="toggleModule('contato')"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sobre -->
+                    <div class="admin-section">
+                        <h3>ℹ️ Seção Sobre</h3>
+                        <div class="form-group">
+                            <label>Título</label>
+                            <input type="text" id="sobreTitulo" value="Sobre Nós" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>Texto</label>
+                            <textarea id="sobreTexto" onchange="updateSite()">Somos uma empresa dedicada a oferecer as melhores soluções para nossos clientes. Com anos de experiência no mercado, construímos uma reputação sólida baseada em qualidade e inovação.</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Imagem da Seção Sobre</label>
+                            <input type="text" id="sobreImagem" value="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800" onchange="updateSite()">
+                            <input type="file" id="sobreImagemFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'sobreImagem')">
+                            <button class="btn-admin" onclick="document.getElementById('sobreImagemFile').click()">Carregar Imagem</button>
+                        </div>
+                    </div>
+
+                    <!-- Horários -->
+                    <div class="admin-section">
+                        <h3>🕐 Horário de Funcionamento</h3>
+                        <div class="form-group">
+                            <label>Segunda-feira</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioSegunda" value="08:00 - 18:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoSegunda" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Terça-feira</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioTerca" value="08:00 - 18:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoTerca" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Quarta-feira</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioQuarta" value="08:00 - 18:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoQuarta" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Quinta-feira</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioQuinta" value="08:00 - 18:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoQuinta" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Sexta-feira</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioSexta" value="08:00 - 18:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoSexta" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Sábado</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioSabado" value="09:00 - 13:00" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoSabado" onchange="updateSite()"> Fechado
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Domingo</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="horarioDomingo" value="Fechado" onchange="updateSite()">
+                                <input type="checkbox" id="fechadoDomingo" onchange="updateSite()" checked> Fechado
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Produtos -->
+                    <div class="admin-section">
+                        <h3>🛍️ Produtos/Cardápio</h3>
+                        <div class="form-group">
+                            <label>Título da Seção</label>
+                            <input type="text" id="produtosTitulo" value="Nossos Produtos" onchange="updateSite()">
+                        </div>
+                        <div class="produtos-list" id="produtosList">
+                            <!-- Produtos serão carregados aqui -->
+                        </div>
+                        <button class="btn-admin btn-success" onclick="addProduto()">+ Adicionar Produto</button>
+                    </div>
+
+                    <!-- Contato -->
+                    <div class="admin-section">
+                        <h3>📞 Informações de Contato</h3>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="text" id="contatoTelefone" value="(11) 9999-9999" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            <input type="email" id="contatoEmail" value="contato@minhaempresa.com.br" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>Endereço</label>
+                            <input type="text" id="contatoEndereco" value="Rua Exemplo, 123 - São Paulo, SP" onchange="updateSite()">
+                        </div>
+                        <div class="form-group">
+                            <label>URL do Google Maps (embed)</label>
+                            <input type="text" id="contatoMapa" value="" onchange="updateSite()">
+                        </div>
+                    </div>
+
+                    <!-- Exportar/Importar -->
+                    <div class="admin-section">
+                        <h3>💾 Exportar/Importar Configurações</h3>
+                        <button class="btn-admin btn-success" onclick="exportConfig()">📥 Exportar JSON</button>
+                        <button class="btn-admin" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button>
+                        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importConfig(event)">
+                    </div>
+
+                </div>
+            </div>
+            <iframe src="index.html" style="flex-grow: 1; border: none; height: 100%;"></iframe>
+        </div>
+
+        <div id="produtoModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeProdutoModal()">&times;</span>
+                <h3 id="produtoModalTitle">Adicionar Produto</h3>
+                <div class="form-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="produtoNome">
+                </div>
+                <div class="form-group">
+                    <label>Preço</label>
+                    <input type="text" id="produtoPreco">
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="produtoDescricao"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Imagem do Produto</label>
+                    <input type="text" id="produtoImagem">
+                    <input type="file" id="produtoImagemFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'produtoImagem')">
+                    <button class="btn-admin" onclick="document.getElementById('produtoImagemFile').click()">Carregar Imagem</button>
+                </div>
+                <button class="btn-admin btn-success" onclick="saveProduto()">Salvar</button>
+            </div>
+        </div>
+
+        <script>
+            const iframe = document.querySelector('iframe');
+            iframe.onload = function() {
+                const iframeWindow = iframe.contentWindow;
+
+                // Pass all functions and variables to the iframe
+                Object.keys(window).forEach(key => {
+                    if (typeof window[key] === 'function') {
+                        iframeWindow[key] = window[key];
+                    }
+                });
+
+                iframeWindow.siteData = siteData;
+
+                // Redefine getElementById to search in the iframe
+                const originalGetElementById = document.getElementById.bind(document);
+                document.getElementById = function(id) {
+                    return iframeWindow.document.getElementById(id) || originalGetElementById(id);
+                };
+
+                // Initial setup
+                renderProdutos();
+                updateSite();
+                updateColors();
+            };
+        </script>
+        <script src="assets/js/database.js"></script>
+        <script src="assets/js/admin.js"></script>
+    </body>
+    </html>

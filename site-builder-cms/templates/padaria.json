@@ -1,0 +1,50 @@
+{
+  "empresaNome": "Padaria Pão Quente",
+  "bannerTitulo": "Tradição e Sabor na sua Mesa",
+  "bannerSubtitulo": "Pães, bolos e doces feitos com carinho todos os dias.",
+  "bannerImagem": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200",
+  "bannerTexto": "Pão francês quentinho a toda hora!",
+  "cores": {
+    "primaria": "#8e44ad",
+    "secundaria": "#f1c40f",
+    "texto": "#333",
+    "fundo": "#fdfaf6"
+  },
+  "modules": {
+    "banner": true,
+    "sobre": true,
+    "horarios": true,
+    "produtos": true,
+    "contato": true
+  },
+  "sobre": {
+    "titulo": "Nossa História",
+    "texto": "Há mais de 30 anos levando o melhor da panificação para a sua família.",
+    "imagem": "https://images.unsplash.com/photo-1562237525-0a7a7a393a72?w=800"
+  },
+  "horarios": {
+    "semana": "06:00 - 20:00",
+    "sabado": "06:00 - 20:00",
+    "domingo": "07:00 - 18:00"
+  },
+  "produtosTitulo": "Nossas Delícias",
+  "produtos": [
+    {
+      "nome": "Bolo de Chocolate",
+      "preco": "R$ 35,00",
+      "descricao": "Cobertura generosa e massa fofinha.",
+      "imagem": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400"
+    },
+    {
+      "nome": "Pão de Queijo",
+      "preco": "R$ 5,00 (un)",
+      "descricao": "A receita secreta da vovó.",
+      "imagem": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400"
+    }
+  ],
+  "contato": {
+    "telefone": "(31) 99999-8888",
+    "email": "contato@paoquente.com.br",
+    "endereco": "Rua do Pão, 789 - Belo Horizonte, MG"
+  }
+}

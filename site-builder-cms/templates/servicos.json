@@ -1,0 +1,50 @@
+{
+  "empresaNome": "Soluções Tech",
+  "bannerTitulo": "Inovação e Tecnologia para seu Negócio",
+  "bannerSubtitulo": "Consultoria e desenvolvimento de software sob medida.",
+  "bannerImagem": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200",
+  "bannerTexto": "Agende uma consultoria gratuita e descubra como podemos ajudar.",
+  "cores": {
+    "primaria": "#2980b9",
+    "secundaria": "#27ae60",
+    "texto": "#2c3e50",
+    "fundo": "#ecf0f1"
+  },
+  "modules": {
+    "banner": true,
+    "sobre": true,
+    "horarios": false,
+    "produtos": true,
+    "contato": true
+  },
+  "sobre": {
+    "titulo": "Nossa Missão",
+    "texto": "Empoderar empresas através da tecnologia, criando soluções eficientes e inovadoras.",
+    "imagem": "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800"
+  },
+  "horarios": {
+    "semana": "09:00 - 18:00",
+    "sabado": "Fechado",
+    "domingo": "Fechado"
+  },
+  "produtosTitulo": "Nossos Serviços",
+  "produtos": [
+    {
+      "nome": "Desenvolvimento Web",
+      "preco": "Sob consulta",
+      "descricao": "Criação de sites e sistemas web modernos e responsivos.",
+      "imagem": "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?w=400"
+    },
+    {
+      "nome": "Aplicativos Mobile",
+      "preco": "Sob consulta",
+      "descricao": "Desenvolvimento de aplicativos para Android e iOS.",
+      "imagem": "https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=400"
+    }
+  ],
+  "contato": {
+    "telefone": "(48) 98877-6655",
+    "email": "contato@solucoestech.com",
+    "endereco": "Avenida da Tecnologia, 101 - Florianópolis, SC"
+  }
+}

@@ -43,18 +43,15 @@ async function loadDataFromFirestore() {
 function updatePublicSite(data) {
     // Aplicar Configurações Globais
     if (data.global_settings) {
-        // Injetar fonte do Google
         if (data.global_settings.fontUrl) {
             const fontLink = document.createElement('link');
             fontLink.href = data.global_settings.fontUrl;
             fontLink.rel = 'stylesheet';
             document.head.appendChild(fontLink);
         }
-        // Aplicar família da fonte
         if (data.global_settings.fontFamily) {
             document.body.style.fontFamily = data.global_settings.fontFamily;
         }
-        // Injetar código de rastreamento
         if (data.global_settings.trackingCode) {
             const script = document.createElement('script');
             script.innerHTML = data.global_settings.trackingCode;
@@ -62,8 +59,19 @@ function updatePublicSite(data) {
         }
     }
 
+    // Atualizar Logo
+    const logoContainer = document.getElementById('logo');
+    logoContainer.innerHTML = '';
+    if (data.logoType === 'image' && data.logoImageUrl) {
+        const img = document.createElement('img');
+        img.src = data.logoImageUrl;
+        img.style.maxHeight = '50px';
+        logoContainer.appendChild(img);
+    } else {
+        logoContainer.textContent = data.empresaNome;
+    }
+
     document.title = data.empresaNome || document.title;
-    document.getElementById('logo').textContent = data.empresaNome;
     document.getElementById('footerNome').textContent = data.empresaNome;
     document.getElementById('bannerH1').textContent = data.bannerTitulo;
     document.getElementById('bannerP').textContent = data.bannerSubtitulo;
@@ -80,7 +88,29 @@ function updatePublicSite(data) {
     }
     
     if (data.contato) {
-        document.getElementById('telPreview').textContent = data.contato.telefone;
+        const tel1 = data.contato.telefone || '';
+        const tel2 = data.contato.telefone2 || '';
+        const cleanTel1 = tel1.replace(/\D/g, '');
+        const cleanTel2 = tel2.replace(/\D/g, '');
+
+        // Botão flutuante de WhatsApp
+        if(cleanTel1) {
+            document.getElementById('whatsapp-fab').href = `https://wa.me/${cleanTel1}`;
+        }
+
+        // Links de contato
+        document.getElementById('telPreview').textContent = tel1;
+        document.getElementById('telLink1').href = `tel:${cleanTel1}`;
+
+        const contactTel2 = document.getElementById('contact-tel2');
+        if (tel2) {
+            document.getElementById('telPreview2').textContent = tel2;
+            document.getElementById('telLink2').href = `tel:${cleanTel2}`;
+            contactTel2.classList.remove('hidden');
+        } else {
+            contactTel2.classList.add('hidden');
+        }
+
         document.getElementById('emailPreview').textContent = data.contato.email;
         document.getElementById('enderecoPreview').textContent = data.contato.endereco;
     }
@@ -88,10 +118,10 @@ function updatePublicSite(data) {
     if (data.modules) {
         document.querySelector('.sobre-section').classList.toggle('hidden', !data.modules.sobre);
         document.querySelector('.nav-sobre').classList.toggle('hidden', !data.modules.sobre);
-        document.querySelector('.produtos-section').classList.toggle('hidden', !data.modules.produtos);
-        document.querySelector('.nav-produtos').classList.toggle('hidden', !data.modules.produtos);
-        document.querySelector('.contato-section').classList.toggle('hidden', !data.modules.contato);
-        document.querySelector('.nav-contato').classList.toggle('hidden', !data.modules.contato);
+        document.querySelector('.produtos-section').classList.toggle('hidden', !state.modules.produtos);
+        document.querySelector('.nav-produtos').classList.toggle('hidden', !state.modules.produtos);
+        document.querySelector('.contato-section').classList.toggle('hidden', !state.modules.contato);
+        document.querySelector('.nav-contato').classList.toggle('hidden', !state.modules.contato);
     }
     
     if (data.produtos) {

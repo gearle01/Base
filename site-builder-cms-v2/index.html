@@ -43,7 +43,7 @@
         </nav>
 
         <!-- Banner -->
-        <section class="banner" id="banner">
+        <section class="banner" id="home">
             <div class="banner-content">
                 <h1 id="bannerH1">Transforme Seu Negócio</h1>
                 <p id="bannerP">Soluções modernas para sua empresa crescer</p>
@@ -78,11 +78,18 @@
                 <h2 class="section-title">Entre em Contato</h2>
                 <div class="contact-grid">
                     <div>
-                        <div class="contact-item">
-                            <div class="contact-icon" id="iconTel">📞</div>
+                        <div class="contact-item" id="contact-tel1">
+                            <div class="contact-icon">📞</div>
                             <div>
-                                <h4>Telefone</h4>
-                                <p id="telPreview">(11) 9999-9999</p>
+                                <h4>Telefone 1</h4>
+                                <a href="#" id="telLink1" style="text-decoration: none; color: inherit;"><p id="telPreview">(11) 9999-9999</p></a>
+                            </div>
+                        </div>
+                        <div class="contact-item hidden" id="contact-tel2">
+                            <div class="contact-icon">📞</div>
+                            <div>
+                                <h4>Telefone 2</h4>
+                                <a href="#" id="telLink2" style="text-decoration: none; color: inherit;"><p id="telPreview2"></p></a>
                             </div>
                         </div>
                         <div class="contact-item">
@@ -107,14 +114,16 @@
             </div>
         </section>
 
-        <!-- Footer -->
         <footer class="site-footer">
             <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
+            <p style="margin-top: 1rem;"><a href="login.html" style="color: #aaa; text-decoration: none;">Acesso Restrito</a></p>
         </footer>
     </div>
 
-    <!-- Ícone de Login para Admin -->
-    <a href="login.html" class="admin-login-icon" title="Acesso Restrito">⚙️</a>
+    <!-- Botão Flutuante de WhatsApp -->
+    <a id="whatsapp-fab" href="#" target="_blank" class="admin-login-icon" title="Fale conosco no WhatsApp">
+        <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" style="width: 28px; height: 28px;">
+    </a>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

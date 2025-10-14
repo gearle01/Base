@@ -5,10 +5,10 @@ let state = {
 };
 
 // Referências do Firebase
-let db;
+let db, storage;
 const clientId = 'cliente-001';
 
-// ===== INICIALIZAÇÃO E CARREGAMENTO DE DADOS =====
+// ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
         showToast('Firebase não configurado.', 'error');
@@ -18,9 +18,39 @@ document.addEventListener('DOMContentLoaded', function() {
         firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
+    storage = firebase.storage();
     loadDataFromFirestore();
 });
 
+// ===== UPLOAD DE IMAGEM =====
+async function handleImageUpload(event, targetInputId, previewSelector) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const uploadPath = `images/${clientId}/${Date.now()}-${file.name}`;
+    const storageRef = storage.ref(uploadPath);
+
+    try {
+        showToast(`Fazendo upload de ${file.name}...`, 'info');
+        const snapshot = await storageRef.put(file);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+
+        document.getElementById(targetInputId).value = downloadURL;
+        if (previewSelector) {
+            document.querySelector(previewSelector).style.backgroundImage = `url(${downloadURL})`;
+        }
+        
+        showToast('Upload concluído!', 'success');
+        update();
+        autoSave();
+
+    } catch (error) {
+        console.error("Erro no upload: ", error);
+        showToast('Falha no upload da imagem.', 'error');
+    }
+}
+
+// ===== LÓGICA DE DADOS (FIRESTORE) =====
 async function loadDataFromFirestore() {
     const clientDocRef = db.collection('site').doc(clientId);
     showToast('Carregando dados...', 'info');
@@ -30,7 +60,6 @@ async function loadDataFromFirestore() {
         if (!clientDoc.exists) {
             showToast('Cliente não encontrado. Usando modelo padrão.', 'info');
             update();
-            saveToHistory();
             return;
         }
 
@@ -60,7 +89,6 @@ async function loadDataFromFirestore() {
     }
 }
 
-// ===== LÓGICA DE SALVAMENTO =====
 async function saveConfig() {
     if (!validateForm()) {
         showToast('Corrija os erros antes de salvar', 'error');
@@ -76,7 +104,9 @@ async function saveConfig() {
         empresaNome: config.empresaNome,
         bannerTitulo: config.bannerTitulo,
         bannerSubtitulo: config.bannerSubtitulo,
-        bannerImagem: config.bannerImagem
+        bannerImagem: config.bannerImagem,
+        logoType: config.logoType,
+        logoImageUrl: config.logoImageUrl
     }, { merge: true });
 
     batch.set(clientDocRef.collection('global_settings').doc('data'), config.global_settings);
@@ -106,6 +136,26 @@ async function saveConfig() {
 
 // ===== FUNÇÕES DE UI E ESTADO =====
 
+function setLogoType(type) {
+    document.getElementById('logoType').value = type;
+    const textGroup = document.getElementById('logoTextInputGroup');
+    const imageGroup = document.getElementById('logoImageInputGroup');
+    const textBtn = document.getElementById('logoTypeTextBtn');
+    const imageBtn = document.getElementById('logoTypeImageBtn');
+
+    if (type === 'text') {
+        textGroup.classList.remove('hidden');
+        imageGroup.classList.add('hidden');
+        textBtn.classList.add('active');
+        imageBtn.classList.remove('active');
+    } else {
+        textGroup.classList.add('hidden');
+        imageGroup.classList.remove('hidden');
+        textBtn.classList.remove('active');
+        imageBtn.classList.add('active');
+    }
+}
+
 function logout() {
     firebase.auth().signOut().then(() => {
         showToast('Saindo...', 'info');
@@ -115,6 +165,8 @@ function logout() {
 
 function getConfig() {
     return {
+        logoType: document.getElementById('logoType').value,
+        logoImageUrl: document.getElementById('logoImageUrl').value,
         empresaNome: document.getElementById('empresaNome').value,
         bannerTitulo: document.getElementById('bannerTitulo').value,
         bannerSubtitulo: document.getElementById('bannerSubtitulo').value,
@@ -128,7 +180,12 @@ function getConfig() {
         modules: state.modules,
         sobre: { texto: document.getElementById('sobreTexto').value, imagem: document.getElementById('sobreImagem').value },
         produtos: state.produtos,
-        contato: { telefone: document.getElementById('telefone').value, email: document.getElementById('email').value, endereco: document.getElementById('endereco').value }
+        contato: {
+            telefone: document.getElementById('telefone').value,
+            telefone2: document.getElementById('telefone2').value,
+            email: document.getElementById('email').value,
+            endereco: document.getElementById('endereco').value
+        }
     };
 }
 
@@ -138,6 +195,12 @@ function loadConfig(config) {
     document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
     document.getElementById('bannerImagem').value = config.bannerImagem || '';
     
+    setLogoType(config.logoType || 'text');
+    document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
+    if (config.logoImageUrl) {
+        document.querySelector('#logoPreview').style.backgroundImage = `url(${config.logoImageUrl})`;
+    }
+
     if (config.global_settings) {
         document.getElementById('fontUrl').value = config.global_settings.fontUrl || '';
         document.getElementById('fontFamily').value = config.global_settings.fontFamily || '';
@@ -153,6 +216,7 @@ function loadConfig(config) {
     }
     if (config.contato) {
         document.getElementById('telefone').value = config.contato.telefone || '';
+        document.getElementById('telefone2').value = config.contato.telefone2 || '';
         document.getElementById('email').value = config.contato.email || '';
         document.getElementById('endereco').value = config.contato.endereco || '';
     }
@@ -166,7 +230,6 @@ function loadConfig(config) {
 }
 
 function update() {
-    // Atualizar fonte dinâmica no preview
     const fontUrl = document.getElementById('fontUrl').value;
     if (fontUrl) {
         let fontLink = document.getElementById('dynamic-font');
@@ -180,35 +243,92 @@ function update() {
     }
     const fontFamily = document.getElementById('fontFamily').value;
     if (fontFamily) {
-        document.querySelector('.preview .site').style.fontFamily = fontFamily;
+        const previewSite = document.querySelector('.preview .site');
+        if (previewSite) previewSite.style.fontFamily = fontFamily;
     }
 
-    const empresaNome = document.getElementById('empresaNome').value;
-    document.getElementById('logo').textContent = empresaNome;
-    document.getElementById('footerNome').textContent = empresaNome;
-    document.getElementById('bannerH1').textContent = document.getElementById('bannerTitulo').value;
-    document.getElementById('bannerP').textContent = document.getElementById('bannerSubtitulo').value;
-    document.getElementById('banner').style.backgroundImage = `url(${document.getElementById('bannerImagem').value})`;
+    const logoContainer = document.getElementById('logo');
+    if (logoContainer) {
+        const logoType = document.getElementById('logoType').value;
+        logoContainer.innerHTML = '';
+        if (logoType === 'image') {
+            const imgUrl = document.getElementById('logoImageUrl').value;
+            if (imgUrl) {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.style.maxHeight = '50px';
+                logoContainer.appendChild(img);
+            } else {
+                logoContainer.textContent = document.getElementById('empresaNome').value;
+            }
+        } else {
+            logoContainer.textContent = document.getElementById('empresaNome').value;
+        }
+    }
+
+    const footerNome = document.getElementById('footerNome');
+    if (footerNome) footerNome.textContent = document.getElementById('empresaNome').value;
+
+    const bannerH1 = document.getElementById('bannerH1');
+    if (bannerH1) bannerH1.textContent = document.getElementById('bannerTitulo').value;
+
+    const bannerP = document.getElementById('bannerP');
+    if (bannerP) bannerP.textContent = document.getElementById('bannerSubtitulo').value;
+
+    const banner = document.getElementById('banner');
+    if (banner) banner.style.backgroundImage = `url(${document.getElementById('bannerImagem').value})`;
+
     const corPrimaria = document.getElementById('corPrimaria').value;
     const corSecundaria = document.getElementById('corSecundaria').value;
-    document.querySelector('#corPrimaria + input').value = corPrimaria;
-    document.querySelector('#corSecundaria + input').value = corSecundaria;
-    document.getElementById('logo').style.color = corPrimaria;
+    
+    const corPrimariaInput = document.querySelector('#corPrimaria + input');
+    if (corPrimariaInput) corPrimariaInput.value = corPrimaria;
+
+    const corSecundariaInput = document.querySelector('#corSecundaria + input');
+    if (corSecundariaInput) corSecundariaInput.value = corSecundaria;
+
     document.querySelectorAll('.site-nav-links a').forEach(a => a.style.color = corPrimaria);
     document.querySelectorAll('.contact-icon').forEach(icon => icon.style.background = corPrimaria);
-    document.querySelector('.cta-btn').style.background = corSecundaria;
-    document.getElementById('sobreTextoPreview').textContent = document.getElementById('sobreTexto').value;
-    document.getElementById('sobreImagemPreview').style.backgroundImage = `url(${document.getElementById('sobreImagem').value})`;
-    document.getElementById('telPreview').textContent = document.getElementById('telefone').value;
-    document.getElementById('emailPreview').textContent = document.getElementById('email').value;
-    document.getElementById('enderecoPreview').textContent = document.getElementById('endereco').value;
+    
+    const ctaBtn = document.querySelector('.cta-btn');
+    if (ctaBtn) ctaBtn.style.background = corSecundaria;
+
+    const sobreTextoPreview = document.getElementById('sobreTextoPreview');
+    if (sobreTextoPreview) sobreTextoPreview.textContent = document.getElementById('sobreTexto').value;
+
+    const sobreImagemPreview = document.getElementById('sobreImagemPreview');
+    if (sobreImagemPreview) sobreImagemPreview.style.backgroundImage = `url(${document.getElementById('sobreImagem').value})`;
+
+    const telPreview = document.getElementById('telPreview');
+    if (telPreview) telPreview.textContent = document.getElementById('telefone').value;
+
+    const telPreview2 = document.getElementById('telPreview2');
+    if (telPreview2) telPreview2.textContent = document.getElementById('telefone2').value;
+
+    const emailPreview = document.getElementById('emailPreview');
+    if (emailPreview) emailPreview.textContent = document.getElementById('email').value;
+
+    const enderecoPreview = document.getElementById('enderecoPreview');
+    if (enderecoPreview) enderecoPreview.textContent = document.getElementById('endereco').value;
+
     if(state.modules) {
-        document.querySelector('.sobre-section').classList.toggle('hidden', !state.modules.sobre);
-        document.querySelector('.nav-sobre').classList.toggle('hidden', !state.modules.sobre);
-        document.querySelector('.produtos-section').classList.toggle('hidden', !state.modules.produtos);
-        document.querySelector('.nav-produtos').classList.toggle('hidden', !state.modules.produtos);
-        document.querySelector('.contato-section').classList.toggle('hidden', !state.modules.contato);
-        document.querySelector('.nav-contato').classList.toggle('hidden', !state.modules.contato);
+        const sobreSection = document.querySelector('.sobre-section');
+        if (sobreSection) sobreSection.classList.toggle('hidden', !state.modules.sobre);
+
+        const navSobre = document.querySelector('.nav-sobre');
+        if (navSobre) navSobre.classList.toggle('hidden', !state.modules.sobre);
+
+        const produtosSection = document.querySelector('.produtos-section');
+        if (produtosSection) produtosSection.classList.toggle('hidden', !state.modules.produtos);
+
+        const navProdutos = document.querySelector('.nav-produtos');
+        if (navProdutos) navProdutos.classList.toggle('hidden', !state.modules.produtos);
+
+        const contatoSection = document.querySelector('.contato-section');
+        if (contatoSection) contatoSection.classList.toggle('hidden', !state.modules.contato);
+
+        const navContato = document.querySelector('.nav-contato');
+        if (navContato) navContato.classList.toggle('hidden', !state.modules.contato);
     }
     renderProdutos();
 }
@@ -229,22 +349,72 @@ function renderProdutos() {
     if(list) list.innerHTML = state.produtos.map((p, i) => `
         <div style="background: #f8f9fa; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
             <div><strong>${p.nome}</strong><br><small>${p.preco}</small></div>
-            <button class="btn btn-primary" style="width: auto; padding: 0.4rem 0.8rem; margin: 0; font-size: 0.8rem;" onclick="removeProduto(${i})">🗑️</button>
+            <div>
+                <button class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; margin: 0; font-size: 0.8rem;" onclick="openProdutoModal(${i})">✏️ Editar</button>
+                <button class="btn btn-primary" style="width: auto; padding: 0.4rem 0.8rem; margin: 0; font-size: 0.8rem;" onclick="removeProduto(${i})">🗑️</button>
+            </div>
         </div>
     `).join('');
 }
 
-function addProduto() {
-    const nome = prompt('Nome do produto:');
-    if (!nome) return;
-    const preco = prompt('Preço:');
-    if (!preco) return;
-    const descricao = prompt('Descrição:');
-    const imagem = prompt('URL da imagem:');
-    state.produtos.push({ nome, preco, descricao: descricao || '', imagem: imagem || 'https://via.placeholder.com/400' });
+function openProdutoModal(index) {
+    const modal = document.getElementById('produtoModal');
+    const title = document.getElementById('produtoModalTitle');
+    const idInput = document.getElementById('produtoId');
+    const nomeInput = document.getElementById('produtoNome');
+    const precoInput = document.getElementById('produtoPreco');
+    const descricaoInput = document.getElementById('produtoDescricao');
+    const imagemInput = document.getElementById('produtoImagem');
+
+    if (index !== undefined && state.produtos[index]) {
+        const produto = state.produtos[index];
+        title.textContent = 'Editar Produto';
+        idInput.value = index;
+        nomeInput.value = produto.nome;
+        precoInput.value = produto.preco;
+        descricaoInput.value = produto.descricao;
+        imagemInput.value = produto.imagem;
+    } else {
+        title.textContent = 'Adicionar Produto';
+        idInput.value = '';
+        nomeInput.value = '';
+        precoInput.value = '';
+        descricaoInput.value = '';
+        imagemInput.value = '';
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeProdutoModal() {
+    document.getElementById('produtoModal').style.display = 'none';
+}
+
+function saveProduto() {
+    const id = document.getElementById('produtoId').value;
+    const nome = document.getElementById('produtoNome').value;
+    const preco = document.getElementById('produtoPreco').value;
+    const descricao = document.getElementById('produtoDescricao').value;
+    const imagem = document.getElementById('produtoImagem').value;
+
+    if (!nome || !preco) {
+        showToast('Nome e preço são obrigatórios.', 'error');
+        return;
+    }
+
+    const produto = { nome, preco, descricao, imagem: imagem || 'https://via.placeholder.com/400' };
+
+    if (id) {
+        state.produtos[id] = produto;
+        showToast('Produto atualizado!', 'success');
+    } else {
+        state.produtos.push(produto);
+        showToast('Produto adicionado!', 'success');
+    }
+
     update();
     autoSave();
-    showToast('Produto adicionado!', 'success');
+    closeProdutoModal();
 }
 
 function removeProduto(index) {
@@ -260,7 +430,6 @@ let saveTimeout;
 function autoSave() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
-        saveToHistory(); 
         saveConfig();
     }, 1500);
 }
@@ -269,8 +438,6 @@ function toggleHelp() { document.getElementById('shortcutsHelp').classList.toggl
 
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && (e.key === 's' || e.key === 'e')) { e.preventDefault(); saveConfig(); }
-    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-    if (e.ctrlKey && e.shiftKey && (e.key === 'Z' || e.key === 'y')) { e.preventDefault(); redo(); }
     if (e.key === '?') { toggleHelp(); }
     if (e.key === 'Escape') { document.getElementById('shortcutsHelp').classList.remove('show'); }
 });

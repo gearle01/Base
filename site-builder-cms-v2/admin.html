@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/modal.css">
 </head>
-<body>
+<body class="admin-page">
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
@@ -167,15 +167,49 @@
                 <div class="section">
                     <h3>🛍️ Produtos</h3>
                     <div id="produtosList"></div>
-                    <button class="btn btn-success" onclick="addProduto()">+ Adicionar Produto</button>
+                    <button class="btn btn-success" onclick="openProdutoModal()">+ Adicionar Produto</button>
+                </div>
+
+                <!-- Modal de Produto -->
+                <div id="produtoModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeProdutoModal()">&times;</span>
+                        <h3 id="produtoModalTitle">Adicionar Produto</h3>
+                        <input type="hidden" id="produtoId">
+                        <div class="form-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="produtoNome" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Preço</label>
+                            <input type="text" id="produtoPreco" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <textarea id="produtoDescricao" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Imagem do Produto</label>
+                            <div class="image-upload-wrapper">
+                                <input type="url" id="produtoImagem">
+                                <button class="btn btn-success" onclick="document.getElementById('produtoImagemUpload').click()">Upload</button>
+                                <input type="file" id="produtoImagemUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'produtoImagem')">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveProduto()">Salvar Produto</button>
+                    </div>
                 </div>
 
                 <!-- Contato -->
                 <div class="section">
                     <h3>📞 Contato</h3>
                     <div class="form-group">
-                        <label>Telefone</label>
+                        <label>Telefone 1</label>
                         <input type="tel" id="telefone" value="(11) 9999-9999">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone 2 (Opcional)</label>
+                        <input type="tel" id="telefone2" placeholder="(11) 8888-8888">
                     </div>
                     <div class="form-group">
                         <label>E-mail *</label>
@@ -211,7 +245,7 @@
                 </nav>
 
                 <!-- Banner -->
-                <section class="banner" id="banner">
+                <section class="banner" id="home">
                     <div class="banner-content">
                         <h1 id="bannerH1">Transforme Seu Negócio</h1>
                         <p id="bannerP">Soluções modernas para sua empresa crescer</p>

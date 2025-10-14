@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Builder CMS - V2</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Help Modal -->
+    <div class="shortcuts-help" id="shortcutsHelp">
+        <h3>? Ajuda e Suporte</h3>
+        
+        <h4>Atalhos de Teclado</h4>
+        <ul>
+            <li><kbd>Ctrl + S</kbd> - Salvar Alterações</li>
+            <li><kbd>Ctrl + Z</kbd> - Desfazer</li>
+            <li><kbd>Ctrl + Shift + Z</kbd> - Refazer</li>
+            <li><kbd>?</kbd> - Mostrar/Ocultar esta janela</li>
+        </ul>
+
+        <h4>Tutoriais</h4>
+        <p>Em breve...</p>
+
+        <h4>Contato para Suporte</h4>
+        <p>email@suporte.com</p>
+    </div>
+
+    <div class="container">
+        <!-- Admin Panel -->
+        <div class="admin-panel">
+            <div class="admin-header">
+                <h1>⚙️ Painel Administrativo</h1>
+                <div class="header-controls">
+                    <div class="save-status" id="saveStatus">
+                        <span id="saveText">Salvo</span>
+                    </div>
+                    <button class="help-btn" onclick="toggleHelp()" title="Atalhos de teclado">?</button>
+                    <button class="help-btn" onclick="logout()" title="Sair">🚪</button>
+                </div>
+            </div>
+            
+            <div class="admin-content">
+                <div class="section">
+                    <h3>📋 Informações Básicas</h3>
+                    
+                    <div class="form-group">
+                        <label>Tipo de Logo</label>
+                        <div class="logo-type-selector">
+                            <button id="logoTypeTextBtn" class="btn-logo-type active" onclick="setLogoType('text')">Texto</button>
+                            <button id="logoTypeImageBtn" class="btn-logo-type" onclick="setLogoType('image')">Imagem</button>
+                        </div>
+                        <input type="hidden" id="logoType" value="text">
+                    </div>
+
+                    <div id="logoTextInputGroup" class="form-group">
+                        <label>Nome da Empresa (Logo como Texto)</label>
+                        <input type="text" id="empresaNome" value="MinhaEmpresa" required>
+                        <div class="error-msg">Campo obrigatório</div>
+                    </div>
+
+                    <div id="logoImageInputGroup" class="form-group hidden">
+                        <label>Arquivo de Imagem do Logo</label>
+                        <input type="file" id="logoUpload" accept="image/*" onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
+                        <input type="hidden" id="logoImageUrl">
+                        <div class="image-preview" id="logoPreview"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Título do Banner *</label>
+                        <input type="text" id="bannerTitulo" value="Transforme Seu Negócio" required>
+                        <div class="error-msg">Campo obrigatório</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Subtítulo do Banner</label>
+                        <input type="text" id="bannerSubtitulo" value="Soluções modernas para sua empresa crescer">
+                    </div>
+                    <div class="form-group">
+                        <label>Imagem do Banner</label>
+                        <div class="image-upload-wrapper">
+                            <input type="url" id="bannerImagem" value="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200">
+                            <button class="btn btn-success" onclick="document.getElementById('bannerUpload').click()">Upload</button>
+                            <input type="file" id="bannerUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'bannerImagem')">
+                        </div>
+                        <div class="error-msg">URL inválida</div>
+                    </div>
+                </div>
+
+                <!-- Configurações Globais -->
+                <div class="section">
+                    <h3>⚙️ Configurações Globais</h3>
+                    <!-- Cores -->
+                    <div class="form-group">
+                        <h4>🎨 Cores do Site</h4>
+                        <div class="color-grid">
+                            <div class="form-group">
+                                <label>Cor Primária</label>
+                                <div class="color-input">
+                                    <input type="color" id="corPrimaria" value="#007bff">
+                                    <input type="text" value="#007bff" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Cor Secundária</label>
+                                <div class="color-input">
+                                    <input type="color" id="corSecundaria" value="#28a745">
+                                    <input type="text" value="#28a745" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fontes -->
+                    <div class="form-group">
+                        <h4>✒️ Fontes</h4>
+                        <label>URL da Fonte (Google Fonts)</label>
+                        <input type="url" id="fontUrl" placeholder="Ex: https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+                        <label>Nome da Fonte (CSS)</label>
+                        <input type="text" id="fontFamily" placeholder="Ex: 'Roboto', sans-serif">
+                    </div>
+                    <!-- Rastreamento -->
+                    <div class="form-group">
+                        <h4>📈 Rastreamento</h4>
+                        <label>Código de Rastreamento (ex: Google Analytics)</label>
+                        <textarea id="trackingCode" rows="5" placeholder="Cole o seu script de rastreamento aqui..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Módulos -->
+                <div class="section">
+                    <h3>📦 Módulos</h3>
+                    <div class="toggle">
+                        <span>Seção Sobre</span>
+                        <div class="switch active" data-module="sobre"></div>
+                    </div>
+                    <div class="toggle">
+                        <span>Seção Produtos</span>
+                        <div class="switch active" data-module="produtos"></div>
+                    </div>
+                    <div class="toggle">
+                        <span>Seção Contato</span>
+                        <div class="switch active" data-module="contato"></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>ℹ️ Sobre</h3>
+                    <div class="form-group">
+                        <label>Texto</label>
+                        <textarea id="sobreTexto">Somos uma empresa dedicada a oferecer as melhores soluções para nossos clientes.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Imagem da Seção</label>
+                        <div class="image-upload-wrapper">
+                            <input type="url" id="sobreImagem" value="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800">
+                            <button class="btn btn-success" onclick="document.getElementById('sobreUpload').click()">Upload</button>
+                            <input type="file" id="sobreUpload" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'sobreImagem')">
+                        </div>
+                        <div class="error-msg">URL inválida</div>
+                    </div>
+                </div>
+
+                <!-- Produtos -->
+                <div class="section">
+                    <h3>🛍️ Produtos</h3>
+                    <div id="produtosList"></div>
+                    <button class="btn btn-success" onclick="addProduto()">+ Adicionar Produto</button>
+                </div>
+
+                <!-- Contato -->
+                <div class="section">
+                    <h3>📞 Contato</h3>
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="tel" id="telefone" value="(11) 9999-9999">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail *</label>
+                        <input type="email" id="email" value="contato@minhaempresa.com" required>
+                        <div class="error-msg">E-mail inválido</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço</label>
+                        <input type="text" id="endereco" value="Rua Exemplo, 123 - São Paulo, SP">
+                    </div>
+                </div>
+
+                <!-- Salvar -->
+                <div class="section">
+                    <h3>💾 Salvar Dados</h3>
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 Salvar no Site</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview">
+            <div class="site">
+                <!-- Navigation -->
+                <nav class="site-nav">
+                    <div class="site-logo" id="logo">MinhaEmpresa</div>
+                    <ul class="site-nav-links">
+                        <li><a href="#home">Home</a></li>
+                        <li class="nav-sobre"><a href="#sobre">Sobre</a></li>
+                        <li class="nav-produtos"><a href="#produtos">Produtos</a></li>
+                        <li class="nav-contato"><a href="#contato">Contato</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Banner -->
+                <section class="banner" id="banner">
+                    <div class="banner-content">
+                        <h1 id="bannerH1">Transforme Seu Negócio</h1>
+                        <p id="bannerP">Soluções modernas para sua empresa crescer</p>
+                        <a href="#contato" class="cta-btn">Entre em Contato</a>
+                    </div>
+                </section>
+
+                <!-- Sobre -->
+                <section class="site-section alt sobre-section" id="sobre">
+                    <div class="section-content">
+                        <h2 class="section-title">Sobre Nós</h2>
+                        <div class="about-grid">
+                            <div class="about-text" id="sobreTextoPreview">
+                                Somos uma empresa dedicada a oferecer as melhores soluções para nossos clientes.
+                            </div>
+                            <div class="about-image" id="sobreImagemPreview"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Produtos -->
+                <section class="site-section produtos-section" id="produtos">
+                    <div class="section-content">
+                        <h2 class="section-title">Nossos Produtos</h2>
+                        <div class="products-grid" id="produtosGrid"></div>
+                    </div>
+                </section>
+
+                <!-- Contato -->
+                <section class="site-section alt contato-section" id="contato">
+                    <div class="section-content">
+                        <h2 class="section-title">Entre em Contato</h2>
+                        <div class="contact-grid">
+                            <div>
+                                <div class="contact-item">
+                                    <div class="contact-icon" id="iconTel">📞</div>
+                                    <div>
+                                        <h4>Telefone</h4>
+                                        <p id="telPreview">(11) 9999-9999</p>
+                                    </div>
+                                </div>
+                                <div class="contact-item">
+                                    <div class="contact-icon" id="iconEmail">📧</div>
+                                    <div>
+                                        <h4>E-mail</h4>
+                                        <p id="emailPreview">contato@minhaempresa.com</p>
+                                    </div>
+                                </div>
+                                <div class="contact-item">
+                                    <div class="contact-icon" id="iconEnd">📍</div>
+                                    <div>
+                                        <h4>Endereço</h4>
+                                        <p id="enderecoPreview">Rua Exemplo, 123 - São Paulo, SP</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                                <p>Entre em contato conosco!</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <footer class="site-footer">
+                    <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Auth check
+        if (typeof firebase !== 'undefined') {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (!user) {
+                    // Se não estiver logado, redireciona para a página de login
+                    window.location.href = 'login.html';
+                }
+            });
+        } else {
+            // Se o firebase não estiver configurado, redireciona também para evitar erros
+            // e mostra uma mensagem no console.
+            console.error("Firebase não configurado. Redirecionando para login.");
+            // window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

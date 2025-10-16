@@ -6,16 +6,6 @@ function escapeHtml(unsafe) {
     return div.innerHTML;
 }
 
-// Usar em TODOS os lugares onde você insere dados do usuário no HTML
-// Exemplo:
-// ANTES:
-// element.innerHTML = produto.nome;
-// DEPOIS:
-// element.textContent = produto.nome; // Mais seguro
-// ou
-// element.innerHTML = escapeHtml(produto.nome);
-
-
 const cache = {
     data: null,
     timestamp: 0,
@@ -23,12 +13,6 @@ const cache = {
         return this.data && (Date.now() - this.timestamp < 60000); // 1 min cache
     }
 };
-
-function escapeHtml(unsafe) {
-    const div = document.createElement('div');
-    div.textContent = unsafe;
-    return div.innerHTML;
-}
 
 function showLoadingSkeleton() {
     const produtosGrid = document.getElementById('produtosGrid');
@@ -42,24 +26,48 @@ function showLoadingSkeleton() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔥 public.js: DOM carregado');
+    
     function initializeFirebase() {
-        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-            loadDataFromFirestore();
-        } else {
-            // Se o Firebase não foi inicializado, tenta novamente em 100ms
+        // ✅ CORREÇÃO: Verificar se Firebase está carregado E configurado
+        if (typeof firebase === 'undefined') {
+            console.log('⏳ Aguardando Firebase SDK...');
             setTimeout(initializeFirebase, 100);
+            return;
         }
+
+        if (typeof firebaseConfig === 'undefined') {
+            console.log('⏳ Aguardando firebaseConfig...');
+            setTimeout(initializeFirebase, 100);
+            return;
+        }
+
+        // ✅ CORREÇÃO: Inicializar Firebase se ainda não foi inicializado
+        if (firebase.apps.length === 0) {
+            console.log('🔥 Inicializando Firebase no public.js...');
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase inicializado com sucesso!');
+        } else {
+            console.log('✅ Firebase já estava inicializado');
+        }
+
+        // Agora sim, carregar os dados
+        loadDataFromFirestore();
     }
+    
     initializeFirebase();
 });
 
 async function loadDataFromFirestore() {
     if (cache.isValid()) {
+        console.log('📦 Usando cache');
         updatePublicSite(cache.data);
         return;
     }
 
     showLoadingSkeleton();
+    console.log('🔍 Buscando dados do Firestore...');
+    
     const db = firebase.firestore();
     const clientId = 'cliente-001';
 
@@ -68,22 +76,27 @@ async function loadDataFromFirestore() {
         const clientDoc = await clientDocRef.get();
 
         if (!clientDoc.exists) {
-            console.log("Cliente não encontrado no Firestore. Usando conteúdo padrão.");
+            console.warn("⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão.");
             const produtosGrid = document.getElementById('produtosGrid');
             if(produtosGrid) produtosGrid.innerHTML = '';
             return;
         }
 
+        console.log('✅ Documento principal encontrado!');
         let config = clientDoc.data();
 
         const subcollections = ['cores', 'contato', 'modules', 'sobre', 'global_settings'];
         const promises = subcollections.map(async (sub) => {
             const subDoc = await clientDocRef.collection(sub).doc('data').get();
-            if (subDoc.exists) config[sub] = subDoc.data();
+            if (subDoc.exists) {
+                config[sub] = subDoc.data();
+                console.log(`✅ ${sub} carregado`);
+            }
         });
 
         const produtosPromise = clientDocRef.collection('produtos').get().then(querySnapshot => {
             config.produtos = querySnapshot.docs.map(doc => doc.data());
+            console.log(`✅ ${config.produtos.length} produtos carregados`);
         });
 
         await Promise.all([...promises, produtosPromise]);
@@ -92,14 +105,17 @@ async function loadDataFromFirestore() {
         cache.data = config;
         cache.timestamp = Date.now();
 
+        console.log('🎉 Todos os dados carregados! Atualizando site...');
         updatePublicSite(config);
 
     } catch (error) {
-        console.error("Erro ao buscar dados do site: ", error);
+        console.error("❌ Erro ao buscar dados do site:", error);
     }
 }
 
 function updatePublicSite(data) {
+    console.log('🎨 Atualizando interface do site...');
+    
     // ✅ CORREÇÃO 1: Aplicar Configurações Globais de Fonte
     if (data.global_settings) {
         // Aplicar fonte customizada
@@ -159,8 +175,10 @@ function updatePublicSite(data) {
             img.style.maxHeight = '50px';
             img.alt = data.empresaNome || 'Logo';
             logoContainer.appendChild(img);
+            console.log('✅ Logo (imagem) atualizado');
         } else {
             logoContainer.textContent = data.empresaNome || 'MinhaEmpresa';
+            console.log('✅ Logo (texto) atualizado');
         }
     }
 
@@ -171,7 +189,10 @@ function updatePublicSite(data) {
 
     // Atualizar banner
     const bannerH1 = document.getElementById('bannerH1');
-    if (bannerH1) bannerH1.textContent = data.bannerTitulo || '';
+    if (bannerH1) {
+        bannerH1.textContent = data.bannerTitulo || '';
+        console.log('✅ Banner título atualizado');
+    }
 
     const bannerP = document.getElementById('bannerP');
     if (bannerP) bannerP.textContent = data.bannerSubtitulo || '';
@@ -179,6 +200,7 @@ function updatePublicSite(data) {
     const banner = document.querySelector('.banner');
     if (banner && data.bannerImagem) {
         banner.style.backgroundImage = `url(${data.bannerImagem})`;
+        console.log('✅ Banner imagem atualizada');
     }
     
     // ✅ CORREÇÃO 3: Aplicar cores
@@ -197,6 +219,8 @@ function updatePublicSite(data) {
         
         const ctaBtn = document.querySelector('.cta-btn');
         if (ctaBtn) ctaBtn.style.background = data.cores.secundaria;
+        
+        console.log('✅ Cores aplicadas');
     }
 
     // Atualizar seção Sobre
@@ -208,6 +232,7 @@ function updatePublicSite(data) {
         if (sobreImagem && data.sobre.imagem) {
             sobreImagem.style.backgroundImage = `url(${data.sobre.imagem})`;
         }
+        console.log('✅ Seção Sobre atualizada');
     }
     
     // ✅ CORREÇÃO 4: Atualizar contato com telefones
@@ -249,6 +274,8 @@ function updatePublicSite(data) {
 
         const enderecoPreview = document.getElementById('enderecoPreview');
         if (enderecoPreview) enderecoPreview.textContent = data.contato.endereco || '';
+        
+        console.log('✅ Contato atualizado');
     }
     
     // ✅ CORREÇÃO 5: Mostrar/ocultar módulos
@@ -298,6 +325,9 @@ function updatePublicSite(data) {
                     </div>
                 </div>
             `).join('');
+            console.log(`✅ ${data.produtos.length} produtos renderizados`);
         }
     }
+    
+    console.log('🎉 Site público atualizado completamente!');
 }

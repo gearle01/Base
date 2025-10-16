@@ -6,9 +6,6 @@
     <title>Minha Empresa</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/main.css">
-    <style>
-        
-    </style>
 </head>
 <body>
     <div class="site">
@@ -68,14 +65,18 @@
                             <div class="contact-icon">📞</div>
                             <div>
                                 <h4>Telefone 1</h4>
-                                <a href="#" id="telLink1" style="text-decoration: none; color: inherit;"><p id="telPreview">(11) 9999-9999</p></a>
+                                <a href="#" id="telLink1" style="text-decoration: none; color: inherit;">
+                                    <p id="telPreview">(11) 9999-9999</p>
+                                </a>
                             </div>
                         </div>
                         <div class="contact-item hidden" id="contact-tel2">
                             <div class="contact-icon">📞</div>
                             <div>
                                 <h4>Telefone 2</h4>
-                                <a href="#" id="telLink2" style="text-decoration: none; color: inherit;"><p id="telPreview2"></p></a>
+                                <a href="#" id="telLink2" style="text-decoration: none; color: inherit;">
+                                    <p id="telPreview2"></p>
+                                </a>
                             </div>
                         </div>
                         <div class="contact-item">
@@ -102,7 +103,9 @@
 
         <footer class="site-footer">
             <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
-            <p style="margin-top: 1rem;"><a href="login.html" style="color: #aaa; text-decoration: none;">Acesso Restrito</a></p>
+            <p style="margin-top: 1rem;">
+                <a href="login.html" style="color: #aaa; text-decoration: none;">Acesso Restrito</a>
+            </p>
         </footer>
     </div>
 
@@ -115,18 +118,44 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <script>
-        // Load Firebase config based on environment
-        const hostname = window.location.hostname;
-        if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
-            document.write('<script src="/__/firebase/init.js"><\/script>');
-        } else {
-            document.write('<script src="js/firebase-config.local.js"><\/script>');
-        }
-    </script>
+    <!-- CORREÇÃO: Carregar SEMPRE firebase-config.local.js -->
+    <script src="js/firebase-config.local.js"></script>
 
     <!-- Scripts -->
+    <script>
+        console.log('🚀 INDEX.HTML CARREGADO!');
+        console.log('📦 Firebase disponível?', typeof firebase !== 'undefined');
+        console.log('🔑 Firebase configurado?', typeof firebaseConfig !== 'undefined');
+    </script>
     <script src="js/public.js"></script>
     <script src="js/responsive.js"></script>
+    <!-- DIAGNÓSTICO TEMPORÁRIO - REMOVER DEPOIS -->
+<script>
+    setTimeout(() => {
+        console.log('=== DIAGNÓSTICO COMPLETO ===');
+        console.log('1. ✅ Firebase carregado?', typeof firebase !== 'undefined');
+        console.log('2. ✅ Firestore disponível?', typeof firebase.firestore === 'function');
+        console.log('3. ✅ public.js carregado?', typeof loadDataFromFirestore === 'function');
+        console.log('4. ✅ Elemento #produtosGrid existe?', !!document.getElementById('produtosGrid'));
+        console.log('5. ✅ Elemento #logo existe?', !!document.getElementById('logo'));
+        console.log('6. ✅ Elemento #bannerH1 existe?', !!document.getElementById('bannerH1'));
+        
+        // Tentar buscar dados manualmente
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            const db = firebase.firestore();
+            db.collection('site').doc('cliente-001').get()
+                .then(doc => {
+                    if (doc.exists) {
+                        console.log('7. ✅ DADOS ENCONTRADOS NO FIRESTORE:', doc.data());
+                    } else {
+                        console.error('7. ❌ Documento cliente-001 NÃO EXISTE no Firestore!');
+                    }
+                })
+                .catch(error => {
+                    console.error('7. ❌ ERRO ao buscar Firestore:', error);
+                });
+        }
+    }, 3000); // Aguarda 3 segundos
+</script>
 </body>
 </html>

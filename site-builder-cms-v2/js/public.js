@@ -1,3 +1,28 @@
+const cache = {
+    data: null,
+    timestamp: 0,
+    isValid: function() {
+        return this.data && (Date.now() - this.timestamp < 60000); // 1 min cache
+    }
+};
+
+function escapeHtml(unsafe) {
+    const div = document.createElement('div');
+    div.textContent = unsafe;
+    return div.innerHTML;
+}
+
+function showLoadingSkeleton() {
+    const produtosGrid = document.getElementById('produtosGrid');
+    if (produtosGrid) {
+        produtosGrid.innerHTML = `
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+        `;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
         console.error('Erro: Firebase não configurado corretamente.');
@@ -7,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function loadDataFromFirestore() {
+    if (cache.isValid()) {
+        updatePublicSite(cache.data);
+        return;
+    }
+
+    showLoadingSkeleton();
     const db = firebase.firestore();
     const clientId = 'cliente-001';
 
@@ -16,6 +47,8 @@ async function loadDataFromFirestore() {
 
         if (!clientDoc.exists) {
             console.log("Cliente não encontrado no Firestore. Usando conteúdo padrão.");
+            const produtosGrid = document.getElementById('produtosGrid');
+            if(produtosGrid) produtosGrid.innerHTML = '';
             return;
         }
 
@@ -32,6 +65,10 @@ async function loadDataFromFirestore() {
         });
 
         await Promise.all([...promises, produtosPromise]);
+
+        // Cache the data
+        cache.data = config;
+        cache.timestamp = Date.now();
 
         updatePublicSite(config);
 
@@ -52,6 +89,7 @@ function updatePublicSite(data) {
         if (data.global_settings.fontFamily) {
             document.body.style.fontFamily = data.global_settings.fontFamily;
         }
+        // O tracking code é inserido aqui. Certifique-se de que o código inserido no painel de administração é de uma fonte confiável.
         if (data.global_settings.trackingCode) {
             const script = document.createElement('script');
             script.innerHTML = data.global_settings.trackingCode;
@@ -75,11 +113,22 @@ function updatePublicSite(data) {
     document.getElementById('footerNome').textContent = data.empresaNome;
     document.getElementById('bannerH1').textContent = data.bannerTitulo;
     document.getElementById('bannerP').textContent = data.bannerSubtitulo;
-    document.getElementById('banner').style.backgroundImage = `url(${data.bannerImagem})`;
+    
+    const banner = document.querySelector('.banner');
+    if (banner) {
+        banner.style.backgroundImage = `url(${data.bannerImagem})`;
+    }
     
     if (data.cores) {
         document.documentElement.style.setProperty('--primary-color', data.cores.primaria);
         document.documentElement.style.setProperty('--secondary-color', data.cores.secundaria);
+        
+        // Aplicar cores aos elementos
+        document.querySelectorAll('.site-nav-links a').forEach(a => a.style.color = data.cores.primaria);
+        document.querySelectorAll('.contact-icon').forEach(icon => icon.style.background = data.cores.primaria);
+        
+        const ctaBtn = document.querySelector('.cta-btn');
+        if (ctaBtn) ctaBtn.style.background = data.cores.secundaria;
     }
 
     if (data.sobre) {
@@ -118,10 +167,10 @@ function updatePublicSite(data) {
     if (data.modules) {
         document.querySelector('.sobre-section').classList.toggle('hidden', !data.modules.sobre);
         document.querySelector('.nav-sobre').classList.toggle('hidden', !data.modules.sobre);
-        document.querySelector('.produtos-section').classList.toggle('hidden', !state.modules.produtos);
-        document.querySelector('.nav-produtos').classList.toggle('hidden', !state.modules.produtos);
-        document.querySelector('.contato-section').classList.toggle('hidden', !state.modules.contato);
-        document.querySelector('.nav-contato').classList.toggle('hidden', !state.modules.contato);
+        document.querySelector('.produtos-section').classList.toggle('hidden', !data.modules.produtos);
+        document.querySelector('.nav-produtos').classList.toggle('hidden', !data.modules.produtos);
+        document.querySelector('.contato-section').classList.toggle('hidden', !data.modules.contato);
+        document.querySelector('.nav-contato').classList.toggle('hidden', !data.modules.contato);
     }
     
     if (data.produtos) {
@@ -130,9 +179,9 @@ function updatePublicSite(data) {
             <div class="product-card">
                 <div class="product-image" style="background-image: url(${p.imagem})"></div>
                 <div class="product-info">
-                    <h3>${p.nome}</h3>
-                    <div class="product-price">${p.preco}</div>
-                    <p>${p.descricao}</p>
+                    <h3>${escapeHtml(p.nome)}</h3>
+                    <div class="product-price">${escapeHtml(p.preco)}</div>
+                    <p>${escapeHtml(p.descricao)}</p>
                 </div>
             </div>
         `).join('');

@@ -23,16 +23,66 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===== UPLOAD DE IMAGEM =====
+async function compressImage(file, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, file.type, quality);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+}
+
 async function handleImageUpload(event, targetInputId, previewSelector) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const uploadPath = `images/${clientId}/${Date.now()}-${file.name}`;
-    const storageRef = storage.ref(uploadPath);
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+        showToast('Imagem muito grande! Máximo 5MB', 'error');
+        return;
+    }
 
     try {
+        showToast('Comprimindo imagem...', 'info');
+        const compressedFile = await compressImage(file);
+
+        const uploadPath = `images/${clientId}/${Date.now()}-${file.name}`;
+        const storageRef = storage.ref(uploadPath);
+
         showToast(`Fazendo upload de ${file.name}...`, 'info');
-        const snapshot = await storageRef.put(file);
+        const snapshot = await storageRef.put(compressedFile);
         const downloadURL = await snapshot.ref.getDownloadURL();
 
         document.getElementById(targetInputId).value = downloadURL;
@@ -429,15 +479,28 @@ function removeProduto(index) {
 let saveTimeout;
 function autoSave() {
     clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveConfig();
+    saveTimeout = setTimeout(async () => {
+        try {
+            await saveConfig();
+        } catch (error) {
+            console.error('Erro detalhado no auto-save:', error);
+            showToast(`Erro: ${error.message}`, 'error');
+        }
     }, 1500);
 }
 
 function toggleHelp() { document.getElementById('shortcutsHelp').classList.toggle('show'); }
 
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && (e.key === 's' || e.key === 'e')) { e.preventDefault(); saveConfig(); }
+document.addEventListener('keydown', async (e) => {
+    if (e.ctrlKey && (e.key === 's' || e.key === 'e')) {
+        e.preventDefault();
+        try {
+            await saveConfig();
+        } catch (error) {
+            console.error('Erro detalhado ao salvar (Ctrl+S):', error);
+            showToast(`Erro: ${error.message}`, 'error');
+        }
+    }
     if (e.key === '?') { toggleHelp(); }
     if (e.key === 'Escape') { document.getElementById('shortcutsHelp').classList.remove('show'); }
 });

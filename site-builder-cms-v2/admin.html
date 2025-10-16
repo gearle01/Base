@@ -73,6 +73,18 @@
             <div class="admin-header">
                 <h1>⚙️ Painel Administrativo</h1>
                 <div class="header-controls">
+                    <div class="save-status" id="saveStatus">
+                        <span id="saveText">Salvo</span>
+                    </div>
+                    <button class="help-btn" onclick="toggleHelp()" title="Atalhos de teclado">?</button>
+                    <button class="help-btn" onclick="logout()" title="Sair">🚪</button>
+                </div>
+            </div>
+            
+            <div class="admin-content">
+                <div class="section">
+                    <h3>📋 Informações Básicas</h3>
+                    
                     <div class="form-group">
                         <label>Tipo de Logo</label>
                         <div class="logo-type-selector">
@@ -369,16 +381,4 @@
     <script src="js/app.js"></script>
 
 </body>
-</html>="save-status" id="saveStatus">
-                        <span id="saveText">Salvo</span>
-                    </div>
-                    <button class="help-btn" onclick="toggleHelp()" title="Atalhos de teclado">?</button>
-                    <button class="help-btn" onclick="logout()" title="Sair">🚪</button>
-                </div>
-            </div>
-            
-            <div class="admin-content">
-                <div class="section">
-                    <h3>📋 Informações Básicas</h3>
-                    
-                    <div class
+</html>

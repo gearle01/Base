@@ -84,7 +84,12 @@ async function compressImage(file, quality = 0.7) {
                 ctx.drawImage(img, 0, 0, width, height);
 
                 canvas.toBlob((blob) => {
-                    resolve(blob);
+                    // CORREÇÃO: Converter Blob para File
+                    const compressedFile = new File([blob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
                 }, file.type, quality);
             };
             img.onerror = (error) => reject(error);
@@ -97,6 +102,12 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+        showToast('Por favor, selecione uma imagem válida.', 'error');
+        return;
+    }
+
     if (file.size > 5 * 1024 * 1024) { // 5MB
         showToast('Imagem muito grande! Máximo 5MB', 'error');
         return;
@@ -106,9 +117,16 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
         showToast('Comprimindo imagem...', 'info');
         const compressedFile = await compressImage(file);
 
+        console.log('Tipo do arquivo:', compressedFile.constructor.name); // Debug
+        console.log('É um File?', compressedFile instanceof File); // Debug
+
         showToast(`Fazendo upload de ${file.name}...`, 'info');
         
-        const promise = appwriteStorage.createFile('68f04fe50018c9e1abc4', Appwrite.ID.unique(), compressedFile);
+        const promise = appwriteStorage.createFile(
+            '68f04fe50018c9e1abc4', 
+            Appwrite.ID.unique(), 
+            compressedFile
+        );
 
         promise.then(function (response) {
             const fileId = response.$id;
@@ -125,13 +143,13 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
             autoSave();
 
         }, function (error) {
-            console.error("Erro no upload: ", error); // Failure
-            showToast('Falha no upload da imagem.', 'error');
+            console.error("Erro no upload: ", error);
+            showToast('Falha no upload da imagem: ' + error.message, 'error');
         });
 
     } catch (error) {
         console.error("Erro no upload: ", error);
-        showToast('Falha no upload da imagem.', 'error');
+        showToast('Falha no upload da imagem: ' + error.message, 'error');
     }
 }
 

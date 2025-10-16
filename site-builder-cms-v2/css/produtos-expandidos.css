@@ -229,45 +229,45 @@
 }
 
 /* Dark Mode */
-body.dark-mode .produto-item {
+html[data-theme="dark"] .produto-item {
     background: #333333;
     border-color: #555555;
 }
 
-body.dark-mode .produto-header {
+html[data-theme="dark"] .produto-header {
     background: linear-gradient(135deg, #3a3a3a 0%, #333333 100%);
 }
 
-body.dark-mode .produto-header:hover {
+html[data-theme="dark"] .produto-header:hover {
     background: linear-gradient(135deg, #424242 0%, #3a3a3a 100%);
 }
 
-body.dark-mode .produto-info-compact strong {
+html[data-theme="dark"] .produto-info-compact strong {
     color: #e0e0e0;
 }
 
-body.dark-mode .produto-expanded {
+html[data-theme="dark"] .produto-expanded {
     background: #2d2d2d;
     border-top-color: #555555;
 }
 
-body.dark-mode .detalhe-item strong {
+html[data-theme="dark"] .detalhe-item strong {
     color: #999;
 }
 
-body.dark-mode .detalhe-item p {
+html[data-theme="dark"] .detalhe-item p {
     color: #e0e0e0;
 }
 
-body.dark-mode .produto-preview-image {
+html[data-theme="dark"] .produto-preview-image {
     border-color: #555555;
 }
 
-body.dark-mode .produto-acoes {
+html[data-theme="dark"] .produto-acoes {
     border-top-color: #555555;
 }
 
-body.dark-mode .product-badge {
+html[data-theme="dark"] .product-badge {
     background: #1a3a4d;
     color: #64b5f6;
 }

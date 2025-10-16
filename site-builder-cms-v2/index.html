@@ -6,8 +6,8 @@
     <title>Minha Empresa</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/produtos-expandidos.css">
-    <script src="js/dark-mode.js"></script>
+
+
     <style>
         /* Ícones SVG personalizados */
         .contact-icon svg {
@@ -40,7 +40,7 @@
                 <li class="nav-sobre"><a href="#sobre">Sobre</a></li>
                 <li class="nav-produtos"><a href="#produtos">Produtos</a></li>
                 <li class="nav-contato"><a href="#contato">Contato</a></li>
-                <li><button id="darkModeToggle" class="help-btn" onclick="toggleDarkMode()" title="Modo Escuro">🌙</button></li>
+
             </ul>
             <div class="hamburger">
                 <div class="line"></div>
@@ -81,78 +81,83 @@
 
         <!-- Contato -->
         <section class="site-section alt contato-section" id="contato">
-            <div class="section-content">
-                <h2 class="section-title">Entre em Contato</h2>
-                <div class="contact-grid">
-                    <div>
-                        <!-- Telefone 1 -->
-                        <div class="contact-item" id="contact-tel1">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4>Telefone</h4>
-                                <a href="#" id="telLink1" class="address-link">
-                                    <p id="telPreview">(11) 9999-9999</p>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Telefone 2 (Opcional) -->
-                        <div class="contact-item hidden" id="contact-tel2">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4>Telefone 2</h4>
-                                <a href="#" id="telLink2" class="address-link">
-                                    <p id="telPreview2"></p>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M20 4C21.6569 4 23 5.34315 23 7V17C23 18.6569 21.6569 20 20 20H4C2.34315 20 1 18.6569 1 17V7C1 5.34315 2.34315 4 4 4H20ZM19.2529 6H4.74718L11.3804 11.2367C11.7437 11.5236 12.2563 11.5236 12.6197 11.2367L19.2529 6ZM3 7.1688V17C3 17.5523 3.44772 18 4 18H20C20.5523 18 21 17.5523 21 17V7.16882L13.8589 12.8065C12.769 13.667 11.231 13.667 10.1411 12.8065L3 7.1688Z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4>E-mail</h4>
-                                <a href="mailto:contato@minhaempresa.com" id="emailLink" class="address-link">
-                                    <p id="emailPreview">contato@minhaempresa.com</p>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Endereço com link para Maps -->
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                                    <path d="M309.2 584.776h105.5l-49 153.2H225.8c-7.3 0-13.3-6-13.3-13.3 0-2.6 0.8-5.1 2.2-7.3l83.4-126.7c2.5-3.6 6.7-5.9 11.1-5.9z"/>
-                                    <path d="M534.1 639.7C652.5 537.4 711.7 445.8 711.7 365c0-127-102.7-212.1-195-212.1s-195 85.1-195 212.1c0 80.8 59.2 172.3 177.7 274.7 9.9 8.6 24.7 8.6 34.7 0z"/>
-                                    <circle cx="516.7" cy="348" r="97.5"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4>Endereço</h4>
-                                <a href="#" id="enderecoLink" class="address-link" target="_blank" rel="noopener noreferrer">
-                                    <p id="enderecoPreview">Rua Exemplo, 123 - São Paulo, SP</p>
-                                </a>
-                            </div>
-                        </div>
+    <div class="section-content">
+        <h2 class="section-title">Entre em Contato</h2>
+        <div class="contact-grid">
+            <div>
+                <!-- Telefone 1 -->
+                <div class="contact-item" id="contact-tel1">
+                    <div class="contact-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z"/>
+                        </svg>
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: center; color: #6c757d;">
-                        <p>Entre em contato conosco!</p>
+                    <div>
+                        <h4>Telefone</h4>
+                        <a href="#" id="telLink1" class="address-link">
+                            <p id="telPreview">(11) 9999-9999</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Telefone 2 (Opcional) -->
+                <div class="contact-item hidden" id="contact-tel2">
+                    <div class="contact-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>Telefone 2</h4>
+                        <a href="#" id="telLink2" class="address-link">
+                            <p id="telPreview2"></p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M20 4C21.6569 4 23 5.34315 23 7V17C23 18.6569 21.6569 20 20 20H4C2.34315 20 1 18.6569 1 17V7C1 5.34315 2.34315 4 4 4H20ZM19.2529 6H4.74718L11.3804 11.2367C11.7437 11.5236 12.2563 11.5236 12.6197 11.2367L19.2529 6ZM3 7.1688V17C3 17.5523 3.44772 18 4 18H20C20.5523 18 21 17.5523 21 17V7.16882L13.8589 12.8065C12.769 13.667 11.231 13.667 10.1411 12.8065L3 7.1688Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>E-mail</h4>
+                        <a href="mailto:contato@minhaempresa.com" id="emailLink" class="address-link">
+                            <p id="emailPreview">contato@minhaempresa.com</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Endereço com link para Maps -->
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                            <path d="M309.2 584.776h105.5l-49 153.2H225.8c-7.3 0-13.3-6-13.3-13.3 0-2.6 0.8-5.1 2.2-7.3l83.4-126.7c2.5-3.6 6.7-5.9 11.1-5.9z"/>
+                            <path d="M534.1 639.7C652.5 537.4 711.7 445.8 711.7 365c0-127-102.7-212.1-195-212.1s-195 85.1-195 212.1c0 80.8 59.2 172.3 177.7 274.7 9.9 8.6 24.7 8.6 34.7 0z"/>
+                            <circle cx="516.7" cy="348" r="97.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4>Endereço</h4>
+                        <a href="#" id="enderecoLink" class="address-link" target="_blank" rel="noopener noreferrer">
+                            <p id="enderecoPreview">Rua Exemplo, 123 - São Paulo, SP</p>
+                        </a>
                     </div>
                 </div>
             </div>
-        </section>
+            
+            <!-- NOVO: Mapa do Google -->
+            <div id="mapContainer" style="display: flex; align-items: center; justify-content: center;">
+                <div id="googleMapEmbed" style="width: 100%; height: 100%; min-height: 350px; border-radius: 8px; overflow: hidden;">
+                    <!-- O mapa será carregado aqui pelo JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 
         <footer class="site-footer">
             <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>

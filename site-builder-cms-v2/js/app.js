@@ -8,45 +8,68 @@ let state = {
 let db, storage;
 const clientId = 'cliente-001';
 
-// ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', function() {
+// ===== INICIALIZAÇÃO COM SESSÃO ANÔNIMA =====
+document.addEventListener('DOMContentLoaded', async function() {
     // Verificar se Firebase está carregado
     if (typeof firebase === 'undefined') {
-        console.error('ERRO: Firebase não foi carregado. Verifique se os scripts do Firebase estão no HTML.');
+        console.error('ERRO: Firebase não foi carregado.');
         showToast('Firebase não configurado.', 'error');
         return;
     }
 
-    // Inicializar Firebase apenas se ainda não foi inicializado
+    // Inicializar Firebase
     try {
         if (!firebase.apps.length) {
             console.log('Inicializando Firebase...');
             firebase.initializeApp(firebaseConfig);
             console.log('Firebase inicializado com sucesso!');
-        } else {
-            console.log('Firebase já estava inicializado.');
         }
         
-        // Inicializar referências
         db = firebase.firestore();
         storage = firebase.storage();
 
-        // Adicionado para verificação de autenticação
-        firebase.auth().onAuthStateChanged(function(user) {
+        // Verificar autenticação Firebase
+        firebase.auth().onAuthStateChanged(async function(user) {
             if (!user) {
-                // Se não estiver logado, redireciona para a página de login
                 console.log('Usuário não autenticado, redirecionando para login...');
                 window.location.href = 'login.html';
+                return;
             }
+
+            // ✅ CRIAR SESSÃO ANÔNIMA NO APPWRITE
+            try {
+                // Aguardar Appwrite estar pronto
+                if (typeof Appwrite === 'undefined') {
+                    await new Promise(resolve => {
+                        window.addEventListener('appwriteReady', resolve, { once: true });
+                    });
+                }
+
+                const account = new Appwrite.Account(window.appwriteClient);
+                
+                // Tentar criar sessão anônima (só funciona se não houver sessão ativa)
+                try {
+                    await account.createAnonymousSession();
+                    console.log('✅ Sessão anônima Appwrite criada');
+                } catch (error) {
+                    // Se já existe sessão, não faz nada
+                    if (error.code !== 401) {
+                        console.log('ℹ️ Sessão Appwrite já existe');
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Não foi possível criar sessão Appwrite:', error.message);
+            }
+
+            // Carregar dados
+            loadDataFromFirestore();
         });
         
         console.log('Firestore e Storage prontos!');
         
-        // Carregar dados
-        loadDataFromFirestore();
     } catch (error) {
-        console.error('ERRO ao inicializar Firebase:', error);
-        showToast('Erro ao conectar com Firebase: ' + error.message, 'error');
+        console.error('ERRO ao inicializar:', error);
+        showToast('Erro ao conectar: ' + error.message, 'error');
     }
 });
 
@@ -117,21 +140,21 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
         showToast('Comprimindo imagem...', 'info');
         const compressedFile = await compressImage(file);
 
-        console.log('Tipo do arquivo:', compressedFile.constructor.name); // Debug
-        console.log('É um File?', compressedFile instanceof File); // Debug
-
         showToast(`Fazendo upload de ${file.name}...`, 'info');
         
+        // ✅ CORREÇÃO: Appwrite precisa de um File nativo do navegador
+        // Não precisa converter Blob para File manualmente
         const promise = appwriteStorage.createFile(
-            '68f04fe50018c9e1abc4', 
-            Appwrite.ID.unique(), 
-            compressedFile
+            '68f04fe50018c9e1abc4', // Bucket ID
+            'unique()', // ✅ CORREÇÃO: Use string 'unique()' ao invés de Appwrite.ID.unique()
+            compressedFile // Já é um File válido
         );
 
         promise.then(function (response) {
             const fileId = response.$id;
-            const result = appwriteStorage.getFilePreview('68f04fe50018c9e1abc4', fileId);
-            const downloadURL = result.href;
+            // ✅ CORREÇÃO: Usar getFileView ao invés de getFilePreview
+            const viewResult = appwriteStorage.getFileView('68f04fe50018c9e1abc4', fileId);
+            const downloadURL = viewResult.href;
 
             document.getElementById(targetInputId).value = downloadURL;
             if (previewSelector) {
@@ -151,6 +174,54 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
         console.error("Erro no upload: ", error);
         showToast('Falha no upload da imagem: ' + error.message, 'error');
     }
+}
+
+// ✅ Função compressImage corrigida para retornar File
+async function compressImage(file, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    // ✅ Converter Blob para File CORRETAMENTE
+                    const compressedFile = new File([blob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, file.type, quality);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
 }
 
 // ===== LÓGICA DE DADOS (FIRESTORE) =====

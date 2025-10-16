@@ -1,4 +1,4 @@
-// Inicialização do Appwrite
+// Inicialização do Appwrite com suporte CORS dinâmico
 (function() {
     // Aguardar o carregamento do SDK do Appwrite
     function initAppwrite() {
@@ -13,13 +13,26 @@
         const client = new Appwrite.Client();
 
         client
-            .setEndpoint('https://sfo.cloud.appwrite.io/v1') // Your Appwrite Endpoint
-            .setProject('68f04b740016e7f878b3'); // Your project ID
+            .setEndpoint('https://sfo.cloud.appwrite.io/v1')
+            .setProject('68f04b740016e7f878b3');
 
         window.appwriteStorage = new Appwrite.Storage(client);
         window.appwriteClient = client;
         
         console.log('Appwrite inicializado com sucesso!');
+        console.log('🌐 Origem atual:', window.location.origin);
+        
+        // ⚠️ AVISO: Adicione esta origem no Console do Appwrite
+        if (!window.location.origin.includes('localhost')) {
+            console.warn(`
+⚠️ ATENÇÃO: Configure o Appwrite para aceitar esta origem!
+
+1. Acesse: https://cloud.appwrite.io
+2. Vá em: Settings → Platforms → Add Platform → Web App
+3. Adicione: ${window.location.origin}
+4. Salve e recarregue a página
+            `);
+        }
         
         // Disparar evento customizado para avisar que Appwrite está pronto
         window.dispatchEvent(new Event('appwriteReady'));

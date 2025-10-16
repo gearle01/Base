@@ -3,7 +3,8 @@ let state = {
     modules: { sobre: true, produtos: true, contato: true },
     produtos: []
 };
-
+// ✨ NOVO no início do arquivo
+let expandedProductId = null;
 // Referências do Firebase
 let db, storage;
 const clientId = 'cliente-001';
@@ -73,6 +74,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
+
+// ✨ NOVA função
+function markAsUnsaved() {
+    state.hasUnsavedChanges = true;
+    updateSaveStatus();
+}
+
+// ✨ NOVA função
+function updateSaveStatus() {
+    const saveStatus = document.getElementById('saveStatus');
+    const saveText = document.getElementById('saveText');
+    
+    if (!saveStatus || !saveText) return;
+    
+    if (state.hasUnsavedChanges) {
+        saveStatus.className = 'save-status unsaved';
+        saveText.innerHTML = '⚫ Mudanças não salvas';
+    } else {
+        saveStatus.className = 'save-status saved';
+        saveText.textContent = '✓ Salvo';
+    }
+}
+
+// ✨ NOVA função
+function toggleProductExpanded(index) {
+    if (expandedProductId === index) {
+        expandedProductId = null;
+    } else {
+        expandedProductId = index;
+    }
+    renderProdutos();
+}
 // ===== UPLOAD DE IMAGEM =====
 async function compressImage(file, quality = 0.7) {
     return new Promise((resolve, reject) => {
@@ -163,7 +196,7 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
             
             showToast('Upload concluído!', 'success');
             update();
-            autoSave();
+            markAsUnsaved();
 
         }, function (error) {
             console.error("Erro no upload: ", error);
@@ -612,7 +645,7 @@ function saveProduto() {
     }
 
     update();
-    autoSave();
+    markAsUnsaved();
     closeProdutoModal();
 }
 
@@ -620,23 +653,11 @@ function removeProduto(index) {
     if (confirm('Remover este produto?')) {
         state.produtos.splice(index, 1);
         update();
-        autoSave();
+        markAsUnsaved();
         showToast('Produto removido', 'info');
     }
 }
 
-let saveTimeout;
-function autoSave() {
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(async () => {
-        try {
-            await saveConfig();
-        } catch (error) {
-            console.error('Erro detalhado no auto-save:', error);
-            showToast(`Erro: ${error.message}`, 'error');
-        }
-    }, 1500);
-}
 
 function toggleHelp() { document.getElementById('shortcutsHelp').classList.toggle('show'); }
 
@@ -655,7 +676,7 @@ document.addEventListener('keydown', async (e) => {
 });
 
 document.querySelectorAll('input, textarea').forEach(el => {
-    el.addEventListener('input', () => { update(); autoSave(); });
+    el.addEventListener('input', () => { update(); markAsUnsaved(); });
     el.addEventListener('input', function() { this.classList.remove('error'); });
 });
 
@@ -664,6 +685,8 @@ document.querySelectorAll('.switch').forEach(sw => {
         this.classList.toggle('active');
         state.modules[this.dataset.module] = this.classList.contains('active');
         update();
-        autoSave();
+       markAsUnsaved();
     });
 });
+state.hasUnsavedChanges = false; // ✨ NOVO
+updateSaveStatus();

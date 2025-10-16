@@ -1,3 +1,21 @@
+// Função para escapar HTML e prevenir XSS
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return unsafe;
+    const div = document.createElement('div');
+    div.textContent = unsafe;
+    return div.innerHTML;
+}
+
+// Usar em TODOS os lugares onde você insere dados do usuário no HTML
+// Exemplo:
+// ANTES:
+// element.innerHTML = produto.nome;
+// DEPOIS:
+// element.textContent = produto.nome; // Mais seguro
+// ou
+// element.innerHTML = escapeHtml(produto.nome);
+
+
 const cache = {
     data: null,
     timestamp: 0,
@@ -24,11 +42,15 @@ function showLoadingSkeleton() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
-        console.error('Erro: Firebase não configurado corretamente.');
-        return;
+    function initializeFirebase() {
+        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+            loadDataFromFirestore();
+        } else {
+            // Se o Firebase não foi inicializado, tenta novamente em 100ms
+            setTimeout(initializeFirebase, 100);
+        }
     }
-    loadDataFromFirestore();
+    initializeFirebase();
 });
 
 async function loadDataFromFirestore() {
@@ -79,23 +101,37 @@ async function loadDataFromFirestore() {
 
 function updatePublicSite(data) {
     // Aplicar Configurações Globais
-    if (data.global_settings) {
-        if (data.global_settings.fontUrl) {
-            const fontLink = document.createElement('link');
-            fontLink.href = data.global_settings.fontUrl;
-            fontLink.rel = 'stylesheet';
-            document.head.appendChild(fontLink);
-        }
-        if (data.global_settings.fontFamily) {
-            document.body.style.fontFamily = data.global_settings.fontFamily;
-        }
-        // O tracking code é inserido aqui. Certifique-se de que o código inserido no painel de administração é de uma fonte confiável.
-        if (data.global_settings.trackingCode) {
-            const script = document.createElement('script');
-            script.innerHTML = data.global_settings.trackingCode;
-            document.body.appendChild(script);
-        }
+    // VERSÃO SEGURA - Valida o código antes de inserir
+if (data.global_settings && data.global_settings.trackingCode) {
+    const code = data.global_settings.trackingCode;
+    
+    // Whitelist de códigos permitidos
+    const isGoogleAnalytics = code.includes('googletagmanager.com') || 
+                               code.includes('analytics.google.com');
+    const isFacebookPixel = code.includes('facebook.net/en_US/fbevents.js');
+    const isHotjar = code.includes('static.hotjar.com');
+    
+    if (isGoogleAnalytics || isFacebookPixel || isHotjar) {
+        // Usar DOMParser para segurança
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(code, 'text/html');
+        
+        // Inserir apenas scripts válidos
+        const scripts = doc.querySelectorAll('script');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            if (script.src) {
+                newScript.src = script.src;
+            } else {
+                newScript.textContent = script.textContent;
+            }
+            if (script.async) newScript.async = true;
+            document.body.appendChild(newScript);
+        });
+    } else {
+        console.warn('Código de rastreamento não reconhecido foi bloqueado');
     }
+}
 
     // Atualizar Logo
     const logoContainer = document.getElementById('logo');

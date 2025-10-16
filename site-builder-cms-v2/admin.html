@@ -323,27 +323,25 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
+    <script>
+        // Load Firebase config based on environment
+        const hostname = window.location.hostname;
+        if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
+            document.write('<script src="/__/firebase/init.js"><\/script>');
+        } else {
+            document.write('<script src="js/firebase-config.local.js"><\/script>');
+        }
+    </script>
+
+    <!-- Appwrite -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0" defer></script>
+    <script src="js/appwrite-config.js" defer></script>
+
     <!-- Scripts -->
-    <script src="js/firebase-config.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/validation.js"></script>
     <script src="js/history.js"></script>
     <script src="js/app.js"></script>
-    <script>
-        // Auth check
-        if (typeof firebase !== 'undefined') {
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (!user) {
-                    // Se não estiver logado, redireciona para a página de login
-                    window.location.href = 'login.html';
-                }
-            });
-        } else {
-            // Se o firebase não estiver configurado, redireciona também para evitar erros
-            // e mostra uma mensagem no console.
-            console.error("Firebase não configurado. Redirecionando para login.");
-            // window.location.href = 'login.html';
-        }
-    </script>
+
 </body>
 </html>

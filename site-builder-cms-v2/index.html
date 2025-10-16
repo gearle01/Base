@@ -7,27 +7,7 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/main.css">
     <style>
-        /* Estilo simples para o ícone de admin */
-        .admin-login-icon {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            width: 50px;
-            height: 50px;
-            background: #212529;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            text-decoration: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-        .admin-login-icon:hover {
-            transform: scale(1.1);
-        }
+        
     </style>
 </head>
 <body>
@@ -128,15 +108,24 @@
 
     <!-- Botão Flutuante de WhatsApp -->
     <a id="whatsapp-fab" href="#" target="_blank" class="admin-login-icon" title="Fale conosco no WhatsApp">
-        <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" style="width: 28px; height: 28px;">
+        <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" style="width: 40px; height: 40px;">
     </a>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <script>
+        // Load Firebase config based on environment
+        const hostname = window.location.hostname;
+        if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
+            document.write('<script src="/__/firebase/init.js"><\/script>');
+        } else {
+            document.write('<script src="js/firebase-config.local.js"><\/script>');
+        }
+    </script>
+
     <!-- Scripts -->
-    <script src="js/firebase-config.js"></script>
     <script src="js/public.js"></script>
     <script src="js/responsive.js"></script>
 </body>

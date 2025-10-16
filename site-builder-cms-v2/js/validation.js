@@ -1,8 +1,36 @@
 // ===== VALIDAÇÃO =====
 function validateURL(url) {
-    if (!url) return true; // URLs vazias são válidas (opcionais)
+    if (!url) return true; // URLs vazias são válidas
+    
     try {
-        new URL(url);
+        const parsed = new URL(url);
+        
+        // Bloquear protocolos perigosos
+        const allowedProtocols = ['http:', 'https:'];
+        if (!allowedProtocols.includes(parsed.protocol)) {
+            console.warn('Protocolo não permitido:', parsed.protocol);
+            return false;
+        }
+        
+        // Opcional: Whitelist de domínios confiáveis
+        const trustedDomains = [
+            'images.unsplash.com',
+            'firebasestorage.googleapis.com',
+            'via.placeholder.com',
+            'cdn.jsdelivr.net',
+            'fonts.googleapis.com',
+            'www.googletagmanager.com'
+        ];
+        
+        // Comentar as linhas abaixo se quiser aceitar qualquer domínio HTTPS
+        // const isTrusted = trustedDomains.some(domain => 
+        //     parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+        // );
+        // if (!isTrusted) {
+        //     console.warn('Domínio não confiável:', parsed.hostname);
+        //     return false;
+        // }
+        
         return true;
     } catch {
         return false;

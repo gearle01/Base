@@ -10,16 +10,44 @@ const clientId = 'cliente-001';
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+    // Verificar se Firebase está carregado
+    if (typeof firebase === 'undefined') {
+        console.error('ERRO: Firebase não foi carregado. Verifique se os scripts do Firebase estão no HTML.');
         showToast('Firebase não configurado.', 'error');
         return;
     }
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+
+    // Inicializar Firebase apenas se ainda não foi inicializado
+    try {
+        if (!firebase.apps.length) {
+            console.log('Inicializando Firebase...');
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase inicializado com sucesso!');
+        } else {
+            console.log('Firebase já estava inicializado.');
+        }
+        
+        // Inicializar referências
+        db = firebase.firestore();
+        storage = firebase.storage();
+
+        // Adicionado para verificação de autenticação
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (!user) {
+                // Se não estiver logado, redireciona para a página de login
+                console.log('Usuário não autenticado, redirecionando para login...');
+                window.location.href = 'login.html';
+            }
+        });
+        
+        console.log('Firestore e Storage prontos!');
+        
+        // Carregar dados
+        loadDataFromFirestore();
+    } catch (error) {
+        console.error('ERRO ao inicializar Firebase:', error);
+        showToast('Erro ao conectar com Firebase: ' + error.message, 'error');
     }
-    db = firebase.firestore();
-    storage = firebase.storage();
-    loadDataFromFirestore();
 });
 
 // ===== UPLOAD DE IMAGEM =====
@@ -78,21 +106,28 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
         showToast('Comprimindo imagem...', 'info');
         const compressedFile = await compressImage(file);
 
-        const uploadPath = `images/${clientId}/${Date.now()}-${file.name}`;
-        const storageRef = storage.ref(uploadPath);
-
         showToast(`Fazendo upload de ${file.name}...`, 'info');
-        const snapshot = await storageRef.put(compressedFile);
-        const downloadURL = await snapshot.ref.getDownloadURL();
-
-        document.getElementById(targetInputId).value = downloadURL;
-        if (previewSelector) {
-            document.querySelector(previewSelector).style.backgroundImage = `url(${downloadURL})`;
-        }
         
-        showToast('Upload concluído!', 'success');
-        update();
-        autoSave();
+        const promise = appwriteStorage.createFile('68f04fe50018c9e1abc4', Appwrite.ID.unique(), compressedFile);
+
+        promise.then(function (response) {
+            const fileId = response.$id;
+            const result = appwriteStorage.getFilePreview('68f04fe50018c9e1abc4', fileId);
+            const downloadURL = result.href;
+
+            document.getElementById(targetInputId).value = downloadURL;
+            if (previewSelector) {
+                document.querySelector(previewSelector).style.backgroundImage = `url(${downloadURL})`;
+            }
+            
+            showToast('Upload concluído!', 'success');
+            update();
+            autoSave();
+
+        }, function (error) {
+            console.error("Erro no upload: ", error); // Failure
+            showToast('Falha no upload da imagem.', 'error');
+        });
 
     } catch (error) {
         console.error("Erro no upload: ", error);
@@ -102,26 +137,42 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
 
 // ===== LÓGICA DE DADOS (FIRESTORE) =====
 async function loadDataFromFirestore() {
+    if (!db) {
+        console.error('Firestore não está inicializado!');
+        showToast('Erro: Banco de dados não conectado.', 'error');
+        return;
+    }
+
     const clientDocRef = db.collection('site').doc(clientId);
+    console.log('Carregando dados do cliente:', clientId);
     showToast('Carregando dados...', 'info');
 
     try {
         const clientDoc = await clientDocRef.get();
+        
         if (!clientDoc.exists) {
+            console.warn('Cliente não encontrado. Criando documento padrão...');
             showToast('Cliente não encontrado. Usando modelo padrão.', 'info');
             update();
             return;
         }
 
+        console.log('Documento principal encontrado:', clientDoc.data());
         let config = clientDoc.data();
 
         const subcollections = ['cores', 'contato', 'modules', 'sobre', 'global_settings'];
         const promises = subcollections.map(async (sub) => {
             const subDoc = await clientDocRef.collection(sub).doc('data').get();
-            if (subDoc.exists) config[sub] = subDoc.data();
+            if (subDoc.exists) {
+                console.log(`Subcoleção ${sub} carregada:`, subDoc.data());
+                config[sub] = subDoc.data();
+            } else {
+                console.warn(`Subcoleção ${sub} não encontrada.`);
+            }
         });
 
         const produtosPromise = clientDocRef.collection('produtos').get().then(snap => {
+            console.log(`${snap.docs.length} produtos encontrados`);
             config.produtos = snap.docs.map(doc => doc.data());
         });
 
@@ -130,11 +181,12 @@ async function loadDataFromFirestore() {
         state.modules = config.modules || state.modules;
         state.produtos = config.produtos || state.produtos;
         loadConfig(config);
+        console.log('Dados carregados com sucesso!');
         showToast('Dados carregados com sucesso!', 'success');
 
     } catch (error) {
-        showToast('Erro ao carregar dados.', 'error');
-        console.error("Error loading data: ", error);
+        console.error("Erro detalhado ao carregar dados:", error);
+        showToast('Erro ao carregar dados: ' + error.message, 'error');
         update();
     }
 }
@@ -145,8 +197,15 @@ async function saveConfig() {
         return;
     }
 
+    if (!db) {
+        showToast('Erro: Banco de dados não conectado.', 'error');
+        return;
+    }
+
     showSaving();
     const config = getConfig();
+    console.log('Salvando configuração:', config);
+    
     const batch = db.batch();
     const clientDocRef = db.collection('site').doc(clientId);
 
@@ -175,12 +234,13 @@ async function saveConfig() {
         });
 
         await batch.commit();
+        console.log('Dados salvos com sucesso!');
         showSaved();
         showToast('Site atualizado com sucesso!', 'success');
 
     } catch (error) {
-        showToast('Erro ao salvar os dados.', 'error');
-        console.error("Error writing batch: ", error);
+        console.error("Erro detalhado ao salvar:", error);
+        showToast('Erro ao salvar: ' + error.message, 'error');
     }
 }
 
@@ -325,7 +385,7 @@ function update() {
     const bannerP = document.getElementById('bannerP');
     if (bannerP) bannerP.textContent = document.getElementById('bannerSubtitulo').value;
 
-    const banner = document.getElementById('banner');
+    const banner = document.querySelector('.banner');
     if (banner) banner.style.backgroundImage = `url(${document.getElementById('bannerImagem').value})`;
 
     const corPrimaria = document.getElementById('corPrimaria').value;

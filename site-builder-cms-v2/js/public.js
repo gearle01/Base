@@ -251,26 +251,24 @@ function updatePublicSite(data) {
     }
     console.log("✅ Seção Sobre atualizada");
   }
-   // NOVO: Configurar mapa do Google
-    const endereco = data.contato.endereco || '';
+
+  // ===== ✅ ATUALIZAR MAPA COM COORDENADAS =====
+  if (data.contato) {
+    const latitude = data.contato.latitude || -23.5505;
+    const longitude = data.contato.longitude || -46.6333;
     const mostrarMapa = data.contato.mostrarMapa !== false; // Default true
     const mapContainer = document.getElementById('mapContainer');
     const mapEmbed = document.getElementById('googleMapEmbed');
     
-    if (mostrarMapa && endereco && mapEmbed) {
-        const enderecoEncoded = encodeURIComponent(endereco);
-        
-        // URL do Google Maps Embed
-        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${enderecoEncoded}&zoom=15`;
-        
-        // Alternativa SEM API Key
-        // const mapUrl = `https://maps.google.com/maps?q=${enderecoEncoded}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    if (mostrarMapa && mapEmbed) {
+        // Usar coordenadas precisas ao invés de endereço
+        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&center=${latitude},${longitude}`;
         
         mapEmbed.innerHTML = `
             <iframe 
                 width="100%" 
                 height="100%" 
-                style="border:0; min-height: 350px;" 
+                style="border:0; min-height: 350px; border-radius: 8px;" 
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
                 src="${mapUrl}">
@@ -281,21 +279,25 @@ function updatePublicSite(data) {
             mapContainer.style.display = 'flex';
         }
         
-        console.log('✅ Mapa do Google carregado');
+        console.log(`✅ Mapa carregado com coordenadas: ${latitude}, ${longitude}`);
     } else {
         // Ocultar mapa se não tiver endereço ou estiver desabilitado
         if (mapContainer) {
-            mapContainer.innerHTML = '<p style="color: #6c757d; text-align: center;">Entre em contato conosco!</p>';
+            mapContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Entre em contato conosco!</p>';
         }
     }
     
     // Atualizar link do endereço para abrir Google Maps
     const enderecoLink = document.getElementById('enderecoLink');
-    if (enderecoLink && endereco) {
-        const enderecoEncoded = encodeURIComponent(endereco);
-        enderecoLink.href = `https://www.google.com/maps/search/?api=1&query=${enderecoEncoded}`;
-    
-        
+    if (enderecoLink) {
+        const endereco = data.contato.endereco || '';
+        if (endereco) {
+            const enderecoEncoded = encodeURIComponent(endereco);
+            enderecoLink.href = `https://www.google.com/maps/search/?api=1&query=${enderecoEncoded}`;
+        }
+    }
+  }
+
   // ✅ CORREÇÃO 4: Atualizar contato com telefones
   if (data.contato) {
     const tel1 = data.contato.telefone || "";

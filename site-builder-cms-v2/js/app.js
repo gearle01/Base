@@ -70,46 +70,7 @@ function markAsUnsaved() {
     state.hasUnsavedChanges = true;
     updateSaveStatus();
 }
-<script>
-// Função para atualizar o preview do mapa no admin
-function atualizarMapaPreview() {
-    const endereco = document.getElementById('endereco').value.trim();
-    const mapIframe = document.getElementById('mapIframe');
-    
-    if (!endereco) {
-        showToast('Digite um endereço primeiro', 'error');
-        return;
-    }
-    
-    // Codificar o endereço para URL
-    const enderecoEncoded = encodeURIComponent(endereco);
-    
-    // URL do Google Maps Embed
-    // NOTA: Para produção, recomenda-se usar uma API Key
-    const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${enderecoEncoded}&zoom=15`;
-    
-    // Alternativa SEM API Key (menos confiável)
-    // const mapUrl = `https://maps.google.com/maps?q=${enderecoEncoded}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-    
-    mapIframe.src = mapUrl;
-    showToast('Mapa atualizado!', 'success');
-}
 
-// Atualizar mapa automaticamente quando o endereço mudar
-document.getElementById('endereco').addEventListener('change', function() {
-    atualizarMapaPreview();
-});
-
-// Carregar mapa inicial quando a página carregar
-window.addEventListener('load', function() {
-    setTimeout(() => {
-        const endereco = document.getElementById('endereco').value;
-        if (endereco) {
-            atualizarMapaPreview();
-        }
-    }, 1000);
-});
-</script>
 function updateSaveStatus() {
     const saveStatus = document.getElementById('saveStatus');
     const saveText = document.getElementById('saveText');
@@ -123,6 +84,26 @@ function updateSaveStatus() {
         saveStatus.className = 'save-status saved';
         saveText.textContent = '✓ Salvo';
     }
+}
+
+// ===== ATUALIZAR MAPA PREVIEW =====
+function atualizarMapaPreview() {
+    const endereco = document.getElementById('endereco').value.trim();
+    const mapIframe = document.getElementById('mapIframe');
+    
+    if (!endereco) {
+        showToast('Digite um endereço primeiro', 'error');
+        return;
+    }
+    
+    // Codificar o endereço para URL
+    const enderecoEncoded = encodeURIComponent(endereco);
+    
+    // URL do Google Maps Embed
+    const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${enderecoEncoded}&zoom=15`;
+    
+    mapIframe.src = mapUrl;
+    showToast('Mapa atualizado!', 'success');
 }
 
 // ===== UPLOAD DE IMAGEM =====
@@ -386,16 +367,17 @@ function getConfig() {
             imagem: document.getElementById('sobreImagem').value 
         },
         produtos: state.produtos,
-        // Na função getConfig(), adicione na seção contato:
-contato: {
-    telefone: document.getElementById('telefone').value,
-    telefone2: document.getElementById('telefone2').value,
-    email: document.getElementById('email').value,
-    endereco: document.getElementById('endereco').value,
-    mostrarMapa: document.getElementById('mostrarMapa').checked // NOVO
-}
-
-
+        contato: {
+            telefone: document.getElementById('telefone').value,
+            telefone2: document.getElementById('telefone2').value,
+            email: document.getElementById('email').value,
+            endereco: document.getElementById('endereco').value,
+            mostrarMapa: document.getElementById('mostrarMapa').checked,
+            // NOVO: Coordenadas do mapa
+            latitude: parseFloat(document.getElementById('latitude').value) || -23.5505,
+            longitude: parseFloat(document.getElementById('longitude').value) || -46.6333
+        }
+    };
 }
 
 function loadConfig(config) {
@@ -415,44 +397,57 @@ function loadConfig(config) {
         document.getElementById('fontFamily').value = config.global_settings.fontFamily || '';
         document.getElementById('trackingCode').value = config.global_settings.trackingCode || '';
     }
+    
     if (config.cores) {
         document.getElementById('corPrimaria').value = config.cores.primaria;
         document.getElementById('corSecundaria').value = config.cores.secundaria;
     }
+    
     if (config.sobre) {
         document.getElementById('sobreTexto').value = config.sobre.texto || '';
         document.getElementById('sobreImagem').value = config.sobre.imagem || '';
     }
-    if (config.contato) {
-        document.getElementById('telefone').value = config.contato.telefone || '';
-        document.getElementById('telefone2').value = config.contato.telefone2 || '';
-        document.getElementById('email').value = config.contato.email || '';
-        document.getElementById('endereco').value = config.contato.endereco || '';
-    }
+    
     if (config.modules) {
         Object.keys(config.modules).forEach(module => {
             const sw = document.querySelector(`[data-module="${module}"]`);
             if (sw) sw.classList.toggle('active', config.modules[module]);
         });
     }
-    // Na função loadConfig(), adicione na seção contato:
-if (config.contato) {
-    document.getElementById('telefone').value = config.contato.telefone || '';
-    document.getElementById('telefone2').value = config.contato.telefone2 || '';
-    document.getElementById('email').value = config.contato.email || '';
-    document.getElementById('endereco').value = config.contato.endereco || '';
-    document.getElementById('mostrarMapa').checked = config.contato.mostrarMapa !== false; // NOVO
     
-    // Atualizar preview do mapa
-    if (config.contato.endereco) {
-        setTimeout(() => atualizarMapaPreview(), 500);
+    if (config.contato) {
+        document.getElementById('telefone').value = config.contato.telefone || '';
+        document.getElementById('telefone2').value = config.contato.telefone2 || '';
+        document.getElementById('email').value = config.contato.email || '';
+        document.getElementById('endereco').value = config.contato.endereco || '';
+        document.getElementById('mostrarMapa').checked = config.contato.mostrarMapa !== false;
+        
+        // NOVO: Carregar coordenadas
+        document.getElementById('latitude').value = config.contato.latitude || -23.5505;
+        document.getElementById('longitude').value = config.contato.longitude || -46.6333;
+        document.getElementById('latitudeDisplay').textContent = (config.contato.latitude || -23.5505).toFixed(4);
+        document.getElementById('longitudeDisplay').textContent = (config.contato.longitude || -46.6333).toFixed(4);
+        
+        // Atualizar preview do mapa após um pequeno delay
+        setTimeout(() => {
+            if (mapAdmin) {
+                latitudeAtual = config.contato.latitude || -23.5505;
+                longitudeAtual = config.contato.longitude || -46.6333;
+                mapAdmin.setView([latitudeAtual, longitudeAtual], 15);
+                markerAdmin.setLatLng([latitudeAtual, longitudeAtual]);
+            }
+            if (config.contato.endereco) {
+                atualizarMapaPublico();
+            }
+        }, 500);
     }
-}
-    };
+
     update();
 }
 
 function update() {
+    console.log('🔄 Atualizando preview...');
+    
     const fontUrl = document.getElementById('fontUrl').value;
     if (fontUrl) {
         let fontLink = document.getElementById('dynamic-font');
@@ -494,6 +489,7 @@ function update() {
     if (footerNome) footerNome.textContent = document.getElementById('empresaNome').value;
 
     const bannerH1 = document.getElementById('bannerH1');
+    console.log('Atualizando banner H1:', document.getElementById('bannerTitulo').value);
     if (bannerH1) bannerH1.textContent = document.getElementById('bannerTitulo').value;
 
     const bannerP = document.getElementById('bannerP');
@@ -554,6 +550,7 @@ function update() {
         const navContato = document.querySelector('.nav-contato');
         if (navContato) navContato.classList.toggle('hidden', !state.modules.contato);
     }
+    
     renderProdutos();
 }
 
@@ -705,10 +702,15 @@ document.addEventListener('keydown', async (e) => {
 });
 
 document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('change', () => { 
+        markAsUnsaved();
+        update();
+    });
+    
     el.addEventListener('input', () => { 
         update(); 
-        markAsUnsaved(); 
     });
+    
     el.addEventListener('input', function() { 
         this.classList.remove('error'); 
     });
@@ -721,6 +723,16 @@ document.querySelectorAll('.switch').forEach(sw => {
         update();
         markAsUnsaved();
     });
+});
+
+// Atualizar mapa quando o endereço mudar
+document.addEventListener('DOMContentLoaded', () => {
+    const enderecoInput = document.getElementById('endereco');
+    if (enderecoInput) {
+        enderecoInput.addEventListener('change', function() {
+            setTimeout(atualizarMapaPreview, 300);
+        });
+    }
 });
 
 updateSaveStatus();

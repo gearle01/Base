@@ -8,6 +8,14 @@ let expandedProductId = null;
 let db, storage;
 const clientId = 'cliente-001';
 
+// ===== FUNÇÃO AUXILIAR: Escape XSS =====
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return unsafe;
+    const div = document.createElement('div');
+    div.textContent = unsafe;
+    return div.innerHTML;
+}
+
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async function() {
     if (typeof firebase === 'undefined') {
@@ -86,27 +94,7 @@ function updateSaveStatus() {
     }
 }
 
-// ===== ATUALIZAR MAPA PREVIEW =====
-function atualizarMapaPreview() {
-    const endereco = document.getElementById('endereco').value.trim();
-    const mapIframe = document.getElementById('mapIframe');
-    
-    if (!endereco) {
-        showToast('Digite um endereço primeiro', 'error');
-        return;
-    }
-    
-    // Codificar o endereço para URL
-    const enderecoEncoded = encodeURIComponent(endereco);
-    
-    // URL do Google Maps Embed
-    const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${enderecoEncoded}&zoom=15`;
-    
-    mapIframe.src = mapUrl;
-    showToast('Mapa atualizado!', 'success');
-}
-
-// ===== UPLOAD DE IMAGEM =====
+// ===== UPLOAD DE IMAGEM COM PROTEÇÃO =====
 async function compressImage(file, quality = 0.7) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -204,7 +192,7 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
     }
 }
 
-// ===== FIRESTORE =====
+// ===== FIRESTORE - VERSÃO OTIMIZADA COM PROMISE.ALL =====
 async function loadDataFromFirestore() {
     if (!db) {
         console.error('Firestore não está inicializado!');
@@ -217,7 +205,16 @@ async function loadDataFromFirestore() {
     showToast('Carregando dados...', 'info');
 
     try {
-        const clientDoc = await clientDocRef.get();
+        // ✅ OTIMIZAÇÃO: Carregar tudo em paralelo com Promise.all
+        const [clientDoc, coresDoc, contatoDoc, modulesDoc, sobreDoc, globalDoc, produtosSnap] = await Promise.all([
+            clientDocRef.get(),
+            clientDocRef.collection('cores').doc('data').get(),
+            clientDocRef.collection('contato').doc('data').get(),
+            clientDocRef.collection('modules').doc('data').get(),
+            clientDocRef.collection('sobre').doc('data').get(),
+            clientDocRef.collection('global_settings').doc('data').get(),
+            clientDocRef.collection('produtos').get()
+        ]);
         
         if (!clientDoc.exists) {
             console.warn('Cliente não encontrado. Criando documento padrão...');
@@ -226,26 +223,20 @@ async function loadDataFromFirestore() {
             return;
         }
 
-        console.log('Documento principal encontrado:', clientDoc.data());
+        console.log('✅ Todos os documentos carregados em paralelo!');
+        
         let config = clientDoc.data();
-
-        const subcollections = ['cores', 'contato', 'modules', 'sobre', 'global_settings'];
-        const promises = subcollections.map(async (sub) => {
-            const subDoc = await clientDocRef.collection(sub).doc('data').get();
-            if (subDoc.exists) {
-                console.log(`Subcoleção ${sub} carregada:`, subDoc.data());
-                config[sub] = subDoc.data();
-            } else {
-                console.warn(`Subcoleção ${sub} não encontrada.`);
-            }
-        });
-
-        const produtosPromise = clientDocRef.collection('produtos').get().then(snap => {
-            console.log(`${snap.docs.length} produtos encontrados`);
-            config.produtos = snap.docs.map(doc => doc.data());
-        });
-
-        await Promise.all([...promises, produtosPromise]);
+        
+        // Adicionar subcoleções ao config
+        if (coresDoc.exists) config.cores = coresDoc.data();
+        if (contatoDoc.exists) config.contato = contatoDoc.data();
+        if (modulesDoc.exists) config.modules = modulesDoc.data();
+        if (sobreDoc.exists) config.sobre = sobreDoc.data();
+        if (globalDoc.exists) config.global_settings = globalDoc.data();
+        
+        // Produtos
+        config.produtos = produtosSnap.docs.map(doc => doc.data());
+        console.log(`${config.produtos.length} produtos encontrados`);
 
         state.modules = config.modules || state.modules;
         state.produtos = config.produtos || state.produtos;
@@ -313,7 +304,6 @@ async function saveConfig() {
         console.error("Erro detalhado ao salvar:", error);
         showToast('Erro ao salvar: ' + error.message, 'error');
     }
-    
 }
 
 // ===== UI E ESTADO =====
@@ -373,7 +363,6 @@ function getConfig() {
             email: document.getElementById('email').value,
             endereco: document.getElementById('endereco').value,
             mostrarMapa: document.getElementById('mostrarMapa').checked,
-            // NOVO: Coordenadas do mapa
             latitude: parseFloat(document.getElementById('latitude').value) || -23.5505,
             longitude: parseFloat(document.getElementById('longitude').value) || -46.6333
         }
@@ -422,22 +411,17 @@ function loadConfig(config) {
         document.getElementById('endereco').value = config.contato.endereco || '';
         document.getElementById('mostrarMapa').checked = config.contato.mostrarMapa !== false;
         
-        // NOVO: Carregar coordenadas
         document.getElementById('latitude').value = config.contato.latitude || -23.5505;
         document.getElementById('longitude').value = config.contato.longitude || -46.6333;
         document.getElementById('latitudeDisplay').textContent = (config.contato.latitude || -23.5505).toFixed(4);
         document.getElementById('longitudeDisplay').textContent = (config.contato.longitude || -46.6333).toFixed(4);
         
-        // Atualizar preview do mapa após um pequeno delay
         setTimeout(() => {
-            if (mapAdmin) {
+            if (typeof mapAdmin !== 'undefined' && mapAdmin) {
                 latitudeAtual = config.contato.latitude || -23.5505;
                 longitudeAtual = config.contato.longitude || -46.6333;
                 mapAdmin.setView([latitudeAtual, longitudeAtual], 15);
                 markerAdmin.setLatLng([latitudeAtual, longitudeAtual]);
-            }
-            if (config.contato.endereco) {
-                atualizarMapaPublico();
             }
         }, 500);
     }
@@ -489,7 +473,6 @@ function update() {
     if (footerNome) footerNome.textContent = document.getElementById('empresaNome').value;
 
     const bannerH1 = document.getElementById('bannerH1');
-    console.log('Atualizando banner H1:', document.getElementById('bannerTitulo').value);
     if (bannerH1) bannerH1.textContent = document.getElementById('bannerTitulo').value;
 
     const bannerP = document.getElementById('bannerP');
@@ -554,31 +537,29 @@ function update() {
     renderProdutos();
 }
 
-// ===== PRODUTOS - SISTEMA CORRIGIDO =====
+// ===== PRODUTOS - SISTEMA COM PROTEÇÃO XSS =====
 function renderProdutos() {
-    // Renderizar no preview
     const grid = document.getElementById('produtosGrid');
     if(grid) {
         grid.innerHTML = state.produtos.map(p => `
             <div class="product-card">
-                <div class="product-image" style="background-image: url(${p.imagem || 'https://via.placeholder.com/400'})"></div>
+                <div class="product-image" style="background-image: url(${escapeHtml(p.imagem || 'https://via.placeholder.com/400')})"></div>
                 <div class="product-info">
-                    <h3>${p.nome}</h3>
-                    <div class="product-price">${p.preco}</div>
-                    <p>${p.descricao || ''}</p>
+                    <h3>${escapeHtml(p.nome)}</h3>
+                    <div class="product-price">${escapeHtml(p.preco)}</div>
+                    <p>${escapeHtml(p.descricao || '')}</p>
                 </div>
             </div>
         `).join('');
     }
     
-    // Renderizar lista no admin
     const list = document.getElementById('produtosList');
     if(list) {
         list.innerHTML = state.produtos.map((p, i) => `
             <div style="background: #f8f9fa; padding: 0.8rem; border-radius: 4px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong>${p.nome}</strong><br>
-                    <small>${p.preco}</small>
+                    <strong>${escapeHtml(p.nome)}</strong><br>
+                    <small>${escapeHtml(p.preco)}</small>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; margin: 0; font-size: 0.8rem;" onclick="editarProduto(${i})">✏️ Editar</button>
@@ -589,7 +570,6 @@ function renderProdutos() {
     }
 }
 
-// Adicionar novo produto
 function openProdutoModal(index) {
     const modal = document.getElementById('produtoModal');
     const title = document.getElementById('produtoModalTitle');
@@ -599,7 +579,6 @@ function openProdutoModal(index) {
     const descricaoInput = document.getElementById('produtoDescricao');
     const imagemInput = document.getElementById('produtoImagem');
 
-    // Limpar campos
     title.textContent = 'Adicionar Produto';
     idInput.value = '';
     nomeInput.value = '';
@@ -610,7 +589,6 @@ function openProdutoModal(index) {
     modal.style.display = 'block';
 }
 
-// Editar produto existente
 function editarProduto(index) {
     const modal = document.getElementById('produtoModal');
     const title = document.getElementById('produtoModalTitle');
@@ -656,11 +634,9 @@ function saveProduto() {
     };
 
     if (id !== '') {
-        // Editando produto existente
         state.produtos[parseInt(id)] = produto;
         showToast('Produto atualizado!', 'success');
     } else {
-        // Adicionando novo produto
         state.produtos.push(produto);
         showToast('Produto adicionado!', 'success');
     }
@@ -690,7 +666,7 @@ document.addEventListener('keydown', async (e) => {
         try {
             await saveConfig();
         } catch (error) {
-            console.error('Erro detalhado ao salvar (Ctrl+S):', error);
+            console.error('Erro ao salvar:', error);
             showToast(`Erro: ${error.message}`, 'error');
         }
     }
@@ -723,16 +699,6 @@ document.querySelectorAll('.switch').forEach(sw => {
         update();
         markAsUnsaved();
     });
-});
-
-// Atualizar mapa quando o endereço mudar
-document.addEventListener('DOMContentLoaded', () => {
-    const enderecoInput = document.getElementById('endereco');
-    if (enderecoInput) {
-        enderecoInput.addEventListener('change', function() {
-            setTimeout(atualizarMapaPreview, 300);
-        });
-    }
 });
 
 updateSaveStatus();

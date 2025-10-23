@@ -171,22 +171,31 @@
     </a>
 
     <script>
-      const hostname = window.location.hostname;
-      if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
-        // Firebase Hosting Environment
-        document.write('<script src="/__/firebase/8.10.1/firebase-app.js"><\/script>');
-        document.write('<script src="/__/firebase/8.10.1/firebase-firestore.js"><\/script>');
-        document.write('<script src="/__/firebase/init.js"><\/script>');
-      } else {
-        // Local Environment
-        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"><\/script>');
-        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"><\/script>');
-        document.write('<script src="js/firebase-config.local.js"><\/script>');
-      }
+      (function() {
+        const hostname = window.location.hostname;
+        const isFirebaseEnv = hostname.includes("firebaseapp.com") || hostname.includes("web.app");
+
+        function loadDefer(src) {
+          const script = document.createElement('script');
+          script.src = src;
+          script.defer = true;
+          document.head.appendChild(script);
+        }
+
+        if (isFirebaseEnv) {
+          loadDefer("/__/firebase/8.10.1/firebase-app.js");
+          loadDefer("/__/firebase/8.10.1/firebase-firestore.js");
+          loadDefer("/__/firebase/init.js");
+        } else {
+          loadDefer("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+          loadDefer("https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js");
+          loadDefer("js/firebase-config.local.js");
+        }
+      })();
     </script>
 
     <!-- Scripts -->
-    <script src="js/public.js"></script>
-    <script src="js/responsive.js"></script>
+    <script defer src="js/public.js"></script>
+    <script defer src="js/responsive.js"></script>
 </body>
 </html>

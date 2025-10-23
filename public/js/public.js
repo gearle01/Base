@@ -6,11 +6,12 @@ function escapeHtml(unsafe) {
   return div.innerHTML;
 }
 
+// ✅ OTIMIZAÇÃO: Cache aumentado para 5 minutos
 const cache = {
   data: null,
   timestamp: 0,
   isValid: function () {
-    return this.data && Date.now() - this.timestamp < 60000; // 1 min cache
+    return this.data && Date.now() - this.timestamp < 300000; // 5 min cache
   },
 };
 
@@ -35,21 +36,18 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // On Firebase hosting, the app is already initialized by /__/firebase/init.js
     if (firebase.apps.length > 0) {
         console.log("✅ Firebase já inicializado (pelo init.js).");
         loadDataFromFirestore();
         return;
     }
 
-    // For local development, we need the config and must initialize manually.
     if (typeof firebaseConfig === "undefined") {
       console.log("⏳ Aguardando firebaseConfig... (local env)");
       setTimeout(initializeFirebase, 100);
       return;
     }
 
-    // Initialize for local env
     console.log("🔥 Inicializando Firebase no public.js... (local env)");
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase inicializado com sucesso! (local env)");
@@ -60,6 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeFirebase();
 });
 
+// ✅ OTIMIZAÇÃO: Carregar dados com Promise.all
 async function loadDataFromFirestore() {
   if (cache.isValid()) {
     console.log("📦 Usando cache");
@@ -75,12 +74,20 @@ async function loadDataFromFirestore() {
 
   try {
     const clientDocRef = db.collection("site").doc(clientId);
-    const clientDoc = await clientDocRef.get();
+    
+    // ✅ OTIMIZAÇÃO CRÍTICA: Carregar tudo em paralelo
+    const [clientDoc, coresDoc, contatoDoc, modulesDoc, sobreDoc, globalDoc, produtosSnap] = await Promise.all([
+      clientDocRef.get(),
+      clientDocRef.collection('cores').doc('data').get(),
+      clientDocRef.collection('contato').doc('data').get(),
+      clientDocRef.collection('modules').doc('data').get(),
+      clientDocRef.collection('sobre').doc('data').get(),
+      clientDocRef.collection('global_settings').doc('data').get(),
+      clientDocRef.collection('produtos').get()
+    ]);
 
     if (!clientDoc.exists) {
-      console.warn(
-        "⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão."
-      );
+      console.warn("⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão.");
       const produtosGrid = document.getElementById("produtosGrid");
       if (produtosGrid) produtosGrid.innerHTML = "";
       return;
@@ -89,32 +96,32 @@ async function loadDataFromFirestore() {
     console.log("✅ Documento principal encontrado!");
     let config = clientDoc.data();
 
-    const subcollections = [
-      "cores",
-      "contato",
-      "modules",
-      "sobre",
-      "global_settings",
-    ];
-    const promises = subcollections.map(async (sub) => {
-      const subDoc = await clientDocRef.collection(sub).doc("data").get();
-      if (subDoc.exists) {
-        config[sub] = subDoc.data();
-        console.log(`✅ ${sub} carregado`);
-      }
-    });
+    // Adicionar subcoleções
+    if (coresDoc.exists) {
+      config.cores = coresDoc.data();
+      console.log('✅ cores carregado');
+    }
+    if (contatoDoc.exists) {
+      config.contato = contatoDoc.data();
+      console.log('✅ contato carregado');
+    }
+    if (modulesDoc.exists) {
+      config.modules = modulesDoc.data();
+      console.log('✅ modules carregado');
+    }
+    if (sobreDoc.exists) {
+      config.sobre = sobreDoc.data();
+      console.log('✅ sobre carregado');
+    }
+    if (globalDoc.exists) {
+      config.global_settings = globalDoc.data();
+      console.log('✅ global_settings carregado');
+    }
 
-    const produtosPromise = clientDocRef
-      .collection("produtos")
-      .get()
-      .then((querySnapshot) => {
-        config.produtos = querySnapshot.docs.map((doc) => doc.data());
-        console.log(`✅ ${config.produtos.length} produtos carregados`);
-      });
+    config.produtos = produtosSnap.docs.map((doc) => doc.data());
+    console.log(`✅ ${config.produtos.length} produtos carregados`);
 
-    await Promise.all([...promises, produtosPromise]);
-
-    // Cache the data
+    // Cache dos dados
     cache.data = config;
     cache.timestamp = Date.now();
 
@@ -128,9 +135,8 @@ async function loadDataFromFirestore() {
 function updatePublicSite(data) {
   console.log("🎨 Atualizando interface do site...");
 
-  // ✅ CORREÇÃO 1: Aplicar Configurações Globais de Fonte
+  // ✅ Aplicar Configurações Globais de Fonte
   if (data.global_settings) {
-    // Aplicar fonte customizada
     if (data.global_settings.fontUrl) {
       let fontLink = document.getElementById("dynamic-font");
       if (!fontLink) {
@@ -146,7 +152,7 @@ function updatePublicSite(data) {
       document.body.style.fontFamily = data.global_settings.fontFamily;
     }
 
-    // Código de rastreamento (validado)
+    // ✅ SEGURANÇA: Código de rastreamento validado
     if (data.global_settings.trackingCode) {
       const code = data.global_settings.trackingCode;
 
@@ -172,12 +178,12 @@ function updatePublicSite(data) {
           document.body.appendChild(newScript);
         });
       } else {
-        console.warn("Código de rastreamento não reconhecido foi bloqueado");
+        console.warn("⚠️ Código de rastreamento não reconhecido foi bloqueado");
       }
     }
   }
 
-  // ✅ CORREÇÃO 2: Atualizar Logo (com suporte a imagem)
+  // ✅ Atualizar Logo (com suporte a imagem)
   const logoContainer = document.getElementById("logo");
   if (logoContainer) {
     logoContainer.innerHTML = "";
@@ -216,18 +222,11 @@ function updatePublicSite(data) {
     console.log("✅ Banner imagem atualizada");
   }
 
-  // ✅ CORREÇÃO 3: Aplicar cores
+  // ✅ Aplicar cores
   if (data.cores) {
-    document.documentElement.style.setProperty(
-      "--primary-color",
-      data.cores.primaria
-    );
-    document.documentElement.style.setProperty(
-      "--secondary-color",
-      data.cores.secundaria
-    );
+    document.documentElement.style.setProperty("--primary-color", data.cores.primaria);
+    document.documentElement.style.setProperty("--secondary-color", data.cores.secundaria);
 
-    // Aplicar cores aos elementos
     document.querySelectorAll(".site-nav-links a").forEach((a) => {
       a.style.color = data.cores.primaria;
     });
@@ -254,16 +253,15 @@ function updatePublicSite(data) {
     console.log("✅ Seção Sobre atualizada");
   }
 
-  // ===== ✅ ATUALIZAR MAPA COM COORDENADAS =====
+  // ✅ ATUALIZAR MAPA COM COORDENADAS
   if (data.contato) {
     const latitude = data.contato.latitude || -23.5505;
     const longitude = data.contato.longitude || -46.6333;
-    const mostrarMapa = data.contato.mostrarMapa !== false; // Default true
+    const mostrarMapa = data.contato.mostrarMapa !== false;
     const mapContainer = document.getElementById('mapContainer');
     const mapEmbed = document.getElementById('googleMapEmbed');
     
     if (mostrarMapa && mapEmbed) {
-        // Usar coordenadas precisas ao invés de endereço
         const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&center=${latitude},${longitude}`;
         
         mapEmbed.innerHTML = `
@@ -283,13 +281,11 @@ function updatePublicSite(data) {
         
         console.log(`✅ Mapa carregado com coordenadas: ${latitude}, ${longitude}`);
     } else {
-        // Ocultar mapa se não tiver endereço ou estiver desabilitado
         if (mapContainer) {
             mapContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Entre em contato conosco!</p>';
         }
     }
     
-    // Atualizar link do endereço para abrir Google Maps
     const enderecoLink = document.getElementById('enderecoLink');
     if (enderecoLink) {
         const endereco = data.contato.endereco || '';
@@ -300,35 +296,28 @@ function updatePublicSite(data) {
     }
   }
 
-  // ✅ CORREÇÃO 4: Atualizar contato com telefones
+  // ✅ Atualizar contato com telefones
   if (data.contato) {
     const tel1 = data.contato.telefone || "";
     const tel2 = data.contato.telefone2 || "";
     const cleanTel1 = tel1.replace(/\D/g, "");
     const cleanTel2 = tel2.replace(/\D/g, "");
 
-    // Botão flutuante de WhatsApp
     const whatsappFab = document.getElementById("whatsapp-fab");
     if (whatsappFab && cleanTel1 && cleanTel1.length >= 10) {
-      // Garantir que tem pelo menos 10 dígitos
-      const whatsappNumber = cleanTel1.startsWith("55")
-        ? cleanTel1
-        : `55${cleanTel1}`;
+      const whatsappNumber = cleanTel1.startsWith("55") ? cleanTel1 : `55${cleanTel1}`;
       whatsappFab.href = `https://wa.me/${whatsappNumber}`;
       whatsappFab.style.display = "flex";
       console.log("✅ WhatsApp link:", whatsappFab.href);
     } else {
-      console.warn("⚠️ Telefone inválido para WhatsApp:", cleanTel1);
-      whatsappFab.style.display = "none";
+      if (whatsappFab) whatsappFab.style.display = "none";
     }
 
-    // Telefone 1
     const telPreview = document.getElementById("telPreview");
     const telLink1 = document.getElementById("telLink1");
     if (telPreview) telPreview.textContent = tel1;
     if (telLink1) telLink1.href = `tel:+55${cleanTel1}`;
 
-    // Telefone 2 (mostrar/ocultar)
     const contactTel2 = document.getElementById("contact-tel2");
     const telPreview2 = document.getElementById("telPreview2");
     const telLink2 = document.getElementById("telLink2");
@@ -341,48 +330,34 @@ function updatePublicSite(data) {
       contactTel2.classList.add("hidden");
     }
 
-    // Email e endereço
     const emailPreview = document.getElementById("emailPreview");
     if (emailPreview) emailPreview.textContent = data.contato.email || "";
 
     const enderecoPreview = document.getElementById("enderecoPreview");
-    if (enderecoPreview)
-      enderecoPreview.textContent = data.contato.endereco || "";
+    if (enderecoPreview) enderecoPreview.textContent = data.contato.endereco || "";
 
     console.log("✅ Contato atualizado");
   }
 
-  // ✅ CORREÇÃO 5: Mostrar/ocultar módulos
+  // ✅ Mostrar/ocultar módulos
   if (data.modules) {
     const sobreSection = document.querySelector(".sobre-section");
-    if (sobreSection) {
-      sobreSection.classList.toggle("hidden", !data.modules.sobre);
-    }
+    if (sobreSection) sobreSection.classList.toggle("hidden", !data.modules.sobre);
 
     const navSobre = document.querySelector(".nav-sobre");
-    if (navSobre) {
-      navSobre.classList.toggle("hidden", !data.modules.sobre);
-    }
+    if (navSobre) navSobre.classList.toggle("hidden", !data.modules.sobre);
 
     const produtosSection = document.querySelector(".produtos-section");
-    if (produtosSection) {
-      produtosSection.classList.toggle("hidden", !data.modules.produtos);
-    }
+    if (produtosSection) produtosSection.classList.toggle("hidden", !data.modules.produtos);
 
     const navProdutos = document.querySelector(".nav-produtos");
-    if (navProdutos) {
-      navProdutos.classList.toggle("hidden", !data.modules.produtos);
-    }
+    if (navProdutos) navProdutos.classList.toggle("hidden", !data.modules.produtos);
 
     const contatoSection = document.querySelector(".contato-section");
-    if (contatoSection) {
-      contatoSection.classList.toggle("hidden", !data.modules.contato);
-    }
+    if (contatoSection) contatoSection.classList.toggle("hidden", !data.modules.contato);
 
     const navContato = document.querySelector(".nav-contato");
-    if (navContato) {
-      navContato.classList.toggle("hidden", !data.modules.contato);
-    }
+    if (navContato) navContato.classList.toggle("hidden", !data.modules.contato);
   }
 
   // ✅ Renderizar produtos com proteção XSS
@@ -399,7 +374,7 @@ function updatePublicSite(data) {
                     <div class="product-info">
                         <h3>${escapeHtml(p.nome)}</h3>
                         <div class="product-price">${escapeHtml(p.preco)}</div>
-                        <p>${escapeHtml(p.descricao)}</p>
+                        <p>${escapeHtml(p.descricao || '')}</p>
                     </div>
                 </div>
             `

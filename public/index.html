@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Empresa</title>
+    <title>Injetec</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/main.css">
 
@@ -170,18 +170,19 @@
         <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" style="width: 40px; height: 40px;">
     </a>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script>
-        // Load Firebase config based on environment
-        const hostname = window.location.hostname;
-        if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
-            document.write('<script src="/__/firebase/init.js"><\/script>');
-        } else {
-            document.write('<script src="js/firebase-config.local.js"><\/script>');
-        }
+      const hostname = window.location.hostname;
+      if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
+        // Firebase Hosting Environment
+        document.write('<script src="/__/firebase/8.10.1/firebase-app.js"><\/script>');
+        document.write('<script src="/__/firebase/8.10.1/firebase-firestore.js"><\/script>');
+        document.write('<script src="/__/firebase/init.js"><\/script>');
+      } else {
+        // Local Environment
+        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"><\/script>');
+        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"><\/script>');
+        document.write('<script src="js/firebase-config.local.js"><\/script>');
+      }
     </script>
 
     <!-- Scripts -->

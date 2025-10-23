@@ -29,29 +29,31 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("🔥 public.js: DOM carregado");
 
   function initializeFirebase() {
-    // ✅ CORREÇÃO: Verificar se Firebase está carregado E configurado
     if (typeof firebase === "undefined") {
       console.log("⏳ Aguardando Firebase SDK...");
       setTimeout(initializeFirebase, 100);
       return;
     }
 
+    // On Firebase hosting, the app is already initialized by /__/firebase/init.js
+    if (firebase.apps.length > 0) {
+        console.log("✅ Firebase já inicializado (pelo init.js).");
+        loadDataFromFirestore();
+        return;
+    }
+
+    // For local development, we need the config and must initialize manually.
     if (typeof firebaseConfig === "undefined") {
-      console.log("⏳ Aguardando firebaseConfig...");
+      console.log("⏳ Aguardando firebaseConfig... (local env)");
       setTimeout(initializeFirebase, 100);
       return;
     }
 
-    // ✅ CORREÇÃO: Inicializar Firebase se ainda não foi inicializado
-    if (firebase.apps.length === 0) {
-      console.log("🔥 Inicializando Firebase no public.js...");
-      firebase.initializeApp(firebaseConfig);
-      console.log("✅ Firebase inicializado com sucesso!");
-    } else {
-      console.log("✅ Firebase já estava inicializado");
-    }
-
-    // Agora sim, carregar os dados
+    // Initialize for local env
+    console.log("🔥 Inicializando Firebase no public.js... (local env)");
+    firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase inicializado com sucesso! (local env)");
+    
     loadDataFromFirestore();
   }
 

@@ -216,6 +216,18 @@ function updatePublicSite(data) {
   const footerNome = document.getElementById("footerNome");
   if (footerNome) footerNome.textContent = data.empresaNome || "MinhaEmpresa";
 
+  // NOVO: Atualizar Favicon (Ícone do Site)
+  const faviconLink = document.getElementById("faviconLink");
+  const iconUrl = data.faviconImageUrl || data.logoImageUrl; // Prioriza Favicon, usa Logo como fallback
+
+  if (faviconLink && iconUrl) {
+      faviconLink.href = iconUrl;
+      console.log("✅ Favicon atualizado");
+  } else if (faviconLink) {
+      // Caso não haja URL, define um fallback ou remove o link
+      faviconLink.href = ''; 
+  }
+
   // Atualizar banner
   const bannerH1 = document.getElementById("bannerH1");
   if (bannerH1) {

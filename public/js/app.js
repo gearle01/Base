@@ -125,18 +125,19 @@ async function validateImageFile(file) {
         throw new Error('Imagem muito grande! Máximo 5MB');
     }
     
-    // Validar magic bytes
+    // Validar magic bytes (assinatura real do arquivo)
     const buffer = await file.slice(0, 4).arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
     
+    // Assinaturas de magic bytes mais robustas (incluindo SVG)
     const validSignatures = {
-        'ffd8ffe0': 'image/jpeg',
-        'ffd8ffe1': 'image/jpeg',
-        'ffd8ffe2': 'image/jpeg',
-        '89504e47': 'image/png',
-        '47494638': 'image/gif',
-        '52494646': 'image/webp'
+        'ffd8ff': 'image/jpeg',      // JPEG/JFIF (3 bytes)
+        '89504e47': 'image/png',      // PNG
+        '47494638': 'image/gif',      // GIF
+        '52494646': 'image/webp',     // RIFF/WebP (4 bytes)
+        '3c3f786d': 'image/svg+xml',  // SVG (starts with <?xml)
+        '3c737667': 'image/svg+xml'   // SVG (starts with <svg)
     };
     
     const isValid = Object.keys(validSignatures).some(sig => hex.startsWith(sig));
@@ -425,7 +426,9 @@ async function saveConfig() {
         bannerSubtitulo: config.bannerSubtitulo,
         bannerImagem: config.bannerImagem,
         logoType: config.logoType,
-        logoImageUrl: config.logoImageUrl
+        logoImageUrl: config.logoImageUrl,
+        // NOVO: Adiciona o Favicon
+        faviconImageUrl: config.faviconImageUrl
     }, { merge: true });
 
     batch.set(clientDocRef.collection('global_settings').doc('data'), config.global_settings);
@@ -463,23 +466,19 @@ async function saveConfig() {
 
 // ===== UI E ESTADO =====
 function setLogoType(type) {
-    document.getElementById('logoType').value = type;
-    const textGroup = document.getElementById('logoTextInputGroup');
+    // A função é chamada por onchange="setLogoType(this.value)"
     const imageGroup = document.getElementById('logoImageInputGroup');
-    const textBtn = document.getElementById('logoTypeTextBtn');
-    const imageBtn = document.getElementById('logoTypeImageBtn');
-
+    
+    // No novo layout, o campo "Nome da Empresa" fica sempre visível.
+    // Apenas controlamos o campo de upload/URL da Imagem.
     if (type === 'text') {
-        textGroup.classList.remove('hidden');
         imageGroup.classList.add('hidden');
-        textBtn.classList.add('active');
-        imageBtn.classList.remove('active');
     } else {
-        textGroup.classList.add('hidden');
         imageGroup.classList.remove('hidden');
-        textBtn.classList.remove('active');
-        imageBtn.classList.add('active');
     }
+    
+    markAsUnsaved();
+    update();
 }
 
 function logout() {
@@ -493,6 +492,8 @@ function getConfig() {
     return {
         logoType: document.getElementById('logoType').value,
         logoImageUrl: document.getElementById('logoImageUrl').value,
+        // NOVO: Favicon
+        faviconImageUrl: document.getElementById('faviconImageUrl').value,
         empresaNome: document.getElementById('empresaNome').value,
         bannerTitulo: document.getElementById('bannerTitulo').value,
         bannerSubtitulo: document.getElementById('bannerSubtitulo').value,
@@ -530,10 +531,20 @@ function loadConfig(config) {
     document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
     document.getElementById('bannerImagem').value = config.bannerImagem || '';
     
-    setLogoType(config.logoType || 'text');
+    // ATUALIZADO: setLogoType agora usa o valor do select
+    const logoTypeSelect = document.getElementById('logoType');
+    logoTypeSelect.value = config.logoType || 'text';
+    setLogoType(logoTypeSelect.value); // Chama para atualizar o display
+    
     document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
     if (config.logoImageUrl) {
         document.querySelector('#logoPreview').style.backgroundImage = `url(${config.logoImageUrl})`;
+    }
+
+    // NOVO: Carregar Favicon
+    document.getElementById('faviconImageUrl').value = config.faviconImageUrl || '';
+    if (config.faviconImageUrl) {
+        document.querySelector('#faviconPreview').style.backgroundImage = `url(${config.faviconImageUrl})`;
     }
 
     if (config.global_settings) {
@@ -606,26 +617,49 @@ function update() {
     }
 
     const logoContainer = document.getElementById('logo');
+    const adminLogoIcon = document.getElementById('adminLogoIcon');
+    const logoType = document.getElementById('logoType').value;
+    const empresaNome = document.getElementById('empresaNome').value;
+    const logoImageUrl = document.getElementById('logoImageUrl').value;
+
+
     if (logoContainer) {
-        const logoType = document.getElementById('logoType').value;
         logoContainer.innerHTML = '';
         if (logoType === 'image') {
-            const imgUrl = document.getElementById('logoImageUrl').value;
-            if (imgUrl) {
+            if (logoImageUrl) {
                 const img = document.createElement('img');
-                img.src = imgUrl;
+                img.src = logoImageUrl;
                 img.style.maxHeight = '50px';
                 logoContainer.appendChild(img);
             } else {
-                logoContainer.textContent = document.getElementById('empresaNome').value;
+                logoContainer.textContent = empresaNome;
             }
         } else {
-            logoContainer.textContent = document.getElementById('empresaNome').value;
+            logoContainer.textContent = empresaNome;
         }
     }
 
+    // ATUALIZADO: Atualizar Logo no Cabeçalho do Admin
+    if (adminLogoIcon) {
+        adminLogoIcon.innerHTML = '';
+        if (logoType === 'image' && logoImageUrl) {
+            const img = document.createElement('img');
+            img.src = logoImageUrl;
+            img.alt = 'Logo Admin';
+            img.style.height = '24px'; 
+            img.style.verticalAlign = 'middle'; 
+            img.style.marginRight = '8px';
+            adminLogoIcon.appendChild(img);
+        } else {
+            // Se for texto ou sem imagem, mantém o ícone de engrenagem original
+            adminLogoIcon.textContent = '⚙️';
+        }
+    }
+    // FIM ATUALIZADO
+
+
     const footerNome = document.getElementById('footerNome');
-    if (footerNome) footerNome.textContent = document.getElementById('empresaNome').value;
+    if (footerNome) footerNome.textContent = empresaNome;
 
     const bannerH1 = document.getElementById('bannerH1');
     if (bannerH1) bannerH1.textContent = document.getElementById('bannerTitulo').value;
@@ -644,6 +678,12 @@ function update() {
 
     const corSecundariaInput = document.querySelector('#corSecundaria + input');
     if (corSecundariaInput) corSecundariaInput.value = corSecundaria;
+    
+    // NOVO: Atualizar preview do favicon no Admin
+    const faviconPreview = document.getElementById('faviconPreview');
+    if (faviconPreview) {
+        faviconPreview.style.backgroundImage = `url(${document.getElementById('faviconImageUrl').value})`;
+    }
 
     document.querySelectorAll('.site-nav-links a').forEach(a => a.style.color = corPrimaria);
     document.querySelectorAll('.contact-icon').forEach(icon => icon.style.background = corPrimaria);

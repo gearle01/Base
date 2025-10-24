@@ -49,10 +49,8 @@
 </head>
 
 <body class="admin-page">
-    <!-- Toast Container -->
     <div id="toastContainer"></div>
 
-    <!-- Help Modal -->
     <div class="shortcuts-help" id="shortcutsHelp">
         <h3>? Ajuda e Suporte</h3>
 
@@ -72,10 +70,9 @@
     </div>
 
     <div class="container">
-        <!-- Admin Panel -->
         <div class="admin-panel">
             <div class="admin-header">
-                <h1>⚙️ Painel Administrativo</h1>
+                <h1><span id="adminLogoIcon">⚙️</span> Painel Administrativo</h1>
                 <div class="header-controls">
                     <div class="save-status" id="saveStatus">
                         <span id="saveText">Salvo</span>
@@ -90,30 +87,49 @@
                     <h3>📋 Informações Básicas</h3>
 
                     <div class="form-group">
-                        <label>Tipo de Logo</label>
-                        <div class="logo-type-selector">
-                            <button id="logoTypeTextBtn" class="btn-logo-type active"
-                                onclick="setLogoType('text')">Texto</button>
-                            <button id="logoTypeImageBtn" class="btn-logo-type"
-                                onclick="setLogoType('image')">Imagem</button>
-                        </div>
-                        <input type="hidden" id="logoType" value="text">
-                    </div>
-
-                    <div id="logoTextInputGroup" class="form-group">
-                        <label>Nome da Empresa (Logo como Texto)</label>
+                        <label>Nome da Empresa *</label>
                         <input type="text" id="empresaNome" value="MinhaEmpresa" required>
                         <div class="error-msg">Campo obrigatório</div>
                     </div>
 
+                    <hr style="margin-top: 20px; margin-bottom: 20px;">
+                    <h5 style="margin-bottom: 1rem; color: #007bff;">Logo Principal (Cabeçalho do Site)</h5>
+                    <small style="color: #6c757d; display: block; margin-bottom: 1rem;">Define o logo exibido no cabeçalho do seu site.</small>
+
+                    <div class="form-group">
+                        <label>Tipo de Logo</label>
+                        <select id="logoType" onchange="setLogoType(this.value)">
+                            <option value="text">Texto (Nome da Empresa)</option>
+                            <option value="image">Imagem (Upload ou URL)</option>
+                        </select>
+                    </div>
+                    
                     <div id="logoImageInputGroup" class="form-group hidden">
                         <label>Arquivo de Imagem do Logo</label>
                         <input type="file" id="logoUpload" accept="image/*"
                             onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
                         <input type="hidden" id="logoImageUrl">
-                        <div class="image-preview" id="logoPreview"></div>
+                        <div class="image-preview" id="logoPreview" style="max-width: 200px; height: 100px;"></div>
                     </div>
+                    <hr style="margin-top: 30px; margin-bottom: 20px;">
 
+                    <h5 style="margin-bottom: 1rem; color: #007bff;">Favicon (Ícone da Aba do Navegador)</h5>
+                    <small style="color: #6c757d; display: block; margin-bottom: 1rem;">O ícone que aparece na aba. Recomendado: PNG ou SVG 32x32px.</small>
+
+                    <div class="form-group">
+                        <label>Logo Pequeno (Favicon)</label>
+                        <div class="image-upload-wrapper">
+                            <input type="url" id="faviconImageUrl" placeholder="URL ou faça upload do seu ícone">
+                            <button class="btn btn-success"
+                                onclick="document.getElementById('faviconUpload').click()">Upload</button>
+                            <input type="file" id="faviconUpload" accept="image/png, image/svg+xml" class="hidden"
+                                onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')">
+                        </div>
+                        <div class="image-preview" id="faviconPreview" style="max-width: 50px; height: 50px; border: 1px solid #ccc; background-size: contain; background-repeat: no-repeat;"></div>
+                        <small style="color: #6c757d; font-size: 0.75rem; margin-top: 0.5rem;">
+                            URL para o ícone de alta qualidade (32x32px).
+                        </small>
+                    </div>
                     <div class="form-group">
                         <label>Título do Banner *</label>
                         <input type="text" id="bannerTitulo" value="Transforme Seu Negócio" required>
@@ -137,10 +153,8 @@
                     </div>
                 </div>
 
-                <!-- Configurações Globais -->
                 <div class="section">
                     <h3>⚙️ Configurações Globais</h3>
-                    <!-- Cores -->
                     <div class="form-group">
                         <h4>🎨 Cores do Site</h4>
                         <div class="color-grid">
@@ -160,7 +174,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fontes -->
                     <div class="form-group">
                         <h4>✒️ Fontes</h4>
                         <label>URL da Fonte (Google Fonts)</label>
@@ -169,7 +182,6 @@
                         <label>Nome da Fonte (CSS)</label>
                         <input type="text" id="fontFamily" placeholder="Ex: 'Roboto', sans-serif">
                     </div>
-                    <!-- Rastreamento -->
                     <div class="form-group">
                         <h4>📈 Rastreamento</h4>
                         <label>Código de Rastreamento (ex: Google Analytics)</label>
@@ -178,7 +190,6 @@
                     </div>
                 </div>
 
-                <!-- Módulos -->
                 <div class="section">
                     <h3>📦 Módulos</h3>
                     <div class="toggle">
@@ -216,14 +227,12 @@
                     </div>
                 </div>
 
-                <!-- Produtos -->
                 <div class="section">
                     <h3>🛍️ Produtos</h3>
                     <div id="produtosList"></div>
                     <button class="btn btn-success" onclick="openProdutoModal()">+ Adicionar Produto</button>
                 </div>
 
-                <!-- Modal de Produto -->
                 <div id="produtoModal" class="modal">
                     <div class="modal-content">
                         <span class="close" onclick="closeProdutoModal()">&times;</span>
@@ -255,8 +264,6 @@
                     </div>
                 </div>
 
-                <!-- MAPA INTERATIVO NO ADMIN - Substitua a seção de contato por isto -->
-
                 <div class="section">
                     <h3>📞 Contato</h3>
                     <div class="form-group">
@@ -273,7 +280,6 @@
                         <div class="error-msg">E-mail inválido</div>
                     </div>
 
-                    <!-- NOVO: Campo de Endereço -->
                     <div class="form-group">
                         <label>Endereço Completo</label>
                         <input type="text" id="endereco" value="Rua Exemplo, 123 - São Paulo, SP"
@@ -283,13 +289,11 @@
                         </small>
                     </div>
 
-                    <!-- MAPA INTERATIVO -->
                     <div class="form-group">
                         <label>Mapa Interativo - Clique para definir a localização</label>
                         <div id="mapPreview"
                             style="width: 100%; height: 350px; border: 2px solid #dee2e6; border-radius: 8px; margin-bottom: 1rem; position: relative;">
-                            <!-- Mapa será carregado aqui -->
-                        </div>
+                            </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
                             <button type="button" class="btn btn-secondary" onclick="buscarEnderecoMapa()"
                                 style="flex: 1;">
@@ -306,11 +310,9 @@
                         </small>
                     </div>
 
-                    <!-- Coordenadas Ocultas -->
                     <input type="hidden" id="latitude" value="-23.5505">
                     <input type="hidden" id="longitude" value="-46.6333">
 
-                    <!-- Mostrar Mapa Público -->
                     <div class="form-group">
                         <label>
                             <input type="checkbox" id="mostrarMapa" checked>
@@ -319,7 +321,6 @@
                     </div>
                 </div>
 
-                <!-- CSS para Mapa Leaflet -->
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
                 <style>
                     #mapPreview {
@@ -350,7 +351,6 @@
                     }
                 </style>
 
-                <!-- Script Leaflet -->
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
                 <script
                     src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-geocoder/1.0.8/Control.Geocoder.js"></script>
@@ -517,7 +517,6 @@
                     });
                 </script>
 
-                <!-- Salvar -->
                 <div class="section">
                     <h3>💾 Salvar Dados</h3>
                     <button class="btn btn-primary" onclick="saveConfig()">💾 Salvar no Site</button>
@@ -525,10 +524,8 @@
             </div>
         </div>
 
-        <!-- Preview -->
         <div class="preview">
             <div class="site">
-                <!-- Navigation -->
                 <nav class="site-nav">
                     <div class="site-logo" id="logo">MinhaEmpresa</div>
                     <ul class="site-nav-links">
@@ -539,7 +536,6 @@
                     </ul>
                 </nav>
 
-                <!-- Banner -->
                 <section class="banner" id="home">
                     <div class="banner-content">
                         <h1 id="bannerH1">Transforme Seu Negócio</h1>
@@ -548,7 +544,6 @@
                     </div>
                 </section>
 
-                <!-- Sobre -->
                 <section class="site-section alt sobre-section" id="sobre">
                     <div class="section-content">
                         <h2 class="section-title">Sobre Nós</h2>
@@ -561,7 +556,6 @@
                     </div>
                 </section>
 
-                <!-- Produtos -->
                 <section class="site-section produtos-section" id="produtos">
                     <div class="section-content">
                         <h2 class="section-title">Nossos Produtos</h2>
@@ -569,7 +563,6 @@
                     </div>
                 </section>
 
-                <!-- Contato -->
                 <section class="site-section alt contato-section" id="contato">
                     <div class="section-content">
                         <h2 class="section-title">Entre em Contato</h2>
@@ -601,7 +594,6 @@
                     </div>
                 </section>
 
-                <!-- Footer -->
                 <footer class="site-footer">
                     <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
                 </footer>
@@ -609,7 +601,6 @@
         </div>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -625,11 +616,9 @@
         }
     </script>
 
-    <!-- Appwrite - IMPORTANTE: Carregar ANTES do appwrite-config.js -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
     <script src="js/appwrite-config.js"></script>
 
-    <!-- Scripts -->
     <script src="js/toast.js"></script>
     <script src="js/validation.js"></script>
     <script src="js/history.js"></script>

@@ -405,6 +405,16 @@
 .about-text {
     font-size: 1.1rem;
     line-height: 1.8;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto; /* Hifenização automática */
+}
+
+/* Para telas pequenas, melhor usar left align */
+@media (max-width: 768px) {
+    .about-text {
+        text-align: left;
+    }
 }
 
 .about-image {

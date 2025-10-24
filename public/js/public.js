@@ -37,9 +37,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (firebase.apps.length > 0) {
-        console.log("✅ Firebase já inicializado (pelo init.js).");
-        loadDataFromFirestore();
-        return;
+      console.log("✅ Firebase já inicializado (pelo init.js).");
+      loadDataFromFirestore();
+      return;
     }
 
     if (typeof firebaseConfig === "undefined") {
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("🔥 Inicializando Firebase no public.js... (local env)");
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase inicializado com sucesso! (local env)");
-    
+
     loadDataFromFirestore();
   }
 
@@ -74,20 +74,30 @@ async function loadDataFromFirestore() {
 
   try {
     const clientDocRef = db.collection("site").doc(clientId);
-    
+
     // ✅ OTIMIZAÇÃO CRÍTICA: Carregar tudo em paralelo
-    const [clientDoc, coresDoc, contatoDoc, modulesDoc, sobreDoc, globalDoc, produtosSnap] = await Promise.all([
+    const [
+      clientDoc,
+      coresDoc,
+      contatoDoc,
+      modulesDoc,
+      sobreDoc,
+      globalDoc,
+      produtosSnap,
+    ] = await Promise.all([
       clientDocRef.get(),
-      clientDocRef.collection('cores').doc('data').get(),
-      clientDocRef.collection('contato').doc('data').get(),
-      clientDocRef.collection('modules').doc('data').get(),
-      clientDocRef.collection('sobre').doc('data').get(),
-      clientDocRef.collection('global_settings').doc('data').get(),
-      clientDocRef.collection('produtos').get()
+      clientDocRef.collection("cores").doc("data").get(),
+      clientDocRef.collection("contato").doc("data").get(),
+      clientDocRef.collection("modules").doc("data").get(),
+      clientDocRef.collection("sobre").doc("data").get(),
+      clientDocRef.collection("global_settings").doc("data").get(),
+      clientDocRef.collection("produtos").get(),
     ]);
 
     if (!clientDoc.exists) {
-      console.warn("⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão.");
+      console.warn(
+        "⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão."
+      );
       const produtosGrid = document.getElementById("produtosGrid");
       if (produtosGrid) produtosGrid.innerHTML = "";
       return;
@@ -99,23 +109,23 @@ async function loadDataFromFirestore() {
     // Adicionar subcoleções
     if (coresDoc.exists) {
       config.cores = coresDoc.data();
-      console.log('✅ cores carregado');
+      console.log("✅ cores carregado");
     }
     if (contatoDoc.exists) {
       config.contato = contatoDoc.data();
-      console.log('✅ contato carregado');
+      console.log("✅ contato carregado");
     }
     if (modulesDoc.exists) {
       config.modules = modulesDoc.data();
-      console.log('✅ modules carregado');
+      console.log("✅ modules carregado");
     }
     if (sobreDoc.exists) {
       config.sobre = sobreDoc.data();
-      console.log('✅ sobre carregado');
+      console.log("✅ sobre carregado");
     }
     if (globalDoc.exists) {
       config.global_settings = globalDoc.data();
-      console.log('✅ global_settings carregado');
+      console.log("✅ global_settings carregado");
     }
 
     config.produtos = produtosSnap.docs.map((doc) => doc.data());
@@ -224,8 +234,14 @@ function updatePublicSite(data) {
 
   // ✅ Aplicar cores
   if (data.cores) {
-    document.documentElement.style.setProperty("--primary-color", data.cores.primaria);
-    document.documentElement.style.setProperty("--secondary-color", data.cores.secundaria);
+    document.documentElement.style.setProperty(
+      "--primary-color",
+      data.cores.primaria
+    );
+    document.documentElement.style.setProperty(
+      "--secondary-color",
+      data.cores.secundaria
+    );
 
     document.querySelectorAll(".site-nav-links a").forEach((a) => {
       a.style.color = data.cores.primaria;
@@ -258,13 +274,13 @@ function updatePublicSite(data) {
     const latitude = data.contato.latitude || -23.5505;
     const longitude = data.contato.longitude || -46.6333;
     const mostrarMapa = data.contato.mostrarMapa !== false;
-    const mapContainer = document.getElementById('mapContainer');
-    const mapEmbed = document.getElementById('googleMapEmbed');
-    
+    const mapContainer = document.getElementById("mapContainer");
+    const mapEmbed = document.getElementById("googleMapEmbed");
+
     if (mostrarMapa && mapEmbed) {
-        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&center=${latitude},${longitude}`;
-        
-        mapEmbed.innerHTML = `
+      const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&center=${latitude},${longitude}`;
+
+      mapEmbed.innerHTML = `
             <iframe 
                 width="100%" 
                 height="100%" 
@@ -274,25 +290,27 @@ function updatePublicSite(data) {
                 src="${mapUrl}">
             </iframe>
         `;
-        
-        if (mapContainer) {
-            mapContainer.style.display = 'flex';
-        }
-        
-        console.log(`✅ Mapa carregado com coordenadas: ${latitude}, ${longitude}`);
+
+      if (mapContainer) {
+        mapContainer.style.display = "flex";
+      }
+
+      console.log(
+        `✅ Mapa carregado com coordenadas: ${latitude}, ${longitude}`
+      );
     } else {
-        if (mapContainer) {
-            mapContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Entre em contato conosco!</p>';
-        }
+      if (mapContainer) {
+        mapContainer.style.display = "none"; // Esconde completamente
+      }
     }
-    
-    const enderecoLink = document.getElementById('enderecoLink');
+
+    const enderecoLink = document.getElementById("enderecoLink");
     if (enderecoLink) {
-        const endereco = data.contato.endereco || '';
-        if (endereco) {
-            const enderecoEncoded = encodeURIComponent(endereco);
-            enderecoLink.href = `https://www.google.com/maps/search/?api=1&query=${enderecoEncoded}`;
-        }
+      const endereco = data.contato.endereco || "";
+      if (endereco) {
+        const enderecoEncoded = encodeURIComponent(endereco);
+        enderecoLink.href = `https://www.google.com/maps/search/?api=1&query=${enderecoEncoded}`;
+      }
     }
   }
 
@@ -305,7 +323,9 @@ function updatePublicSite(data) {
 
     const whatsappFab = document.getElementById("whatsapp-fab");
     if (whatsappFab && cleanTel1 && cleanTel1.length >= 10) {
-      const whatsappNumber = cleanTel1.startsWith("55") ? cleanTel1 : `55${cleanTel1}`;
+      const whatsappNumber = cleanTel1.startsWith("55")
+        ? cleanTel1
+        : `55${cleanTel1}`;
       whatsappFab.href = `https://wa.me/${whatsappNumber}`;
       whatsappFab.style.display = "flex";
       console.log("✅ WhatsApp link:", whatsappFab.href);
@@ -334,7 +354,8 @@ function updatePublicSite(data) {
     if (emailPreview) emailPreview.textContent = data.contato.email || "";
 
     const enderecoPreview = document.getElementById("enderecoPreview");
-    if (enderecoPreview) enderecoPreview.textContent = data.contato.endereco || "";
+    if (enderecoPreview)
+      enderecoPreview.textContent = data.contato.endereco || "";
 
     console.log("✅ Contato atualizado");
   }
@@ -342,22 +363,27 @@ function updatePublicSite(data) {
   // ✅ Mostrar/ocultar módulos
   if (data.modules) {
     const sobreSection = document.querySelector(".sobre-section");
-    if (sobreSection) sobreSection.classList.toggle("hidden", !data.modules.sobre);
+    if (sobreSection)
+      sobreSection.classList.toggle("hidden", !data.modules.sobre);
 
     const navSobre = document.querySelector(".nav-sobre");
     if (navSobre) navSobre.classList.toggle("hidden", !data.modules.sobre);
 
     const produtosSection = document.querySelector(".produtos-section");
-    if (produtosSection) produtosSection.classList.toggle("hidden", !data.modules.produtos);
+    if (produtosSection)
+      produtosSection.classList.toggle("hidden", !data.modules.produtos);
 
     const navProdutos = document.querySelector(".nav-produtos");
-    if (navProdutos) navProdutos.classList.toggle("hidden", !data.modules.produtos);
+    if (navProdutos)
+      navProdutos.classList.toggle("hidden", !data.modules.produtos);
 
     const contatoSection = document.querySelector(".contato-section");
-    if (contatoSection) contatoSection.classList.toggle("hidden", !data.modules.contato);
+    if (contatoSection)
+      contatoSection.classList.toggle("hidden", !data.modules.contato);
 
     const navContato = document.querySelector(".nav-contato");
-    if (navContato) navContato.classList.toggle("hidden", !data.modules.contato);
+    if (navContato)
+      navContato.classList.toggle("hidden", !data.modules.contato);
   }
 
   // ✅ Renderizar produtos com proteção XSS
@@ -374,7 +400,7 @@ function updatePublicSite(data) {
                     <div class="product-info">
                         <h3>${escapeHtml(p.nome)}</h3>
                         <div class="product-price">${escapeHtml(p.preco)}</div>
-                        <p>${escapeHtml(p.descricao || '')}</p>
+                        <p>${escapeHtml(p.descricao || "")}</p>
                     </div>
                 </div>
             `

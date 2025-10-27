@@ -49,14 +49,14 @@
                     <h3>📋 Informações Básicas</h3>
 
                     <div class="form-group">
-                        <label>Nome da Empresa *</label>
+                        <label for="empresaNome">Nome da Empresa *</label>
                         <input type="text" id="empresaNome" value="MinhaEmpresa" required>
                         <div class="error-msg">Campo obrigatório</div>
                     </div>
 
-                    <hr style="margin-top: 20px; margin-bottom: 20px;">
-                    <h5 style="margin-bottom: 1rem; color: #007bff;">Logo Principal (Cabeçalho do Site)</h5>
-                    <small style="color: #6c757d; display: block; margin-bottom: 1rem;">Define o logo exibido no cabeçalho do seu site.</small>
+                    <hr class="hr-divider">
+                    <h5 class="section-subtitle">Logo Principal (Cabeçalho do Site)</h5>
+                    <small class="subtitle-description">Define o logo exibido no cabeçalho do seu site.</small>
 
                     <div class="form-group">
                         <label>Tipo de Logo</label>
@@ -70,49 +70,49 @@
                     </div>
 
                     <div id="logoImageInputGroup" class="form-group hidden">
-                        <label>Arquivo de Imagem do Logo</label>
+                        <label for="logoUpload">Arquivo de Imagem do Logo</label>
                         <input type="file" id="logoUpload" accept="image/*"
-                            onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
+                            onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')" aria-label="Arquivo de Imagem do Logo">
                         <input type="hidden" id="logoImageUrl">
-                        <div class="image-preview" id="logoPreview" style="max-width: 200px; height: 100px;"></div>
+                        <div class="image-preview image-preview-logo" id="logoPreview"></div>
                     </div>
-                    <hr style="margin-top: 30px; margin-bottom: 20px;">
+                    <hr class="hr-divider-lg">
 
-                    <h5 style="margin-bottom: 1rem; color: #007bff;">Favicon (Ícone da Aba do Navegador)</h5>
-                    <small style="color: #6c757d; display: block; margin-bottom: 1rem;">O ícone que aparece na aba. Recomendado: PNG ou SVG 32x32px.</small>
+                    <h5 class="section-subtitle">Favicon (Ícone da Aba do Navegador)</h5>
+                    <small class="subtitle-description">O ícone que aparece na aba. Recomendado: PNG ou SVG 32x32px.</small>
 
                     <div class="form-group">
-                        <label>Logo Pequeno (Favicon)</label>
+                        <label for="faviconImageUrl">Logo Pequeno (Favicon)</label>
                         <div class="image-upload-wrapper">
                             <input type="url" id="faviconImageUrl" placeholder="URL ou faça upload do seu ícone">
                             <button class="btn btn-success"
                                 onclick="document.getElementById('faviconUpload').click()">Upload</button>
                             <input type="file" id="faviconUpload" accept="image/png, image/svg+xml" class="hidden"
-                                onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')">
+                                onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')" aria-label="Logo Pequeno (Favicon)">
                         </div>
-                        <div class="image-preview" id="faviconPreview" style="max-width: 50px; height: 50px; border: 1px solid #ccc; background-size: contain; background-repeat: no-repeat;"></div>
-                        <small style="color: #6c757d; font-size: 0.75rem; margin-top: 0.5rem;">
+                        <div class="image-preview image-preview-favicon" id="faviconPreview"></div>
+                        <small class="small-text">
                             URL para o ícone de alta qualidade (32x32px).
                         </small>
                     </div>
                     <div class="form-group">
-                        <label>Título do Banner *</label>
+                        <label for="bannerTitulo">Título do Banner *</label>
                         <input type="text" id="bannerTitulo" value="Transforme Seu Negócio" required>
                         <div class="error-msg">Campo obrigatório</div>
                     </div>
                     <div class="form-group">
-                        <label>Subtítulo do Banner</label>
+                        <label for="bannerSubtitulo">Subtítulo do Banner</label>
                         <input type="text" id="bannerSubtitulo" value="Soluções modernas para sua empresa crescer">
                     </div>
                     <div class="form-group">
-                        <label>Imagem do Banner</label>
+                        <label for="bannerImagem">Imagem do Banner</label>
                         <div class="image-upload-wrapper">
                             <input type="url" id="bannerImagem"
                                 value="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200">
                             <button class="btn btn-success"
                                 onclick="document.getElementById('bannerUpload').click()">Upload</button>
                             <input type="file" id="bannerUpload" accept="image/*" class="hidden"
-                                onchange="handleImageUpload(event, 'bannerImagem')">
+                                onchange="handleImageUpload(event, 'bannerImagem')" aria-label="Imagem do Banner">
                         </div>
                         <div class="error-msg">URL inválida</div>
                     </div>
@@ -124,32 +124,32 @@
                         <h4>🎨 Cores do Site</h4>
                         <div class="color-grid">
                             <div class="form-group">
-                                <label>Cor Primária</label>
+                                <label for="corPrimaria">Cor Primária</label>
                                 <div class="color-input">
-                                    <input type="color" id="corPrimaria" value="#007bff">
-                                    <input type="text" value="#007bff" readonly>
+                                    <input type="color" id="corPrimaria" value="#007bff" title="Cor Primária">
+                                    <input type="text" value="#007bff" readonly aria-label="Valor hexadecimal da cor primária">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Cor Secundária</label>
+                                <label for="corSecundaria">Cor Secundária</label>
                                 <div class="color-input">
-                                    <input type="color" id="corSecundaria" value="#28a745">
-                                    <input type="text" value="#28a745" readonly>
+                                    <input type="color" id="corSecundaria" value="#28a745" title="Cor Secundária">
+                                    <input type="text" value="#28a745" readonly aria-label="Valor hexadecimal da cor secundária">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <h4>✒️ Fontes</h4>
-                        <label>URL da Fonte (Google Fonts)</label>
+                        <label for="fontUrl">URL da Fonte (Google Fonts)</label>
                         <input type="url" id="fontUrl"
                             placeholder="Ex: https://fonts.googleapis.com/css2?family=Roboto&display=swap">
-                        <label>Nome da Fonte (CSS)</label>
+                        <label for="fontFamily">Nome da Fonte (CSS)</label>
                         <input type="text" id="fontFamily" placeholder="Ex: 'Roboto', sans-serif">
                     </div>
                     <div class="form-group">
                         <h4>📈 Rastreamento</h4>
-                        <label>Código de Rastreamento (ex: Google Analytics)</label>
+                        <label for="trackingCode">Código de Rastreamento (ex: Google Analytics)</label>
                         <textarea id="trackingCode" rows="5"
                             placeholder="Cole o seu script de rastreamento aqui..."></textarea>
                     </div>
@@ -174,19 +174,19 @@
                 <div class="section">
                     <h3>ℹ️ Sobre</h3>
                     <div class="form-group">
-                        <label>Texto</label>
+                        <label for="sobreTexto">Texto</label>
                         <textarea
                             id="sobreTexto">Somos uma empresa dedicada a oferecer as melhores soluções para nossos clientes.</textarea>
                     </div>
                     <div class="form-group">
-                        <label>Imagem da Seção</label>
+                        <label for="sobreImagem">Imagem da Seção</label>
                         <div class="image-upload-wrapper">
                             <input type="url" id="sobreImagem"
                                 value="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800">
                             <button class="btn btn-success"
                                 onclick="document.getElementById('sobreUpload').click()">Upload</button>
                             <input type="file" id="sobreUpload" accept="image/*" class="hidden"
-                                onchange="handleImageUpload(event, 'sobreImagem')">
+                                onchange="handleImageUpload(event, 'sobreImagem')" aria-label="Imagem da Seção">
                         </div>
                         <div class="error-msg">URL inválida</div>
                     </div>
@@ -204,35 +204,35 @@
                         <h3 id="produtoModalTitle">Adicionar Produto</h3>
                         <input type="hidden" id="produtoId">
                         <div class="form-group">
-                            <label>Nome do Produto</label>
+                            <label for="produtoNome">Nome do Produto</label>
                             <input type="text" id="produtoNome" required>
                         </div>
                         <div class="form-group">
-                            <label>Preço</label>
+                            <label for="produtoPreco">Preço</label>
                             <input type="text" id="produtoPreco" required>
                         </div>
                         <div class="form-group">
-                            <label>Descrição</label>
+                            <label for="produtoDescricao">Descrição</label>
                             <textarea id="produtoDescricao" rows="3"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Imagem do Produto</label>
+                            <label for="produtoImagem">Imagem do Produto</label>
                             <div class="image-upload-wrapper">
                                 <input type="url" id="produtoImagem">
                                 <button class="btn btn-success"
                                     onclick="document.getElementById('produtoImagemUpload').click()">Upload</button>
                                 <input type="file" id="produtoImagemUpload" accept="image/*" class="hidden"
-                                    onchange="handleImageUpload(event, 'produtoImagem')">
+                                    onchange="handleImageUpload(event, 'produtoImagem')" aria-label="Imagem do Produto">
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <label>Foco da Imagem (Arrastável)</label>
-                            <div id="imageFocuserContainer" style="width: 100%; height: 200px; border: 1px solid #ddd; background-size: cover; background-repeat: no-repeat; position: relative; margin-bottom: 0.5rem; cursor: pointer;">
-                                <div id="focusTarget" style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #dc3545; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; z-index: 100;"></div>
+                            <label for="produtoFocoHidden">Foco da Imagem (Arrastável)</label>
+                            <div id="imageFocuserContainer" class="image-focuser-container">
+                                <div id="focusTarget" class="focus-target"></div>
                             </div>
                             <input type="hidden" id="produtoFocoHidden" value="50% 50%">
-                            <small style="color: #6c757d; font-size: 0.75rem; margin-top: 0.3rem;">
+                            <small class="small-text">
                                 Arraste o ponto vermelho para definir o foco da imagem. Posição atual: <span id="focusPositionDisplay">50% 50%</span>
                             </small>
                         </div>
@@ -244,44 +244,40 @@
                 <div class="section">
                     <h3>📞 Contato</h3>
                     <div class="form-group">
-                        <label>Telefone 1</label>
+                        <label for="telefone">Telefone 1</label>
                         <input type="tel" id="telefone" value="(11) 9999-9999">
                     </div>
                     <div class="form-group">
-                        <label>Telefone 2 (Opcional)</label>
+                        <label for="telefone2">Telefone 2 (Opcional)</label>
                         <input type="tel" id="telefone2" placeholder="(11) 8888-8888">
                     </div>
                     <div class="form-group">
-                        <label>E-mail *</label>
+                        <label for="email">E-mail *</label>
                         <input type="email" id="email" value="contato@minhaempresa.com" required>
                         <div class="error-msg">E-mail inválido</div>
                     </div>
 
                     <div class="form-group">
-                        <label>Endereço Completo</label>
+                        <label for="endereco">Endereço Completo</label>
                         <input type="text" id="endereco" value="Rua Exemplo, 123 - São Paulo, SP"
                             placeholder="Rua, número, bairro - Cidade, Estado">
-                        <small style="color: #6c757d; font-size: 0.8rem;">
+                        <small class="small-text-map">
                             💡 Digite o endereço e clique no mapa para definir a localização exata
                         </small>
                     </div>
 
                     <div class="form-group">
                         <label>Mapa Interativo - Clique para definir a localização</label>
-                        <div id="mapPreview"
-                            style="width: 100%; height: 350px; border: 2px solid #dee2e6; border-radius: 8px; margin-bottom: 1rem; position: relative;">
-                            </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button type="button" class="btn btn-secondary" onclick="buscarEnderecoMapa()"
-                                style="flex: 1;">
+                        <div id="mapPreview"></div>
+                        <div class="map-buttons">
+                            <button type="button" class="btn btn-secondary" onclick="buscarEnderecoMapa()">
                                 🔍 Buscar Endereço
                             </button>
-                            <button type="button" class="btn btn-secondary" onclick="usarLocalizacaoAtual()"
-                                style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="usarLocalizacaoAtual()">
                                 📍 Minha Localização
                             </button>
                         </div>
-                        <small style="color: #6c757d; font-size: 0.75rem; margin-top: 0.5rem;">
+                        <small class="small-text">
                             Latitude: <span id="latitudeDisplay">0.0000</span> | Longitude: <span
                                 id="longitudeDisplay">0.0000</span>
                         </small>
@@ -291,7 +287,7 @@
                     <input type="hidden" id="longitude" value="-46.6333">
 
                     <div class="form-group">
-                        <label>
+                        <label for="mostrarMapa">
                             <input type="checkbox" id="mostrarMapa" checked>
                             Mostrar mapa no site público
                         </label>
@@ -488,7 +484,7 @@
         </div>
 
         <div class="preview">
-            <iframe id="preview-iframe" src="index.html" style="width: 100%; height: 100%; border: none;"></iframe>
+            <iframe id="preview-iframe" src="index.html" class="preview-iframe" title="Pré-visualização do Site"></iframe>
         </div>
     </div>
 
@@ -503,43 +499,5 @@
         };
     </script>
 
-    <script>
-        // Código para carregar produtos na pré-visualização
-        function carregarProdutosPreview() {
-            const produtosLista = document.getElementById('produtosListaPreview');
-            produtosLista.innerHTML = ''; // Limpar lista existente
-
-            // Obter produtos do Firestore
-            db.collection('produtos').get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    const produto = doc.data();
-                    const produtoId = doc.id;
-
-                    // Criar elemento do produto
-                    const produtoElem = document.createElement('div');
-                    produtoElem.classList.add('produto-item');
-                    produtoElem.setAttribute('data-id', produtoId);
-                    produtoElem.innerHTML = `
-                        <h3>${produto.nome}</h3>
-                        <p>Preço: R$ ${produto.preco.toFixed(2)}</p>
-                        <img src="${produto.imagem}" alt="${produto.nome}" style="max-width: 100%; height: auto;">
-                    `;
-
-                    // Adicionar evento de clique para abrir o produto
-                    produtoElem.addEventListener('click', () => {
-                        abrirProdutoPreview(produtoId);
-                    });
-
-                    // Adicionar à lista
-                    produtosLista.appendChild(produtoElem);
-                });
-            });
-        }
-
-        // Chamar ao carregar a página
-        document.addEventListener('DOMContentLoaded', () => {
-            carregarProdutosPreview();
-        });
-    </script>
 </body>
 </html>

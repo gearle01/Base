@@ -408,7 +408,7 @@ function updatePublicSite(data) {
                 <div class="product-card">
                     <div class="product-image" style="background-image: url(${escapeHtml(
                       p.imagem || "https://via.placeholder.com/400"
-                    )})"></div>
+                    )}); background-position: ${escapeHtml(p.foco || "center")};"></div>
                     <div class="product-info">
                         <h3>${escapeHtml(p.nome)}</h3>
                         <div class="product-price">${escapeHtml(p.preco)}</div>

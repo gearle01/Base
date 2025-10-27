@@ -8,6 +8,9 @@ let expandedProductId = null;
 let db, storage;
 const clientId = 'cliente-001';
 
+// Variável de controle para garantir que loadDataFromFirestore só é chamado uma vez
+let dataLoaded = false;
+
 // ===== RATE LIMITERS =====
 const SaveRateLimiter = {
     lastSave: 0,
@@ -173,10 +176,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         db = firebase.firestore();
         storage = firebase.storage();
 
+        // 1. Configura o observador de autenticação
         firebase.auth().onAuthStateChanged(async function(user) {
             if (!user) {
                 console.log('Usuário não autenticado, redirecionando...');
-                window.location.href = 'login.html';
+                // Se não estiver logado, não há motivo para tentar carregar dados
+                // O carregamento será feito ao final da função DOMContentLoaded como fallback
                 return;
             }
 
@@ -203,12 +208,29 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.warn('⚠️ Appwrite:', error.message);
             }
 
-            loadDataFromFirestore();
+            // 2. Carrega os dados APÓS a autenticação bem-sucedida
+            if (!dataLoaded) {
+                 loadDataFromFirestore();
+            }
         });
         
+        // CORREÇÃO CRÍTICA: Chama loadDataFromFirestore() após um pequeno atraso. 
+        // Isso é necessário porque o onAuthStateChanged pode levar tempo para disparar 
+        // ou falhar silenciosamente, deixando o painel vazio.
+        setTimeout(() => {
+             if (!dataLoaded) {
+                 console.log("🔥 Tentativa de carregamento de fallback...");
+                 loadDataFromFirestore();
+             }
+        }, 500);
+
+
     } catch (error) {
         console.error('ERRO ao inicializar:', error);
         showToast('Erro ao conectar: ' + error.message, 'error');
+        
+        // Último recurso: Tenta carregar o que puder com o update padrão
+        loadConfig({});
     }
 });
 
@@ -309,6 +331,13 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
                 document.querySelector(previewSelector).style.backgroundImage = `url(${downloadURL})`;
             }
             
+            // NOVO: Se o upload for de uma imagem de produto, atualiza o focuser
+            if (targetInputId === 'produtoImagem') {
+                 document.getElementById('imageFocuserContainer').style.backgroundImage = `url(${downloadURL})`;
+                 // Re-inicializa o focuser para garantir que o ponto seja reposicionado no centro da nova imagem
+                 initImageFocuser(document.getElementById('produtoFocoHidden').value); 
+            }
+            
             showToast('Upload concluído!', 'success');
             update();
             markAsUnsaved();
@@ -327,6 +356,8 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
 
 // ===== FIRESTORE =====
 async function loadDataFromFirestore() {
+    if (dataLoaded) return; // Garante que não carregamos duas vezes
+    
     if (!db) {
         console.error('Firestore não inicializado!');
         showToast('Erro: Banco não conectado.', 'error');
@@ -359,13 +390,11 @@ async function loadDataFromFirestore() {
         if (!clientDoc.exists) {
             console.warn('Cliente não encontrado.');
             showToast('Usando modelo padrão.', 'info');
-            update();
-            return;
         }
 
         console.log('✅ Dados carregados!');
         
-        let config = clientDoc.data();
+        let config = clientDoc.data() || {};
         
         if (coresDoc.exists) config.cores = coresDoc.data();
         if (contatoDoc.exists) config.contato = contatoDoc.data();
@@ -377,7 +406,9 @@ async function loadDataFromFirestore() {
 
         state.modules = config.modules || state.modules;
         state.produtos = config.produtos || state.produtos;
+        
         loadConfig(config);
+        dataLoaded = true; // Marca o carregamento como concluído
         showToast('Dados carregados!', 'success');
 
     } catch (error) {
@@ -503,78 +534,91 @@ function logout() {
 
 function getConfig() {
     return {
-        logoType: document.getElementById('logoType').value,
-        logoImageUrl: document.getElementById('logoImageUrl').value,
-        // NOVO: Favicon
-        faviconImageUrl: document.getElementById('faviconImageUrl').value,
-        empresaNome: document.getElementById('empresaNome').value,
-        bannerTitulo: document.getElementById('bannerTitulo').value,
-        bannerSubtitulo: document.getElementById('bannerSubtitulo').value,
-        bannerImagem: document.getElementById('bannerImagem').value,
+        // Uso de verificações defensivas com operador de encadeamento opcional (?)
+        logoType: document.getElementById('logoType')?.value || 'text',
+        logoImageUrl: document.getElementById('logoImageUrl')?.value || '',
+        faviconImageUrl: document.getElementById('faviconImageUrl')?.value || '',
+        empresaNome: document.getElementById('empresaNome')?.value || '',
+        bannerTitulo: document.getElementById('bannerTitulo')?.value || '',
+        bannerSubtitulo: document.getElementById('bannerSubtitulo')?.value || '',
+        bannerImagem: document.getElementById('bannerImagem')?.value || '',
+        
         global_settings: {
-            fontUrl: document.getElementById('fontUrl').value,
-            fontFamily: document.getElementById('fontFamily').value,
-            trackingCode: document.getElementById('trackingCode').value
+            fontUrl: document.getElementById('fontUrl')?.value || '',
+            fontFamily: document.getElementById('fontFamily')?.value || '',
+            trackingCode: document.getElementById('trackingCode')?.value || ''
         },
         cores: { 
-            primaria: document.getElementById('corPrimaria').value, 
-            secundaria: document.getElementById('corSecundaria').value 
+            primaria: document.getElementById('corPrimaria')?.value || '#007bff', 
+            secundaria: document.getElementById('corSecundaria')?.value || '#28a745'
         },
         modules: state.modules,
         sobre: { 
-            texto: document.getElementById('sobreTexto').value, 
-            imagem: document.getElementById('sobreImagem').value 
+            texto: document.getElementById('sobreTexto')?.value || '', 
+            imagem: document.getElementById('sobreImagem')?.value || ''
         },
         produtos: state.produtos,
         contato: {
-            telefone: document.getElementById('telefone').value,
-            telefone2: document.getElementById('telefone2').value,
-            email: document.getElementById('email').value,
-            endereco: document.getElementById('endereco').value,
-            mostrarMapa: document.getElementById('mostrarMapa').checked,
-            latitude: parseFloat(document.getElementById('latitude').value) || -23.5505,
-            longitude: parseFloat(document.getElementById('longitude').value) || -46.6333
+            telefone: document.getElementById('telefone')?.value || '',
+            telefone2: document.getElementById('telefone2')?.value || '',
+            email: document.getElementById('email')?.value || '',
+            endereco: document.getElementById('endereco')?.value || '',
+            mostrarMapa: document.getElementById('mostrarMapa')?.checked || false,
+            latitude: parseFloat(document.getElementById('latitude')?.value) || -23.5505,
+            longitude: parseFloat(document.getElementById('longitude')?.value) || -46.6333
         }
     };
 }
 
 function loadConfig(config) {
-    document.getElementById('empresaNome').value = config.empresaNome || '';
-    document.getElementById('bannerTitulo').value = config.bannerTitulo || '';
-    document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
-    document.getElementById('bannerImagem').value = config.bannerImagem || '';
+    // CORREÇÃO: Verificação defensiva para todos os elementos
     
-    // ATUALIZADO: setLogoType usa o valor do campo oculto (que é atualizado pelos botões)
     const logoTypeInput = document.getElementById('logoType');
-    const type = config.logoType || 'text';
-    logoTypeInput.value = type;
-    setLogoType(type); // Chama para atualizar o display dos botões
+    if (!logoTypeInput) {
+        console.warn("Elemento 'logoType' não encontrado. O painel pode estar incompleto.");
+    }
     
-    document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
-    if (config.logoImageUrl) {
-        document.querySelector('#logoPreview').style.backgroundImage = `url(${config.logoImageUrl})`;
+    // Preenchendo campos com verificações defensivas
+    if(document.getElementById('empresaNome')) document.getElementById('empresaNome').value = config.empresaNome || '';
+    if(document.getElementById('bannerTitulo')) document.getElementById('bannerTitulo').value = config.bannerTitulo || '';
+    if(document.getElementById('bannerSubtitulo')) document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
+    if(document.getElementById('bannerImagem')) document.getElementById('bannerImagem').value = config.bannerImagem || '';
+    
+    
+    if (logoTypeInput) {
+        const type = config.logoType || 'text';
+        logoTypeInput.value = type;
+        setLogoType(type); // Chama para atualizar o display dos botões
+    }
+    
+    if(document.getElementById('logoImageUrl')) document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
+    
+    const logoPreview = document.querySelector('#logoPreview');
+    if (logoPreview && config.logoImageUrl) {
+        logoPreview.style.backgroundImage = `url(${config.logoImageUrl})`;
     }
 
-    // NOVO: Carregar Favicon
-    document.getElementById('faviconImageUrl').value = config.faviconImageUrl || '';
-    if (config.faviconImageUrl) {
-        document.querySelector('#faviconPreview').style.backgroundImage = `url(${config.faviconImageUrl})`;
+    if(document.getElementById('faviconImageUrl')) document.getElementById('faviconImageUrl').value = config.faviconImageUrl || '';
+    
+    const faviconPreview = document.querySelector('#faviconPreview');
+    if (faviconPreview && config.faviconImageUrl) {
+        faviconPreview.style.backgroundImage = `url(${config.faviconImageUrl})`;
     }
 
     if (config.global_settings) {
-        document.getElementById('fontUrl').value = config.global_settings.fontUrl || '';
-        document.getElementById('fontFamily').value = config.global_settings.fontFamily || '';
-        document.getElementById('trackingCode').value = config.global_settings.trackingCode || '';
+        if(document.getElementById('fontUrl')) document.getElementById('fontUrl').value = config.global_settings.fontUrl || '';
+        if(document.getElementById('fontFamily')) document.getElementById('fontFamily').value = config.global_settings.fontFamily || '';
+        if(document.getElementById('trackingCode')) document.getElementById('trackingCode').value = config.global_settings.trackingCode || '';
     }
     
     if (config.cores) {
-        document.getElementById('corPrimaria').value = config.cores.primaria;
-        document.getElementById('corSecundaria').value = config.cores.secundaria;
+        if(document.getElementById('corPrimaria')) document.getElementById('corPrimaria').value = config.cores.primaria || '#007bff';
+        if(document.getElementById('corSecundaria')) document.getElementById('corSecundaria').value = config.cores.secundaria || '#28a745';
     }
     
     if (config.sobre) {
-        document.getElementById('sobreTexto').value = config.sobre.texto || '';
-        document.getElementById('sobreImagem').value = config.sobre.imagem || '';
+        if(document.getElementById('sobreTexto')) document.getElementById('sobreTexto').value = config.sobre.texto || '';
+        if(document.getElementById('sobreImagem')) document.getElementById('sobreImagem').value = config.sobre.imagem || '';
     }
     
     if (config.modules) {
@@ -585,16 +629,27 @@ function loadConfig(config) {
     }
     
     if (config.contato) {
-        document.getElementById('telefone').value = config.contato.telefone || '';
-        document.getElementById('telefone2').value = config.contato.telefone2 || '';
-        document.getElementById('email').value = config.contato.email || '';
-        document.getElementById('endereco').value = config.contato.endereco || '';
-        document.getElementById('mostrarMapa').checked = config.contato.mostrarMapa !== false;
+        if(document.getElementById('telefone')) document.getElementById('telefone').value = config.contato.telefone || '';
+        if(document.getElementById('telefone2')) document.getElementById('telefone2').value = config.contato.telefone2 || '';
+        if(document.getElementById('email')) document.getElementById('email').value = config.contato.email || '';
+        if(document.getElementById('endereco')) document.getElementById('endereco').value = config.contato.endereco || '';
         
-        document.getElementById('latitude').value = config.contato.latitude || -23.5505;
-        document.getElementById('longitude').value = config.contato.longitude || -46.6333;
-        document.getElementById('latitudeDisplay').textContent = (config.contato.latitude || -23.5505).toFixed(4);
-        document.getElementById('longitudeDisplay').textContent = (config.contato.longitude || -46.6333).toFixed(4);
+        const mostrarMapaCheckbox = document.getElementById('mostrarMapa');
+        if (mostrarMapaCheckbox) {
+            mostrarMapaCheckbox.checked = config.contato.mostrarMapa !== false;
+        }
+
+        const latInput = document.getElementById('latitude');
+        if (latInput) latInput.value = config.contato.latitude || -23.5505;
+        
+        const lonInput = document.getElementById('longitude');
+        if (lonInput) lonInput.value = config.contato.longitude || -46.6333;
+        
+        const latDisplay = document.getElementById('latitudeDisplay');
+        const lonDisplay = document.getElementById('longitudeDisplay');
+
+        if (latDisplay) latDisplay.textContent = (config.contato.latitude || -23.5505).toFixed(4);
+        if (lonDisplay) lonDisplay.textContent = (config.contato.longitude || -46.6333).toFixed(4);
         
         setTimeout(() => {
             if (typeof mapAdmin !== 'undefined' && mapAdmin) {
@@ -612,8 +667,8 @@ function loadConfig(config) {
 function update() {
     console.log('🔄 Atualizando preview...');
     
-    const fontUrl = document.getElementById('fontUrl').value;
-    if (fontUrl) {
+    const fontUrl = document.getElementById('fontUrl');
+    if (fontUrl && fontUrl.value) {
         let fontLink = document.getElementById('dynamic-font');
         if (!fontLink) {
             fontLink = document.createElement('link');
@@ -621,20 +676,24 @@ function update() {
             fontLink.rel = 'stylesheet';
             document.head.appendChild(fontLink);
         }
-        fontLink.href = fontUrl;
+        fontLink.href = fontUrl.value;
     }
     
-    const fontFamily = document.getElementById('fontFamily').value;
-    if (fontFamily) {
+    const fontFamilyInput = document.getElementById('fontFamily');
+    if (fontFamilyInput && fontFamilyInput.value) {
         const previewSite = document.querySelector('.preview .site');
-        if (previewSite) previewSite.style.fontFamily = fontFamily;
+        if (previewSite) previewSite.style.fontFamily = fontFamilyInput.value;
     }
 
     const logoContainer = document.getElementById('logo');
     const adminLogoIcon = document.getElementById('adminLogoIcon');
-    const logoType = document.getElementById('logoType').value;
-    const empresaNome = document.getElementById('empresaNome').value;
-    const logoImageUrl = document.getElementById('logoImageUrl').value;
+    const logoTypeInput = document.getElementById('logoType');
+    const empresaNomeInput = document.getElementById('empresaNome');
+    const logoImageUrlInput = document.getElementById('logoImageUrl');
+
+    const logoType = logoTypeInput ? logoTypeInput.value : 'text';
+    const empresaNome = empresaNomeInput ? empresaNomeInput.value : 'MinhaEmpresa';
+    const logoImageUrl = logoImageUrlInput ? logoImageUrlInput.value : '';
 
 
     if (logoContainer) {
@@ -675,27 +734,34 @@ function update() {
     if (footerNome) footerNome.textContent = empresaNome;
 
     const bannerH1 = document.getElementById('bannerH1');
-    if (bannerH1) bannerH1.textContent = document.getElementById('bannerTitulo').value;
+    const bannerTituloInput = document.getElementById('bannerTitulo');
+    if (bannerH1 && bannerTituloInput) bannerH1.textContent = bannerTituloInput.value;
 
     const bannerP = document.getElementById('bannerP');
-    if (bannerP) bannerP.textContent = document.getElementById('bannerSubtitulo').value;
+    const bannerSubtituloInput = document.getElementById('bannerSubtitulo');
+    if (bannerP && bannerSubtituloInput) bannerP.textContent = bannerSubtituloInput.value;
 
     const banner = document.querySelector('.banner');
-    if (banner) banner.style.backgroundImage = `url(${document.getElementById('bannerImagem').value})`;
+    const bannerImagemInput = document.getElementById('bannerImagem');
+    if (banner && bannerImagemInput) banner.style.backgroundImage = `url(${bannerImagemInput.value})`;
 
-    const corPrimaria = document.getElementById('corPrimaria').value;
-    const corSecundaria = document.getElementById('corSecundaria').value;
+    const corPrimariaInput = document.getElementById('corPrimaria');
+    const corSecundariaInput = document.getElementById('corSecundaria');
+
+    const corPrimaria = corPrimariaInput ? corPrimariaInput.value : '';
+    const corSecundaria = corSecundariaInput ? corSecundariaInput.value : '';
     
-    const corPrimariaInput = document.querySelector('#corPrimaria + input');
-    if (corPrimariaInput) corPrimariaInput.value = corPrimaria;
+    const corPrimariaDisplay = document.querySelector('#corPrimaria + input');
+    if (corPrimariaDisplay) corPrimariaDisplay.value = corPrimaria;
 
-    const corSecundariaInput = document.querySelector('#corSecundaria + input');
-    if (corSecundariaInput) corSecundariaInput.value = corSecundaria;
+    const corSecundariaDisplay = document.querySelector('#corSecundaria + input');
+    if (corSecundariaDisplay) corSecundariaDisplay.value = corSecundaria;
     
     // NOVO: Atualizar preview do favicon no Admin
     const faviconPreview = document.getElementById('faviconPreview');
-    if (faviconPreview) {
-        faviconPreview.style.backgroundImage = `url(${document.getElementById('faviconImageUrl').value})`;
+    const faviconImageUrlInput = document.getElementById('faviconImageUrl');
+    if (faviconPreview && faviconImageUrlInput) {
+        faviconPreview.style.backgroundImage = `url(${faviconImageUrlInput.value})`;
     }
 
     document.querySelectorAll('.site-nav-links a').forEach(a => a.style.color = corPrimaria);
@@ -705,22 +771,28 @@ function update() {
     if (ctaBtn) ctaBtn.style.background = corSecundaria;
 
     const sobreTextoPreview = document.getElementById('sobreTextoPreview');
-    if (sobreTextoPreview) sobreTextoPreview.textContent = document.getElementById('sobreTexto').value;
+    const sobreTextoInput = document.getElementById('sobreTexto');
+    if (sobreTextoPreview && sobreTextoInput) sobreTextoPreview.textContent = sobreTextoInput.value;
 
     const sobreImagemPreview = document.getElementById('sobreImagemPreview');
-    if (sobreImagemPreview) sobreImagemPreview.style.backgroundImage = `url(${document.getElementById('sobreImagem').value})`;
+    const sobreImagemInput = document.getElementById('sobreImagem');
+    if (sobreImagemPreview && sobreImagemInput) sobreImagemPreview.style.backgroundImage = `url(${sobreImagemInput.value})`;
 
     const telPreview = document.getElementById('telPreview');
-    if (telPreview) telPreview.textContent = document.getElementById('telefone').value;
+    const telInput = document.getElementById('telefone');
+    if (telPreview && telInput) telPreview.textContent = telInput.value;
 
     const telPreview2 = document.getElementById('telPreview2');
-    if (telPreview2) telPreview2.textContent = document.getElementById('telefone2').value;
+    const telInput2 = document.getElementById('telefone2');
+    if (telPreview2 && telInput2) telPreview2.textContent = telInput2.value;
 
     const emailPreview = document.getElementById('emailPreview');
-    if (emailPreview) emailPreview.textContent = document.getElementById('email').value;
+    const emailInput = document.getElementById('email');
+    if (emailPreview && emailInput) emailPreview.textContent = emailInput.value;
 
     const enderecoPreview = document.getElementById('enderecoPreview');
-    if (enderecoPreview) enderecoPreview.textContent = document.getElementById('endereco').value;
+    const enderecoInput = document.getElementById('endereco');
+    if (enderecoPreview && enderecoInput) enderecoPreview.textContent = enderecoInput.value;
 
     if(state.modules) {
         const sobreSection = document.querySelector('.sobre-section');
@@ -751,7 +823,7 @@ function renderProdutos() {
     if(grid) {
         grid.innerHTML = state.produtos.map(p => `
             <div class="product-card">
-                <div class="product-image" style="background-image: url(${escapeHtml(p.imagem || 'https://via.placeholder.com/400')})"></div>
+                <div class="product-image" style="background-image: url(${escapeHtml(p.imagem || 'https://via.placeholder.com/400')}); background-position: ${escapeHtml(p.foco || 'center')};"></div>
                 <div class="product-info">
                     <h3>${escapeHtml(p.nome)}</h3>
                     <div class="product-price">${escapeHtml(p.preco)}</div>
@@ -778,6 +850,108 @@ function renderProdutos() {
     }
 }
 
+// ===== IMAGE FOCUS DRAG LOGIC (Mantido para Contexto) =====
+function initImageFocuser(initialFoco = '50% 50%') {
+    const container = document.getElementById('imageFocuserContainer');
+    const target = document.getElementById('focusTarget');
+    const hiddenInput = document.getElementById('produtoFocoHidden');
+    const display = document.getElementById('focusPositionDisplay');
+
+    if (!container || !target || !hiddenInput || !display) return;
+
+    let isDragging = false;
+    const targetSize = 24; // Tamanho do ponto de foco
+
+    function updateFoco(x, y) {
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+        
+        // Ajusta as coordenadas para estarem dentro do contêiner, considerando o tamanho do ponto de foco
+        let newX = Math.max(targetSize / 2, Math.min(x, containerWidth - targetSize / 2));
+        let newY = Math.max(targetSize / 2, Math.min(y, containerHeight - targetSize / 2));
+        
+        // Atualiza a posição do ponto (considerando o translate(-50%, -50%) no CSS)
+        target.style.left = `${newX}px`;
+        target.style.top = `${newY}px`;
+
+        // Calcula a porcentagem do foco (Background Position)
+        const focusX = Math.round(((newX - targetSize / 2) / (containerWidth - targetSize)) * 100);
+        const focusY = Math.round(((newY - targetSize / 2) / (containerHeight - targetSize)) * 100);
+        
+        const safeFocusX = Math.max(0, Math.min(100, focusX));
+        const safeFocusY = Math.max(0, Math.min(100, focusY));
+        
+        const focoValue = `${safeFocusX}% ${safeFocusY}%`;
+        
+        hiddenInput.value = focoValue;
+        display.textContent = focoValue;
+        
+        // Aplica o foco na pré-visualização do container
+        container.style.backgroundPosition = focoValue;
+    }
+
+    function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        target.style.cursor = 'grabbing';
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+
+        const containerRect = container.getBoundingClientRect();
+        
+        // Obtém a posição do mouse/toque relativa ao container
+        const clientX = e.clientX || e.touches[0].clientX;
+        const clientY = e.clientY || e.touches[0].clientY;
+
+        const x = clientX - containerRect.left;
+        const y = clientY - containerRect.top;
+
+        updateFoco(x, y);
+    }
+
+    function endDrag() {
+        if (isDragging) {
+            isDragging = false;
+            target.style.cursor = 'grab';
+            markAsUnsaved();
+            update();
+        }
+    }
+
+    // Remove listeners antigos antes de adicionar novos (para evitar duplicação)
+    target.removeEventListener('mousedown', startDrag);
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', endDrag);
+    target.removeEventListener('touchstart', startDrag);
+    document.removeEventListener('touchmove', onDrag);
+    document.removeEventListener('touchend', endDrag);
+
+    // Eventos de Mouse
+    target.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    // Eventos de Toque
+    target.addEventListener('touchstart', startDrag);
+    document.addEventListener('touchmove', onDrag);
+    document.addEventListener('touchend', endDrag);
+    
+    // Inicializa a posição do foco (o foco é dado em X% Y%)
+    const [initialX, initialY] = initialFoco.split(' ').map(v => parseFloat(v) / 100);
+
+    // Posição inicial em pixels
+    const initialContainerRect = container.getBoundingClientRect();
+    const initialX_px = initialX * (initialContainerRect.width - targetSize) + targetSize / 2;
+    const initialY_px = initialY * (initialContainerRect.height - targetSize) + targetSize / 2;
+    
+    updateFoco(initialX_px, initialY_px);
+}
+// FIM IMAGE FOCUS DRAG LOGIC
+
+
 function openProdutoModal(index) {
     const modal = document.getElementById('produtoModal');
     const title = document.getElementById('produtoModalTitle');
@@ -786,6 +960,8 @@ function openProdutoModal(index) {
     const precoInput = document.getElementById('produtoPreco');
     const descricaoInput = document.getElementById('produtoDescricao');
     const imagemInput = document.getElementById('produtoImagem');
+    const focoHidden = document.getElementById('produtoFocoHidden');
+    const focuserContainer = document.getElementById('imageFocuserContainer');
 
     title.textContent = 'Adicionar Produto';
     idInput.value = '';
@@ -793,6 +969,13 @@ function openProdutoModal(index) {
     precoInput.value = '';
     descricaoInput.value = '';
     imagemInput.value = '';
+    focoHidden.value = '50% 50%'; // Define o padrão
+
+    // Inicializa a visualização do focuser
+    const placeholderUrl = 'https://via.placeholder.com/400';
+    focuserContainer.style.backgroundImage = `url(${placeholderUrl})`;
+    initImageFocuser('50% 50%');
+
 
     modal.style.display = 'block';
 }
@@ -805,15 +988,30 @@ function editarProduto(index) {
     const precoInput = document.getElementById('produtoPreco');
     const descricaoInput = document.getElementById('produtoDescricao');
     const imagemInput = document.getElementById('produtoImagem');
+    const focoHidden = document.getElementById('produtoFocoHidden');
+    const focuserContainer = document.getElementById('imageFocuserContainer');
+
 
     const produto = state.produtos[index];
     
+    // NOVO: Carrega o foco do produto, usando '50% 50%' como fallback para produtos antigos
+    const produtoFoco = produto.foco || '50% 50%'; 
+
     title.textContent = 'Editar Produto';
     idInput.value = index;
     nomeInput.value = produto.nome;
     precoInput.value = produto.preco;
     descricaoInput.value = produto.descricao || '';
     imagemInput.value = produto.imagem || '';
+    
+    // Carrega o foco no campo oculto
+    focoHidden.value = produtoFoco;
+
+    // Inicializa a visualização do focuser com a imagem e foco corretos
+    const imageUrl = produto.imagem || 'https://via.placeholder.com/400';
+    focuserContainer.style.backgroundImage = `url(${imageUrl})`;
+    initImageFocuser(produtoFoco);
+
 
     modal.style.display = 'block';
 }
@@ -828,6 +1026,7 @@ function saveProduto() {
     const preco = document.getElementById('produtoPreco').value.trim();
     const descricao = document.getElementById('produtoDescricao').value.trim();
     const imagem = document.getElementById('produtoImagem').value.trim();
+    const foco = document.getElementById('produtoFocoHidden').value; // NOVO: Captura o foco
 
     if (!nome || !preco) {
         showToast('Nome e preço são obrigatórios.', 'error');
@@ -838,7 +1037,8 @@ function saveProduto() {
         nome, 
         preco, 
         descricao, 
-        imagem: imagem || 'https://via.placeholder.com/400' 
+        imagem: imagem || 'https://via.placeholder.com/400',
+        foco: foco // Salva o valor de foco
     };
 
     if (id !== '') {

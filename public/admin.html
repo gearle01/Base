@@ -4,48 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site Builder CMS - V2</title>
-    <link rel="stylesheet" href="css/main.css">
+    <title>Admin</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+    <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/modal.css">
-    <link rel="stylesheet" href="css/produtos-expandidos.css">
-
-    <style>
-        /* Modal de Produto */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 2rem;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-        }
-
-        .close {
-            position: absolute;
-            right: 1rem;
-            top: 1rem;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #aaa;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-    </style>
 </head>
 
 <body class="admin-page">
@@ -66,7 +28,7 @@
         <p>Em breve...</p>
 
         <h4>Contato para Suporte</h4>
-        <p>email@suporte.com</p>
+        <p>gearlesm@gmail.com</p>
     </div>
 
     <div class="container">
@@ -263,6 +225,18 @@
                                     onchange="handleImageUpload(event, 'produtoImagem')">
                             </div>
                         </div>
+                        
+                        <div class="form-group">
+                            <label>Foco da Imagem (Arrastável)</label>
+                            <div id="imageFocuserContainer" style="width: 100%; height: 200px; border: 1px solid #ddd; background-size: cover; background-repeat: no-repeat; position: relative; margin-bottom: 0.5rem; cursor: pointer;">
+                                <div id="focusTarget" style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #dc3545; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; z-index: 100;"></div>
+                            </div>
+                            <input type="hidden" id="produtoFocoHidden" value="50% 50%">
+                            <small style="color: #6c757d; font-size: 0.75rem; margin-top: 0.3rem;">
+                                Arraste o ponto vermelho para definir o foco da imagem. Posição atual: <span id="focusPositionDisplay">50% 50%</span>
+                            </small>
+                        </div>
+                        
                         <button class="btn btn-primary" onclick="saveProduto()">Salvar Produto</button>
                     </div>
                 </div>
@@ -325,34 +299,6 @@
                 </div>
 
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-                <style>
-                    #mapPreview {
-                        cursor: crosshair;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    }
-
-                    .leaflet-container {
-                        border-radius: 8px;
-                        overflow: hidden;
-                    }
-
-                    .map-marker-custom {
-                        background: #FF6B6B;
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 50%;
-                        border: 3px solid white;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-                    }
-
-                    .map-info {
-                        background: white;
-                        padding: 0.5rem;
-                        border-radius: 4px;
-                        font-size: 0.85rem;
-                        max-width: 150px;
-                    }
-                </style>
 
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
                 <script
@@ -520,6 +466,20 @@
                     });
                 </script>
 
+                <!-- Scripts do Firebase -->
+                <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+                <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+                <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+                <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+                <!-- Configuração do Firebase -->
+                <script src="js/firebase-config.local.js"></script>
+
+                <!-- Scripts da aplicação -->
+                <script src="js/toast.js"></script>
+                <script src="js/validation.js"></script>
+                <script src="js/app.js"></script>
+
                 <div class="section">
                     <h3>💾 Salvar Dados</h3>
                     <button class="btn btn-primary" onclick="saveConfig()">💾 Salvar no Site</button>
@@ -528,105 +488,58 @@
         </div>
 
         <div class="preview">
-            <div class="site">
-                <nav class="site-nav">
-                    <div class="site-logo" id="logo">MinhaEmpresa</div>
-                    <ul class="site-nav-links">
-                        <li><a href="#home">Home</a></li>
-                        <li class="nav-sobre"><a href="#sobre">Sobre</a></li>
-                        <li class="nav-produtos"><a href="#produtos">Produtos</a></li>
-                        <li class="nav-contato"><a href="#contato">Contato</a></li>
-                    </ul>
-                </nav>
-
-                <section class="banner" id="home">
-                    <div class="banner-content">
-                        <h1 id="bannerH1">Transforme Seu Negócio</h1>
-                        <p id="bannerP">Soluções modernas para sua empresa crescer</p>
-                        <a href="#contato" class="cta-btn">Entre em Contato</a>
-                    </div>
-                </section>
-
-                <section class="site-section alt sobre-section" id="sobre">
-                    <div class="section-content">
-                        <h2 class="section-title">Sobre Nós</h2>
-                        <div class="about-grid">
-                            <div class="about-text" id="sobreTextoPreview">
-                                Somos uma empresa dedicada a oferecer as melhores soluções para nossos clientes.
-                            </div>
-                            <div class="about-image" id="sobreImagemPreview"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="site-section produtos-section" id="produtos">
-                    <div class="section-content">
-                        <h2 class="section-title">Nossos Produtos</h2>
-                        <div class="products-grid" id="produtosGrid"></div>
-                    </div>
-                </section>
-
-                <section class="site-section alt contato-section" id="contato">
-                    <div class="section-content">
-                        <h2 class="section-title">Entre em Contato</h2>
-                        <div class="contact-grid">
-                            <div>
-                                <div class="contact-item">
-                                    <div class="contact-icon" id="iconTel">📞</div>
-                                    <div>
-                                        <h4>Telefone</h4>
-                                        <p id="telPreview">(11) 9999-9999</p>
-                                    </div>
-                                </div>
-                                <div class="contact-item">
-                                    <div class="contact-icon" id="iconEmail">📧</div>
-                                    <div>
-                                        <h4>E-mail</h4>
-                                        <p id="emailPreview">contato@minhaempresa.com</p>
-                                    </div>
-                                </div>
-                                <div class="contact-item">
-                                    <div class="contact-icon" id="iconEnd">📍</div>
-                                    <div>
-                                        <h4>Endereço</h4>
-                                        <p id="enderecoPreview">Rua Exemplo, 123 - São Paulo, SP</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <footer class="site-footer">
-                    <p>© 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
-                </footer>
-            </div>
+            <iframe id="preview-iframe" src="index.html" style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-
     <script>
-        // Load Firebase config based on environment
-        const hostname = window.location.hostname;
-        if (hostname.includes("firebaseapp.com") || hostname.includes("web.app")) {
-            document.write('<script src="/__/firebase/init.js"><\/script>');
-        } else {
-            document.write('<script src="js/firebase-config.local.js"><\/script>');
-        }
+        const previewIframe = document.getElementById('preview-iframe');
+        previewIframe.onload = function() {
+            const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow.document;
+            const adminButton = iframeDoc.querySelector('.admin-login-icon');
+            if (adminButton) {
+                adminButton.style.display = 'none';
+            }
+        };
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
-    <script src="js/appwrite-config.js"></script>
+    <script>
+        // Código para carregar produtos na pré-visualização
+        function carregarProdutosPreview() {
+            const produtosLista = document.getElementById('produtosListaPreview');
+            produtosLista.innerHTML = ''; // Limpar lista existente
 
-    <script src="js/toast.js"></script>
-    <script src="js/validation.js"></script>
-    <script src="js/history.js"></script>
-    <script src="js/app.js"></script>
+            // Obter produtos do Firestore
+            db.collection('produtos').get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    const produto = doc.data();
+                    const produtoId = doc.id;
 
+                    // Criar elemento do produto
+                    const produtoElem = document.createElement('div');
+                    produtoElem.classList.add('produto-item');
+                    produtoElem.setAttribute('data-id', produtoId);
+                    produtoElem.innerHTML = `
+                        <h3>${produto.nome}</h3>
+                        <p>Preço: R$ ${produto.preco.toFixed(2)}</p>
+                        <img src="${produto.imagem}" alt="${produto.nome}" style="max-width: 100%; height: auto;">
+                    `;
+
+                    // Adicionar evento de clique para abrir o produto
+                    produtoElem.addEventListener('click', () => {
+                        abrirProdutoPreview(produtoId);
+                    });
+
+                    // Adicionar à lista
+                    produtosLista.appendChild(produtoElem);
+                });
+            });
+        }
+
+        // Chamar ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarProdutosPreview();
+        });
+    </script>
 </body>
-
 </html>

@@ -98,12 +98,15 @@
 
                     <div class="form-group">
                         <label>Tipo de Logo</label>
-                        <select id="logoType" onchange="setLogoType(this.value)">
-                            <option value="text">Texto (Nome da Empresa)</option>
-                            <option value="image">Imagem (Upload ou URL)</option>
-                        </select>
+                        <div class="logo-type-selector">
+                            <button id="logoTypeTextBtn" class="btn-logo-type active"
+                                onclick="setLogoType('text')">Texto</button>
+                            <button id="logoTypeImageBtn" class="btn-logo-type"
+                                onclick="setLogoType('image')">Imagem (Upload ou URL)</button>
+                        </div>
+                        <input type="hidden" id="logoType" value="text">
                     </div>
-                    
+
                     <div id="logoImageInputGroup" class="form-group hidden">
                         <label>Arquivo de Imagem do Logo</label>
                         <input type="file" id="logoUpload" accept="image/*"
@@ -235,7 +238,7 @@
 
                 <div id="produtoModal" class="modal">
                     <div class="modal-content">
-                        <span class="close" onclick="closeProdutoModal()">&times;</span>
+                        <span class="close" onclick="closeProdutoModal()">×</span>
                         <h3 id="produtoModalTitle">Adicionar Produto</h3>
                         <input type="hidden" id="produtoId">
                         <div class="form-group">
@@ -595,7 +598,7 @@
                 </section>
 
                 <footer class="site-footer">
-                    <p>&copy; 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
+                    <p>© 2025 <span id="footerNome">MinhaEmpresa</span>. Todos os direitos reservados.</p>
                 </footer>
             </div>
         </div>

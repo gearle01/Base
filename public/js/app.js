@@ -466,15 +466,28 @@ async function saveConfig() {
 
 // ===== UI E ESTADO =====
 function setLogoType(type) {
-    // A função é chamada por onchange="setLogoType(this.value)"
+    // CORREÇÃO: Lógica para os botões e campo hidden
     const imageGroup = document.getElementById('logoImageInputGroup');
+    const textBtn = document.getElementById('logoTypeTextBtn');
+    const imageBtn = document.getElementById('logoTypeImageBtn');
+    const logoTypeInput = document.getElementById('logoType'); // Campo oculto
+
+    if (imageGroup && logoTypeInput) {
+        logoTypeInput.value = type; // Salva o valor no campo oculto
+        
+        if (type === 'text') {
+            imageGroup.classList.add('hidden');
+        } else {
+            imageGroup.classList.remove('hidden');
+        }
+    }
     
-    // No novo layout, o campo "Nome da Empresa" fica sempre visível.
-    // Apenas controlamos o campo de upload/URL da Imagem.
-    if (type === 'text') {
-        imageGroup.classList.add('hidden');
-    } else {
-        imageGroup.classList.remove('hidden');
+    // Atualiza classes dos botões (se existirem)
+    if (textBtn) {
+        textBtn.classList.toggle('active', type === 'text');
+    }
+    if (imageBtn) {
+        imageBtn.classList.toggle('active', type === 'image');
     }
     
     markAsUnsaved();
@@ -531,10 +544,11 @@ function loadConfig(config) {
     document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
     document.getElementById('bannerImagem').value = config.bannerImagem || '';
     
-    // ATUALIZADO: setLogoType agora usa o valor do select
-    const logoTypeSelect = document.getElementById('logoType');
-    logoTypeSelect.value = config.logoType || 'text';
-    setLogoType(logoTypeSelect.value); // Chama para atualizar o display
+    // ATUALIZADO: setLogoType usa o valor do campo oculto (que é atualizado pelos botões)
+    const logoTypeInput = document.getElementById('logoType');
+    const type = config.logoType || 'text';
+    logoTypeInput.value = type;
+    setLogoType(type); // Chama para atualizar o display dos botões
     
     document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
     if (config.logoImageUrl) {
@@ -655,7 +669,6 @@ function update() {
             adminLogoIcon.textContent = '⚙️';
         }
     }
-    // FIM ATUALIZADO
 
 
     const footerNome = document.getElementById('footerNome');

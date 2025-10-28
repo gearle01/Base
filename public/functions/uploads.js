@@ -1,6 +1,6 @@
 /**
  * ✅ OTIMIZADO: Validação Server-side para uploads
- * Arquivo: functions/src/uploads.js
+ * Arquivo: public/functions/uploads.js
  * 
  * Para implementar no Firebase Functions:
  * 1. Instale as dependências:

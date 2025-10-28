@@ -1,35 +1,49 @@
-// Função para escapar HTML e prevenir XSS
-function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return unsafe;
-  const div = document.createElement("div");
-  div.textContent = unsafe;
-  return div.innerHTML;
-}
+// ✅ OTIMIZADO: Usando módulos e sistema de cache global
+const { debounce, cache, vdom, imageLoader, loading, error } = window.SiteModules;
 
-// ✅ OTIMIZAÇÃO: Cache aumentado para 5 minutos
-const cache = {
-  data: null,
-  timestamp: 0,
-  isValid: function () {
-    return this.data && Date.now() - this.timestamp < 300000; // 5 min cache
-  },
-};
-
+// ✅ OTIMIZADO: Skeleton loading com Virtual DOM
 function showLoadingSkeleton() {
   const produtosGrid = document.getElementById("produtosGrid");
-  if (produtosGrid) {
-    produtosGrid.innerHTML = `
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-        `;
+  if (!produtosGrid) return;
+
+  // Criar cards de skeleton usando Virtual DOM
+  const skeletons = Array(3).fill(null).map(() => 
+    vdom.createElement('div', { 
+      className: 'skeleton-card',
+      style: `
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 8px;
+        height: 200px;
+        margin-bottom: 16px;
+      `
+    })
+  );
+
+  // Adicionar animação de shimmer ao CSS se não existir
+  if (!document.getElementById('skeleton-style')) {
+    const style = document.createElement('style');
+    style.id = 'skeleton-style';
+    style.textContent = `
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    `;
+    document.head.appendChild(style);
   }
+
+  // Limpar e adicionar skeletons
+  produtosGrid.innerHTML = '';
+  skeletons.forEach(skeleton => {
+    produtosGrid.appendChild(vdom.createRealElement(skeleton));
+  });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("🔥 public.js: DOM carregado");
-
-  function initializeFirebase() {
+// ✅ OTIMIZADO: Inicialização do Firebase
+async function initializeFirebase() {
+  try {
     if (typeof firebase === "undefined") {
       console.log("⏳ Aguardando Firebase SDK...");
       setTimeout(initializeFirebase, 100);
@@ -37,45 +51,83 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (firebase.apps.length > 0) {
-      console.log("✅ Firebase já inicializado (pelo init.js).");
-      loadDataFromFirestore();
+      console.log("✅ Firebase já inicializado");
+      await loadDataFromFirestore();
       return;
     }
 
     if (typeof firebaseConfig === "undefined") {
-      console.log("⏳ Aguardando firebaseConfig... (local env)");
+      console.log("⏳ Aguardando firebaseConfig...");
       setTimeout(initializeFirebase, 100);
       return;
     }
 
-    console.log("🔥 Inicializando Firebase no public.js... (local env)");
+    console.log("🔥 Inicializando Firebase...");
     firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase inicializado com sucesso! (local env)");
+    console.log("✅ Firebase inicializado com sucesso!");
 
-    loadDataFromFirestore();
+    await loadDataFromFirestore();
+
+  } catch (err) {
+    console.error('❌ Erro ao inicializar Firebase:', err);
+    error.show('Erro ao inicializar o sistema. Por favor, recarregue a página.', 'error');
+    loading.hide('site');
   }
+}
 
-  initializeFirebase();
+// Inicializar quando o DOM estiver pronto
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("🔥 public.js: DOM carregado");
+  loading.show('site', 'Carregando site...');
+  initializeFirebase().catch(err => {
+    console.error('❌ Erro na inicialização:', err);
+    error.show('Erro ao carregar o site. Por favor, recarregue a página.', 'error');
+    loading.hide('site');
+  });
 });
 
-// ✅ OTIMIZAÇÃO: Carregar dados com Promise.all
+// ✅ OTIMIZAÇÃO: Carregar dados com suporte a modo offline
 async function loadDataFromFirestore() {
-  if (cache.isValid()) {
-    console.log("📦 Usando cache");
-    updatePublicSite(cache.data);
-    return;
-  }
-
-  showLoadingSkeleton();
-  console.log("🔍 Buscando dados do Firestore...");
-
-  const db = firebase.firestore();
-  const clientId = "cliente-001";
-
   try {
+    // Verifica se temos dados em cache
+    const cachedData = cache.get('site', 'data');
+    const cacheTimestamp = cache.get('site', 'timestamp');
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+    if (cachedData && cacheTimestamp && (Date.now() - cacheTimestamp < CACHE_DURATION)) {
+      console.log("📦 Usando cache do site");
+      updatePublicSite(cachedData);
+      return;
+    }
+
+    showLoadingSkeleton();
+    console.log("🔍 Buscando dados do Firestore...");
+
+    const db = firebase.firestore();
+    const clientId = "cliente-001";
+
+    // ✅ OTIMIZADO: Sistema de Timeout
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout')), 10000)
+    );
+
+    // ✅ OTIMIZADO: Função para buscar dados com retry
+    async function fetchWithRetry(promise, retries = 3) {
+      try {
+        return await Promise.race([promise, timeout]);
+      } catch (error) {
+        if (retries > 0 && error.message === 'Timeout') {
+          console.log(`🔄 Tentando novamente... (${retries} tentativas restantes)`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchWithRetry(promise, retries - 1);
+        }
+        throw error;
+      }
+    }
+
     const clientDocRef = db.collection("site").doc(clientId);
 
-    // ✅ OTIMIZAÇÃO CRÍTICA: Carregar tudo em paralelo
+    // ✅ OTIMIZADO: Carregar dados com retry
     const [
       clientDoc,
       coresDoc,
@@ -85,25 +137,23 @@ async function loadDataFromFirestore() {
       globalDoc,
       produtosSnap,
     ] = await Promise.all([
-      clientDocRef.get(),
-      clientDocRef.collection("cores").doc("data").get(),
-      clientDocRef.collection("contato").doc("data").get(),
-      clientDocRef.collection("modules").doc("data").get(),
-      clientDocRef.collection("sobre").doc("data").get(),
-      clientDocRef.collection("global_settings").doc("data").get(),
-      clientDocRef.collection("produtos").get(),
+      fetchWithRetry(clientDocRef.get({ source: 'server' }).catch(() => clientDocRef.get({ source: 'cache' }))),
+      fetchWithRetry(clientDocRef.collection("cores").doc("data").get()),
+      fetchWithRetry(clientDocRef.collection("contato").doc("data").get()),
+      fetchWithRetry(clientDocRef.collection("modules").doc("data").get()),
+      fetchWithRetry(clientDocRef.collection("sobre").doc("data").get()),
+      fetchWithRetry(clientDocRef.collection("global_settings").doc("data").get()),
+      fetchWithRetry(clientDocRef.collection("produtos").get()),
     ]);
 
     if (!clientDoc.exists) {
-      console.warn(
-        "⚠️ Cliente não encontrado no Firestore. Usando conteúdo padrão."
-      );
+      console.error("❌ ERRO CRÍTICO: Documento do cliente não encontrado em '/site/cliente-001'. Verifique se os dados existem neste caminho no seu banco de dados Firestore.");
       const produtosGrid = document.getElementById("produtosGrid");
-      if (produtosGrid) produtosGrid.innerHTML = "";
+      if (produtosGrid) produtosGrid.innerHTML = "<p>Nenhum dado encontrado para este site.</p>";
       return;
     }
 
-    console.log("✅ Documento principal encontrado!");
+    console.log("✅ Documento principal encontrado!", clientDoc.data());
     let config = clientDoc.data();
 
     // Adicionar subcoleções
@@ -128,24 +178,86 @@ async function loadDataFromFirestore() {
       console.log("✅ global_settings carregado");
     }
 
+    console.log(`ℹ️ Snapshot de produtos contém ${produtosSnap.docs.length} documento(s).`);
     config.produtos = produtosSnap.docs.map((doc) => doc.data());
     console.log(`✅ ${config.produtos.length} produtos carregados`);
 
-    // Cache dos dados
-    cache.data = config;
-    cache.timestamp = Date.now();
+    // Atualizar cache
+    cache.set('site', 'data', config);
+    cache.set('site', 'timestamp', Date.now());
 
-    console.log("🎉 Todos os dados carregados! Atualizando site...");
+    console.log("🎉 Todos os dados carregados! Objeto de configuração final:", config);
+    console.log("🎨 Atualizando site...");
     updatePublicSite(config);
   } catch (error) {
     console.error("❌ Erro ao buscar dados do site:", error);
   }
 }
 
-function updatePublicSite(data) {
-  console.log("🎨 Atualizando interface do site...");
+// ✅ OTIMIZADO: Função para criar Virtual DOM dos produtos
+function createProductVNode(produto) {
+    return vdom.createElement('div', { className: 'product-card', 'data-id': produto.id },
+        vdom.createElement('div', { 
+            className: 'product-image',
+            style: `background-image: url(${produto.imagem || 'https://via.placeholder.com/400'}); background-position: ${produto.foco || 'center'};`
+        }),
+        vdom.createElement('div', { className: 'product-info' },
+            vdom.createElement('h3', {}, produto.nome),
+            vdom.createElement('div', { className: 'product-price' }, produto.preco),
+            produto.descricao ? vdom.createElement('p', {}, produto.descricao) : null
+        )
+    );
+}
 
-  // ✅ Aplicar Configurações Globais de Fonte
+// ✅ OTIMIZADO: Renderização otimizada de produtos com Virtual DOM e cache
+function renderProdutos(produtos, container) {
+    // Verifica cache
+    const cachedProducts = cache.get('produtos', 'list');
+    const lastProductsHash = cache.get('produtos', 'hash');
+    const currentHash = JSON.stringify(produtos);
+
+    if (cachedProducts && lastProductsHash === currentHash) {
+        console.log('📦 Usando produtos em cache');
+        container.innerHTML = cachedProducts;
+    imageLoader.init();
+        return;
+    }
+
+    // Criar novo Virtual DOM
+    const newVirtualProducts = produtos.map(createProductVNode);
+    const virtualContainer = vdom.createElement('div', { className: 'products-grid' }, 
+        ...newVirtualProducts
+    );
+
+    // Se existir DOM anterior, fazer diff e update
+    if (container.firstChild) {
+        const oldVirtualContainer = container._virtualDOM;
+        if (oldVirtualContainer) {
+            vdom.updateElement(container, virtualContainer, oldVirtualContainer);
+        } else {
+            container.innerHTML = '';
+            container.appendChild(vdom.createRealElement(virtualContainer));
+        }
+    } else {
+        container.appendChild(vdom.createRealElement(virtualContainer));
+    }
+
+    // Salvar referência do Virtual DOM atual
+    container._virtualDOM = virtualContainer;
+
+    // Atualizar cache
+    cache.set('produtos', 'list', container.innerHTML);
+    cache.set('produtos', 'hash', currentHash);
+
+    // Iniciar lazy loading das imagens
+    imageLoader.init();
+}
+
+// ✅ OTIMIZADO: Função principal de atualização do site
+function updatePublicSite(data) {
+    console.log("🎨 Atualizando interface do site...");
+
+    // ✅ Aplicar Configurações Globais de Fonte com Virtual DOM
   if (data.global_settings) {
     if (data.global_settings.fontUrl) {
       let fontLink = document.getElementById("dynamic-font");
@@ -172,23 +284,47 @@ function updatePublicSite(data) {
       const isFacebookPixel = code.includes("facebook.net/en_US/fbevents.js");
       const isHotjar = code.includes("static.hotjar.com");
 
+      // ✅ OTIMIZADO: Sanitização segura do tracking code usando DOMPurify
       if (isGoogleAnalytics || isFacebookPixel || isHotjar) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(code, "text/html");
+        // Lista de domínios permitidos para scripts
+        const allowedDomains = [
+          'www.googletagmanager.com',
+          'analytics.google.com',
+          'connect.facebook.net',
+          'static.hotjar.com'
+        ];
 
-        const scripts = doc.querySelectorAll("script");
+        // Sanitizar o código com DOMPurify
+        const cleanCode = DOMPurify.sanitize(code, {
+          ALLOWED_TAGS: ['script'],
+          ALLOWED_ATTR: ['src', 'async', 'defer'],
+          ADD_TAGS: ['script'],
+          ALLOW_UNKNOWN_PROTOCOLS: false,
+          RETURN_DOM: true
+        });
+
+        const scripts = cleanCode.querySelectorAll('script');
         scripts.forEach((script) => {
-          const newScript = document.createElement("script");
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
+          const scriptSrc = script.src;
+          // Verificar se o domínio do script é permitido
+          if (scriptSrc && allowedDomains.some(domain => scriptSrc.includes(domain))) {
+            const newScript = document.createElement('script');
+            newScript.src = scriptSrc;
+            if (script.async) newScript.async = true;
+            document.body.appendChild(newScript);
+          } else if (!scriptSrc && isGoogleAnalytics) {
+            // Para GA4, permitir apenas código inline do Google Analytics
+            const gaCode = script.textContent;
+            if (gaCode && gaCode.includes('gtag') && !gaCode.includes('<') && !gaCode.includes('>')) {
+              const newScript = document.createElement('script');
+              newScript.textContent = gaCode;
+              document.body.appendChild(newScript);
+            }
           }
-          if (script.async) newScript.async = true;
-          document.body.appendChild(newScript);
         });
       } else {
         console.warn("⚠️ Código de rastreamento não reconhecido foi bloqueado");
+        // TODO: Implementar no servidor (Firebase Functions) - Log de tentativas bloqueadas
       }
     }
   }
@@ -398,29 +534,15 @@ function updatePublicSite(data) {
       navContato.classList.toggle("hidden", !data.modules.contato);
   }
 
-  // ✅ Renderizar produtos com proteção XSS
-  if (data.produtos) {
-    const produtosGrid = document.getElementById("produtosGrid");
-    if (produtosGrid) {
-      produtosGrid.innerHTML = data.produtos
-        .map(
-          (p) => `
-                <div class="product-card">
-                    <div class="product-image" style="background-image: url(${escapeHtml(
-                      p.imagem || "https://via.placeholder.com/400"
-                    )}); background-position: ${escapeHtml(p.foco || "center")};"></div>
-                    <div class="product-info">
-                        <h3>${escapeHtml(p.nome)}</h3>
-                        <div class="product-price">${escapeHtml(p.preco)}</div>
-                        <p>${escapeHtml(p.descricao || "")}</p>
-                    </div>
-                </div>
-            `
-        )
-        .join("");
-      console.log(`✅ ${data.produtos.length} produtos renderizados`);
-    }
-  }
+        // Renderizar produtos
+        if (data.produtos) {
+            const produtosGrid = document.getElementById("produtosGrid");
+            if (produtosGrid) {
+                renderProdutos(data.produtos, produtosGrid);
+            }
+        }
 
-  console.log("🎉 Site público atualizado completamente!");
+        console.log("🎉 Site público atualizado completamente!");
+        loading.hide('site');
+
 }

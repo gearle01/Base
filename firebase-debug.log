@@ -1,0 +1,96 @@
+[debug] [2025-10-28T11:47:54.227Z] ----------------------------------------------------------------------
+[debug] [2025-10-28T11:47:54.234Z] Command:       D:\Program Files\nodejs\node.exe C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init firestore
+[debug] [2025-10-28T11:47:54.235Z] CLI Version:   14.3.0
+[debug] [2025-10-28T11:47:54.235Z] Platform:      win32
+[debug] [2025-10-28T11:47:54.235Z] Node Version:  v22.12.0
+[debug] [2025-10-28T11:47:54.236Z] Time:          Tue Oct 28 2025 08:47:54 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2025-10-28T11:47:54.236Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-28T11:47:54.621Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-28T11:47:54.622Z] > authorizing via signed-in user (gearlesoaresfsa@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\Users\gearl\Documents\GitHub\Base
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-10-28T11:48:05.132Z] Using project from CLI flag: base-5488a
+[debug] [2025-10-28T11:48:05.133Z] Checked if tokens are valid: false, expires at: 1761347617686
+[debug] [2025-10-28T11:48:05.133Z] Checked if tokens are valid: false, expires at: 1761347617686
+[debug] [2025-10-28T11:48:05.133Z] > refreshing access token with scopes: []
+[debug] [2025-10-28T11:48:05.136Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-28T11:48:05.136Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-28T11:48:05.604Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-28T11:48:05.605Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-28T11:48:05.653Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/base-5488a [none]
+[debug] [2025-10-28T11:48:06.176Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/base-5488a 200
+[debug] [2025-10-28T11:48:06.177Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/base-5488a {"projectId":"base-5488a","projectNumber":"399469780607","displayName":"Base","name":"projects/base-5488a","resources":{"hostingSite":"base-5488a"},"state":"ACTIVE","etag":"1_b30ef2eb-11ee-4643-8628-3ec72acd2ac5"}
+[info] i  Using project base-5488a (Base) 
+[info] 
+=== Firestore Setup
+[debug] [2025-10-28T11:48:06.187Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:06.188Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:06.188Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/base-5488a/services/firestore.googleapis.com [none]
+[debug] [2025-10-28T11:48:06.188Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/base-5488a/services/firestore.googleapis.com x-goog-quota-user=projects/base-5488a
+[debug] [2025-10-28T11:48:07.483Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/base-5488a/services/firestore.googleapis.com 200
+[debug] [2025-10-28T11:48:07.484Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/base-5488a/services/firestore.googleapis.com [omitted]
+[debug] [2025-10-28T11:48:07.485Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:07.485Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:07.486Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/base-5488a/databases/(default) [none]
+[debug] [2025-10-28T11:48:08.661Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/base-5488a/databases/(default) 200
+[debug] [2025-10-28T11:48:08.662Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/base-5488a/databases/(default) {"name":"projects/base-5488a/databases/(default)","uid":"64f098c3-066e-4d63-8262-691ab700261f","createTime":"2025-10-13T19:29:57.666835Z","updateTime":"2025-10-13T19:29:57.666835Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2025-10-28T10:48:08.577040Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IJ6z1LfpxpADMNGxncf1oZAD"}
+[debug] [2025-10-28T11:48:08.662Z] database_type: FIRESTORE_NATIVE
+[debug] [2025-10-28T11:48:08.663Z] database_type: FIRESTORE_NATIVE
+[debug] [2025-10-28T11:48:08.665Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-28T11:48:08.666Z] > authorizing via signed-in user (gearlesoaresfsa@gmail.com)
+[debug] [2025-10-28T11:48:08.666Z] [iam] checking project base-5488a for permissions ["firebase.projects.get"]
+[debug] [2025-10-28T11:48:08.668Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:08.668Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:08.669Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/base-5488a:testIamPermissions [none]
+[debug] [2025-10-28T11:48:08.670Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/base-5488a:testIamPermissions x-goog-quota-user=projects/base-5488a
+[debug] [2025-10-28T11:48:08.670Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/base-5488a:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2025-10-28T11:48:09.691Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/base-5488a:testIamPermissions 200
+[debug] [2025-10-28T11:48:09.693Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/base-5488a:testIamPermissions {"permissions":["firebase.projects.get"]}
+[info] 
+[info] Firestore Security Rules allow you to define how and when to allow
+[info] requests. You can keep these rules in your project directory
+[info] and publish them with firebase deploy.
+[info] 
+[debug] [2025-10-28T11:48:34.343Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:34.344Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:34.344Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/releases pageSize=10&pageToken=
+[debug] [2025-10-28T11:48:35.548Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/releases 200
+[debug] [2025-10-28T11:48:35.548Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/releases {"releases":[{"name":"projects/base-5488a/releases/cloud.firestore","rulesetName":"projects/base-5488a/rulesets/7cf9c3a0-0593-4440-b6ed-a7c6577dc5aa","createTime":"2025-10-13T19:59:07.163704Z","updateTime":"2025-10-16T00:26:01.091659Z"}]}
+[debug] [2025-10-28T11:48:35.549Z] Found ruleset: projects/base-5488a/rulesets/7cf9c3a0-0593-4440-b6ed-a7c6577dc5aa
+[debug] [2025-10-28T11:48:35.549Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:35.550Z] Checked if tokens are valid: true, expires at: 1761655684605
+[debug] [2025-10-28T11:48:35.550Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/rulesets/7cf9c3a0-0593-4440-b6ed-a7c6577dc5aa [none]
+[debug] [2025-10-28T11:48:36.500Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/rulesets/7cf9c3a0-0593-4440-b6ed-a7c6577dc5aa 200
+[debug] [2025-10-28T11:48:36.501Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/base-5488a/rulesets/7cf9c3a0-0593-4440-b6ed-a7c6577dc5aa [omitted]
+[debug] [2025-10-28T11:48:36.801Z] TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+    at Object.isAbsolute (node:path:434:5)
+    at Config.path (C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\config.js:130:18)
+    at Config.writeProjectFile (C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\config.js:162:32)
+    at C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\init\features\firestore\rules.js:37:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async doSetup (C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\init\features\firestore\index.js:48:5)
+    at async init (C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\init\index.js:41:9)
+    at async Command.initAction [as actionFn] (C:\Users\gearl\AppData\Roaming\npm\node_modules\firebase-tools\lib\commands\init.js:187:5)
+[error] 
+[error] Error: An unexpected error has occurred.

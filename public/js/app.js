@@ -1,10 +1,10 @@
 // ===== ESTADO DA APLICAÇÃO =====
+// ✅ OTIMIZADO: Removida variável não utilizada expandedProductId
 let state = {
     modules: { sobre: true, produtos: true, contato: true },
     produtos: []
 };
 
-let expandedProductId = null;
 let db, storage;
 const clientId = 'cliente-001';
 
@@ -82,17 +82,55 @@ if (window.self !== window.top) {
 }
 
 // ===== HELPERS DE SEGURANÇA =====
+// ✅ OTIMIZADO: Função escapeHtml melhorada com proteção completa contra XSS
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') return unsafe;
     
-    const cleaned = unsafe
+    // Remove scripts, eventos inline e atributos perigosos
+    let cleaned = unsafe
+        // Remove tags <script> e seu conteúdo
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-        .replace(/on\w+\s*=\s*[^\s>]*/gi, '');
+        // Remove eventos inline (onclick, onload, etc)
+        .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        // Remove javascript: URLs
+        .replace(/\b(?:javascript|data|vbscript):/gi, 'invalid:')
+        // Remove expressões CSS perigosas
+        .replace(/expression\s*\(|behavior\s*:|[-a-z]+-binding:/gi, 'invalid:')
+        // Remove meta caracteres
+        .replace(/<meta\b[^>]*>/gi, '')
+        // Remove comentários HTML que podem conter scripts
+        .replace(/<!--[\s\S]*?-->/g, '')
+        // Remove atributos base href
+        .replace(/<base\b[^>]*>/gi, '');
+
+    // Caracteres especiais para escape HTML
+    const escapeChars = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
     
-    const div = document.createElement('div');
-    div.textContent = cleaned;
-    return div.innerHTML;
+    // Escapa caracteres especiais
+    cleaned = cleaned.replace(/[&<>"'`=]/g, char => escapeChars[char]);
+    
+    // Sanitização final usando DOMPurify para garantir
+    if (typeof DOMPurify !== 'undefined') {
+        cleaned = DOMPurify.sanitize(cleaned, {
+            ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'span', 'p', 'br', 'a'],
+            ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'style'],
+            ALLOW_DATA_ATTR: false,
+            ADD_ATTR: ['target="_blank"'],
+            FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'button'],
+            FORBID_ATTR: ['onerror', 'onload', 'onmouseover', 'onclick', 'onfocus'],
+            ALLOW_UNKNOWN_PROTOCOLS: false
+        });
+    }
+    
+    return cleaned;
 }
 
 function withTimeout(promise, ms) {
@@ -241,6 +279,7 @@ function markAsUnsaved() {
     updateSaveStatus();
 }
 
+// ✅ OTIMIZADO: Função update() com debounce de 300ms
 function updateSaveStatus() {
     const saveStatus = document.getElementById('saveStatus');
     const saveText = document.getElementById('saveText');
@@ -255,6 +294,12 @@ function updateSaveStatus() {
         saveText.textContent = '✓ Salvo';
     }
 }
+
+// Importa o debounce do módulo de performance
+import { debounce, PerformanceCache } from './performance.js';
+
+// Debounce da função update para otimizar performance
+const debouncedUpdate = debounce(update, 300);
 
 // ===== UPLOAD DE IMAGEM =====
 async function compressImage(file, quality = 0.7) {

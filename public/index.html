@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GSM</title>
-    <link rel="stylesheet" href="css/main.css">
     
-    <link id="faviconLink" rel="icon" type="image/png" href="https://via.placeholder.com/16"> 
+    <!-- ✅ OTIMIZADO: Stylesheets -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/skeleton.css">
+    
+    <link id="faviconLink" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAABn0lEQVQ4jZ2TvUscURSHn3t3dtZ1/YrRQhQUsbAgIkJAEIyVYmFhYWNhYWPnf2BnY2khNsYqkNLOD2wUG1ECEgQRxDXr7syOzr0W7q6ZdVYscrqB87vvOe95ZDAY8L/lAczMzBCGIbquo2ka09PTjI2NIYQgl8sxPT1NvV6n2WxydXVFEASPAwAYGxsjn8+TSqXI5XJMTk4iSRJxHHN3d0etVqPZbNJqtR4H6LqOruuYpkkymSSdTqNpGlEU0el06Ha7dDodOp3O4wBZlpFl+SFwbB6GIUEQPEyvVquPAyRJ4unpCcuysCwLwzAwDINms0m326XX6+F5HrIs/xswMTHB+Pg4iqLgui6yLGMYBkEQEMcxiqKgadq/AZqmoaoqiqLgeR7tdpvb21s8z8NxHOI4RgjB5eUlqqr+EhRCIITg4eGB8/Nzms0m+XyeVCrFxMQEiqJgWRbLy8tcX19zdnZGqVRifn5+BBABrdaAg4MDDg8POT4+xvM8ZFlGURQkSSKOY/r9PgBzc3OsrKywsbGB4ziIwWDwGbhvtVqWaZpfgS/AJ8ACukAF+A58E0KcCiF+APw0oy7COM7YAAAAAElFTkSuQmCC">
 
     <style>
         /* Ícones SVG personalizados */
@@ -154,12 +157,26 @@
         <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp">
     </a>
 
+    <!-- Core Dependencies -->
+    <script src="js/modules.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <script src="js/firebase-config.local.js"></script>
-
-    <script defer src="js/public.js"></script>
-    <script defer src="js/responsive.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <!-- Configuration -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/purify.min.js"></script>
+    
+    <!-- Feature Modules -->
+    <script src="js/performance.js" type="module"></script>
+    <script src="js/image-loader.js" type="module"></script>
+    <script src="js/virtual-dom.js" type="module"></script>
+    <script src="js/smart-cache.js" type="module"></script>
+    <script src="js/leaflet-loader.js" type="module"></script>
+    
+    <!-- Application Logic -->
+    <script defer src="js/public.js" type="module"></script>
+    <script defer src="js/responsive.js" type="module"></script>
 </body>
 </html>

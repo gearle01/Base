@@ -379,73 +379,7 @@
                         update();
                     }
 
-                    // ===== BUSCAR ENDEREÇO =====
-                    async function buscarEnderecoMapa() {
-                        const endereco = document.getElementById('endereco').value.trim();
 
-                        if (!endereco) {
-                            showToast('Digite um endereço primeiro', 'error');
-                            return;
-                        }
-
-                        showToast('Buscando endereço...', 'info');
-
-                        try {
-                            // Usar Nominatim (geocoding público gratuito)
-                            const response = await fetch(
-                                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`
-                            );
-
-                            const dados = await response.json();
-
-                            if (dados.length === 0) {
-                                showToast('Endereço não encontrado', 'error');
-                                return;
-                            }
-
-                            const resultado = dados[0];
-                            const lat = parseFloat(resultado.lat);
-                            const lon = parseFloat(resultado.lon);
-
-                            // Atualizar mapa
-                            mapAdmin.setView([lat, lon], 15);
-                            markerAdmin.setLatLng([lat, lon]);
-                            atualizarCoordenadas(lat, lon);
-
-                            showToast(`Localização encontrada: ${resultado.address}`, 'success');
-
-                        } catch (error) {
-                            console.error('Erro ao buscar endereço:', error);
-                            showToast('Erro ao buscar endereço: ' + error.message, 'error');
-                        }
-                    }
-
-                    // ===== USAR LOCALIZAÇÃO ATUAL DO NAVEGADOR =====
-                    function usarLocalizacaoAtual() {
-                        if (!navigator.geolocation) {
-                            showToast('Geolocalização não suportada pelo navegador', 'error');
-                            return;
-                        }
-
-                        showToast('Obtendo sua localização...', 'info');
-
-                        navigator.geolocation.getCurrentPosition(
-                            function (position) {
-                                const lat = position.coords.latitude;
-                                const lng = position.coords.longitude;
-
-                                mapAdmin.setView([lat, lng], 15);
-                                markerAdmin.setLatLng([lat, lng]);
-                                atualizarCoordenadas(lat, lng);
-
-                                showToast('Localização atualizada! ✅', 'success');
-                            },
-                            function (error) {
-                                console.error('Erro ao obter localização:', error);
-                                showToast('Erro ao obter localização: ' + error.message, 'error');
-                            }
-                        );
-                    }
 
                     // ===== BUSCAR ENDEREÇO AO DIGITAR (com delay) =====
                     let timeoutBusca;

@@ -1268,3 +1268,18 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 updateSaveStatus();
+
+// ===== EXPOSIÇÃO GLOBAL (necessário para inline event handlers) =====
+// Expondo funções para serem acessíveis globalmente pelo HTML
+window.handleImageUpload = handleImageUpload;
+window.openProdutoModal = openProdutoModal;
+window.closeProdutoModal = closeProdutoModal;
+window.saveProduto = saveProduto;
+window.setLogoType = setLogoType;
+window.logout = logout;
+window.toggleHelp = toggleHelp;
+window.saveConfig = saveConfig;
+window.editarProduto = editarProduto;
+window.removerProduto = removerProduto;
+window.buscarEnderecoMapa = buscarEnderecoMapa;
+window.usarLocalizacaoAtual = usarLocalizacaoAtual;

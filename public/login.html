@@ -27,8 +27,41 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- Scripts -->
+    <!-- Configuração -->
     <script src="js/firebase-config.local.js"></script>
+
+    <!-- Inicialização do Firebase -->
+    <script>
+        console.log('🔥 [login.html] Inicializando Firebase...');
+        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+            if (firebase.apps.length === 0) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('✅ [login.html] Firebase inicializado com sucesso.');
+            } else {
+                console.log('🟡 [login.html] Firebase já estava inicializado.');
+            }
+        } else {
+            console.error('❌ [login.html] Firebase SDK ou firebaseConfig não encontrados.');
+        }
+    </script>
+
+    <!-- Auth Manager -->
+    <script src="js/auth-manager.js"></script>
+
+    <!-- Inicialização do Auth Manager -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('⏳ [login.html] DOM carregado, inicializando Auth Manager...');
+            if (window.authManager) {
+                await window.authManager.init();
+                console.log('✅ [login.html] Auth Manager inicializado.');
+            } else {
+                console.error('❌ [login.html] Auth Manager não foi encontrado.');
+            }
+        });
+    </script>
+
+    <!-- Script da página de login -->
     <script src="js/login.js"></script>
 </body>
 </html>

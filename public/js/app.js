@@ -1,3 +1,5 @@
+console.log('📝 [app.js] Script carregado');
+
 // ===== ESTADO DA APLICAÇÃO =====
 'use strict';
 
@@ -13,14 +15,11 @@ if (typeof window.state === 'undefined') {
 let db, storage;
 const clientId = 'cliente-001';
 
-// Variável de controle para garantir que loadDataFromFirestore só é chamado uma vez
-let dataLoaded = false;
-
 // ===== RATE LIMITERS =====
 const SaveRateLimiter = {
     lastSave: 0,
     minInterval: 2000,
-    
+
     canSave() {
         const now = Date.now();
         if (now - this.lastSave < this.minInterval) {
@@ -29,7 +28,7 @@ const SaveRateLimiter = {
         this.lastSave = now;
         return true;
     },
-    
+
     getRemainingTime() {
         const elapsed = Date.now() - this.lastSave;
         const remaining = Math.ceil((this.minInterval - elapsed) / 1000);
@@ -41,15 +40,15 @@ const FirestoreRateLimiter = {
     operations: [],
     maxOps: 10,
     windowMs: 60000,
-    
+
     canOperate() {
         const now = Date.now();
         this.operations = this.operations.filter(time => now - time < this.windowMs);
-        
+
         if (this.operations.length >= this.maxOps) {
             return false;
         }
-        
+
         this.operations.push(now);
         return true;
     }
@@ -59,24 +58,26 @@ const FirestoreRateLimiter = {
 const SessionMonitor = {
     lastActivity: Date.now(),
     timeout: 30 * 60 * 1000,
-    
+
     init() {
+        console.log('🔄 [SessionMonitor] Inicializando...');
         ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
             document.addEventListener(event, () => this.updateActivity(), true);
         });
-        
+
         setInterval(() => this.check(), 60000);
     },
-    
+
     updateActivity() {
         this.lastActivity = Date.now();
     },
-    
+
     check() {
         if (Date.now() - this.lastActivity > this.timeout) {
-            firebase.auth().signOut();
+            console.warn('⚠️ [SessionMonitor] Sessão expirada por inatividade.');
+            window.authManager.logout(); // Usa o authManager para logout
             showToast('Sessão expirada por inatividade', 'warning');
-            window.location.href = 'login.html';
+            // O AuthManager cuidará do redirecionamento
         }
     }
 };
@@ -90,7 +91,7 @@ if (window.self !== window.top) {
 // ✅ OTIMIZADO: Função escapeHtml melhorada com proteção completa contra XSS
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') return unsafe;
-    
+
     // Remove scripts, eventos inline e atributos perigosos
     let cleaned = unsafe
         // Remove tags <script> e seu conteúdo
@@ -118,30 +119,30 @@ function escapeHtml(unsafe) {
         '`': '&#x60;',
         '=': '&#x3D;'
     };
-    
+
     // Escapa caracteres especiais
     cleaned = cleaned.replace(/[&<>"'`=]/g, char => escapeChars[char]);
-    
+
     // Sanitização final usando DOMPurify para garantir
     if (typeof DOMPurify !== 'undefined') {
         cleaned = DOMPurify.sanitize(cleaned, {
             ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'span', 'p', 'br', 'a'],
             ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'style'],
             ALLOW_DATA_ATTR: false,
-            ADD_ATTR: ['target="_blank"'],
+            ADD_ATTR: ['target=\"_blank\"'],
             FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'button'],
             FORBID_ATTR: ['onerror', 'onload', 'onmouseover', 'onclick', 'onfocus'],
             ALLOW_UNKNOWN_PROTOCOLS: false
         });
     }
-    
+
     return cleaned;
 }
 
 function withTimeout(promise, ms) {
     return Promise.race([
         promise,
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Operação excedeu o tempo limite')), ms)
         )
     ]);
@@ -150,15 +151,15 @@ function withTimeout(promise, ms) {
 function validateCoordinates(lat, lon) {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lon);
-    
+
     if (isNaN(latitude) || isNaN(longitude)) {
         throw new Error('Coordenadas inválidas');
     }
-    
+
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
         throw new Error('Coordenadas fora do intervalo válido');
     }
-    
+
     return { latitude, longitude };
 }
 
@@ -166,16 +167,16 @@ async function validateImageFile(file) {
     if (!file.type.startsWith('image/')) {
         throw new Error('Arquivo não é uma imagem válida');
     }
-    
+
     if (file.size > 5 * 1024 * 1024) {
         throw new Error('Imagem muito grande! Máximo 5MB');
     }
-    
+
     // Validar magic bytes (assinatura real do arquivo)
     const buffer = await file.slice(0, 4).arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    
+
     // Assinaturas de magic bytes mais robustas (incluindo SVG)
     const validSignatures = {
         'ffd8ff': 'image/jpeg',      // JPEG/JFIF (3 bytes)
@@ -185,9 +186,9 @@ async function validateImageFile(file) {
         '3c3f786d': 'image/svg+xml',  // SVG (starts with <?xml)
         '3c737667': 'image/svg+xml'   // SVG (starts with <svg)
     };
-    
+
     const isValid = Object.keys(validSignatures).some(sig => hex.startsWith(sig));
-    
+
     if (!isValid) {
         throw new Error('Formato de imagem não suportado ou arquivo corrompido');
     }
@@ -201,85 +202,84 @@ function sanitizeLogData(data) {
     return sanitized;
 }
 
+// Nova função para inicializar o app após autenticação
+async function initializeApp(user) {
+    console.log('🔄 [app.js] initializeApp chamado para usuário:', user.email);
+    try {
+        if (typeof firebase === 'undefined') {
+            console.error('❌ [app.js] Firebase não está disponível em initializeApp.');
+            showToast('Erro: Firebase não configurado.', 'error');
+            return;
+        }
+
+        db = firebase.firestore();
+        storage = firebase.storage();
+        console.log('✅ [app.js] Firestore e Storage inicializados.');
+
+        SessionMonitor.init();
+        console.log('✅ [app.js] SessionMonitor inicializado.');
+
+        // Tenta usar Appwrite (mantém lógica existente)
+        try {
+            if (typeof Appwrite === 'undefined') {
+                await new Promise(resolve => {
+                    window.addEventListener('appwriteReady', resolve, { once: true });
+                });
+            }
+
+            const account = new Appwrite.Account(window.appwriteClient);
+
+            try {
+                await account.createAnonymousSession();
+                console.log('✅ [app.js] Sessão Appwrite criada');
+            } catch (error) {
+                if (error.code !== 401) {
+                    console.log('ℹ️ [app.js] Sessão Appwrite já existe ou outro erro:', error.message);
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ [app.js] Appwrite:', error.message);
+        }
+
+        await loadDataFromFirestore();
+        console.log('✅ [app.js] Dados carregados do Firestore.');
+
+    } catch (error) {
+        console.error('❌ [app.js] ERRO ao inicializar o aplicativo:', error);
+        showToast('Erro ao conectar: ' + error.message, 'error');
+        loadConfig({}); // Tenta carregar o que puder com o update padrão
+    }
+}
+
 // ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined') {
-        console.error('ERRO: Firebase não foi carregado.');
-        showToast('Firebase não configurado.', 'error');
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('📄 [app.js] DOM carregado');
+
+    if (!window.authManager) {
+        console.error('❌ [app.js] Auth Manager não está disponível.');
+        showToast('Erro: Gerenciador de autenticação não carregado.', 'error');
         return;
     }
+    console.log('✅ [app.js] Auth Manager está disponível.');
 
-    async function init() {
-        try {
-            if (!firebase.apps.length) {
-                console.log('Inicializando Firebase...');
-                firebase.initializeApp(firebaseConfig);
-                console.log('Firebase inicializado com sucesso!');
-            }
-            
-            db = firebase.firestore();
-            storage = firebase.storage();
+    // Aguarda o estado de autenticação ser resolvido pelo AuthManager
+    const user = await window.authManager.waitUntilReady();
 
-            // 1. Configura o observador de autenticação
-            firebase.auth().onAuthStateChanged(async function(user) {
-                if (!user) {
-                    console.log('Usuário não autenticado, redirecionando...');
-                    // Redirecionar para a página de login se estiver na página de admin
-                    if (window.location.pathname.includes('admin.html')) {
-                        window.location.href = 'login.html';
-                    }
-                    return;
-                }
+    if (user) {
+        console.log('✅ [app.js] Usuário autenticado via AuthManager:', user.email);
+        initializeApp(user); // Inicializa o restante do app
 
-                SessionMonitor.init();
-
-                try {
-                    if (typeof Appwrite === 'undefined') {
-                        await new Promise(resolve => {
-                            window.addEventListener('appwriteReady', resolve, { once: true });
-                        });
-                    }
-
-                    const account = new Appwrite.Account(window.appwriteClient);
-                    
-                    try {
-                        await account.createAnonymousSession();
-                        console.log('✅ Sessão Appwrite criada');
-                    } catch (error) {
-                        if (error.code !== 401) {
-                            console.log('ℹ️ Sessão Appwrite já existe');
-                        }
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Appwrite:', error.message);
-                }
-
-                // 2. Carrega os dados APÓS a autenticação bem-sucedida
-                if (!dataLoaded) {
-                     loadDataFromFirestore();
-                }
-            });
-            
-            // CORREÇÃO CRÍTICA: Chama loadDataFromFirestore() após um pequeno atraso. 
-            // Isso é necessário porque o onAuthStateChanged pode levar tempo para disparar 
-            // ou falhar silenciosamente, deixando o painel vazio.
-            setTimeout(() => {
-                 if (!dataLoaded) {
-                     console.log("🔥 Tentativa de carregamento de fallback...");
-                     loadDataFromFirestore();
-                 }
-            }, 500);
-
-        } catch (error) {
-            console.error('ERRO ao inicializar:', error);
-            showToast('Erro ao conectar: ' + error.message, 'error');
-            
-            // Último recurso: Tenta carregar o que puder com o update padrão
-            loadConfig({});
+        // Attach event listener for addSocialLink button
+        const addSocialLinkBtn = document.getElementById('addSocialLinkBtn');
+        if (addSocialLinkBtn) {
+            addSocialLinkBtn.addEventListener('click', addSocialLink);
         }
-    }
 
-    init();
+    } else {
+        console.log('❌ [app.js] Usuário não autenticado, saindo...');
+        // O AuthManager já cuidou do redirecionamento para login.html se necessário
+        showToast('Sessão expirada ou não autenticada.', 'warning');
+    }
 });
 
 state.hasUnsavedChanges = false;
@@ -293,9 +293,9 @@ function markAsUnsaved() {
 function updateSaveStatus() {
     const saveStatus = document.getElementById('saveStatus');
     const saveText = document.getElementById('saveText');
-    
+
     if (!saveStatus || !saveText) return;
-    
+
     if (state.hasUnsavedChanges) {
         saveStatus.className = 'save-status unsaved';
         saveText.innerHTML = '⚫ Mudanças não salvas';
@@ -374,12 +374,12 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
 
     try {
         await validateImageFile(file);
-        
+
         showToast('Comprimindo imagem...', 'info');
         const compressedFile = await compressImage(file);
 
         showToast(`Fazendo upload de ${file.name}...`, 'info');
-        
+
         const promise = appwriteStorage.createFile(
             '68f04fe50018c9e1abc4',
             'unique()',
@@ -395,14 +395,14 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
             if (previewSelector) {
                 document.querySelector(previewSelector).style.backgroundImage = `url(${downloadURL})`;
             }
-            
+
             // NOVO: Se o upload for de uma imagem de produto, atualiza o focuser
             if (targetInputId === 'produtoImagem') {
-                 document.getElementById('imageFocuserContainer').style.backgroundImage = `url(${downloadURL})`;
-                 // Re-inicializa o focuser para garantir que o ponto seja reposicionado no centro da nova imagem
-                 initImageFocuser(document.getElementById('produtoFocoHidden').value); 
+                document.getElementById('imageFocuserContainer').style.backgroundImage = `url(${downloadURL})`;
+                // Re-inicializa o focuser para garantir que o ponto seja reposicionado no centro da nova imagem
+                initImageFocuser(document.getElementById('produtoFocoHidden').value);
             }
-            
+
             showToast('Upload concluído!', 'success');
             update();
             markAsUnsaved();
@@ -421,10 +421,10 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
 
 // ===== FIRESTORE =====
 async function loadDataFromFirestore() {
-    if (dataLoaded) return; // Garante que não carregamos duas vezes
-    
+    console.log('🔄 [app.js] loadDataFromFirestore chamado.');
+
     if (!db) {
-        console.error('Firestore não inicializado!');
+        console.error('❌ [app.js] Firestore não inicializado!');
         showToast('Erro: Banco não conectado.', 'error');
         return;
     }
@@ -435,7 +435,7 @@ async function loadDataFromFirestore() {
     }
 
     const clientDocRef = db.collection('site').doc(clientId);
-    console.log('Carregando dados:', clientId);
+    console.log('🔄 [app.js] Carregando dados para cliente:', clientId);
     showToast('Carregando dados...', 'info');
 
     try {
@@ -452,16 +452,16 @@ async function loadDataFromFirestore() {
             ]),
             10000
         );
-        
+
         if (!clientDoc.exists) {
-            console.warn('Cliente não encontrado.');
+            console.warn('⚠️ [app.js] Cliente não encontrado. Usando modelo padrão.');
             showToast('Usando modelo padrão.', 'info');
         }
 
-        console.log('✅ Dados carregados!');
-        
+        console.log('✅ [app.js] Dados carregados do Firestore!');
+
         let config = clientDoc.data() || {};
-        
+
         if (coresDoc.exists) config.cores = coresDoc.data();
         if (contatoDoc.exists) config.contato = contatoDoc.data();
         if (modulesDoc.exists) config.modules = modulesDoc.data();
@@ -476,69 +476,72 @@ async function loadDataFromFirestore() {
 
         state.modules = config.modules || state.modules;
         state.produtos = config.produtos || state.produtos;
-        
+
         loadConfig(config);
-        dataLoaded = true; // Marca o carregamento como concluído
         showToast('Dados carregados!', 'success');
 
     } catch (error) {
         if (error.message.includes('tempo limite')) {
             showToast('Servidor demorou muito. Tente novamente.', 'error');
         } else {
-            console.error("Erro:", error);
+            console.error("❌ [app.js] Erro ao carregar dados do Firestore:", error);
             showToast('Erro ao carregar: ' + error.message, 'error');
         }
         update();
     }
 }
 
+// ===== CORREÇÃO NA FUNÇÃO saveConfig =====
+
 async function saveConfig() {
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        showToast('Sua sessão expirou. Por favor, faça login novamente.', 'error');
-        return;
-    }
-
-    if (!validateForm()) {
-        showToast('Corrija os erros antes de salvar', 'error');
-        return;
-    }
-
-    if (!SaveRateLimiter.canSave()) {
-        const remaining = SaveRateLimiter.getRemainingTime();
-        showToast(`Aguarde ${remaining}s`, 'warning');
-        return;
-    }
-
-    if (!FirestoreRateLimiter.canOperate()) {
-        showToast('Muitas operações. Aguarde.', 'warning');
-        return;
-    }
-
-    if (!db) {
-        showToast('Erro: Banco não conectado.', 'error');
-        return;
-    }
-
-    showSaving();
-    const config = getConfig();
-    console.log('Salvando:', sanitizeLogData(config));
-    
-    const currentUser = firebase.auth().currentUser;
-    console.log('Estado de autenticação:', currentUser ? 'Autenticado' : 'Não autenticado');
-    console.log('Usuário:', currentUser);
-
-    if (!db) {
-        console.error('Firestore não está inicializado');
-        showToast('Erro: Banco não conectado', 'error');
-        return;
-    }
-
     try {
+        // ✅ PASSO 1: Verificar autenticação ANTES de fazer qualquer coisa
+        const user = window.authManager.getCurrentUser();
+
+        if (!user) {
+            console.error('❌ [app.js] Usuário não autenticado ao tentar salvar.');
+            showToast('Sua sessão expirou. Faça login novamente.', 'error');
+            // AuthManager cuidará do redirecionamento
+            return;
+        }
+
+        console.log('✅ [app.js] Usuário autenticado para salvar:', user.email);
+
+        // ✅ PASSO 2: Validar formulário
+        if (!validateForm()) {
+            showToast('Corrija os erros antes de salvar', 'error');
+            return;
+        }
+
+        // ✅ PASSO 3: Verificar rate limiting
+        if (!SaveRateLimiter.canSave()) {
+            const remaining = SaveRateLimiter.getRemainingTime();
+            showToast(`Aguarde ${remaining}s antes de salvar novamente`, 'warning');
+            return;
+        }
+
+        // ✅ PASSO 4: Verificar operações Firestore
+        if (!FirestoreRateLimiter.canOperate()) {
+            showToast('Muitas operações. Aguarde alguns segundos.', 'warning');
+            return;
+        }
+
+        // ✅ PASSO 5: Verificar se Firestore está inicializado
+        if (!db) {
+            console.error('❌ [app.js] Firestore não inicializado ao tentar salvar.');
+            showToast('Erro: Banco de dados não conectado.', 'error');
+            return;
+        }
+
+        showSaving();
+        const config = getConfig();
+        console.log('📝 [app.js] Configuração a salvar:', sanitizeLogData(config));
+
+        // ✅ PASSO 6: Criar batch e salvar
         const batch = db.batch();
         const clientDocRef = db.collection('site').doc(clientId);
 
-        // 1. Documento principal
+        // Documento principal
         batch.set(clientDocRef, {
             logoType: config.logoType,
             logoImageUrl: config.logoImageUrl,
@@ -547,9 +550,11 @@ async function saveConfig() {
             bannerTitulo: config.bannerTitulo,
             bannerSubtitulo: config.bannerSubtitulo,
             bannerImagem: config.bannerImagem,
+            updatedAt: new Date(), // Adiciona timestamp
+            updatedBy: user.email   // Rastreia quem atualizou
         }, { merge: true });
 
-        // 2. Coleções aninhadas
+        // Coleções aninhadas
         const coresRef = clientDocRef.collection('cores').doc('data');
         batch.set(coresRef, config.cores, { merge: true });
 
@@ -564,39 +569,59 @@ async function saveConfig() {
 
         const globalSettingsRef = clientDocRef.collection('global_settings').doc('data');
         batch.set(globalSettingsRef, config.global_settings, { merge: true });
-        
+
         const socialLinksRef = clientDocRef.collection('social_links').doc('data');
-        batch.set(socialLinksRef, { links: config.socialLinks }, { merge: true });
+        batch.set(socialLinksRef, { links: config.socialLinks || [] }, { merge: true });
 
-        // 3. Limpar e adicionar produtos
+        // Produtos - com tratamento melhorado
         const produtosCollectionRef = clientDocRef.collection('produtos');
-        const produtosSnapshot = await produtosCollectionRef.get();
-        produtosSnapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        config.produtos.forEach(produto => {
-            const newProdRef = produtosCollectionRef.doc();
-            batch.set(newProdRef, produto);
-        });
 
-        await batch.commit();
+        // Busca produtos existentes para deletar
+        try {
+            const produtosSnapshot = await produtosCollectionRef.get();
+            produtosSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+        } catch (err) {
+            console.warn('⚠️ [app.js] Aviso ao limpar produtos:', err);
+        }
 
-        console.log('✅ Salvo!');
+        // Adiciona novos produtos
+        if (Array.isArray(config.produtos)) {
+            config.produtos.forEach(produto => {
+                const newProdRef = produtosCollectionRef.doc();
+                batch.set(newProdRef, {
+                    ...produto,
+                    createdAt: new Date()
+                });
+            });
+        }
+
+        // ✅ PASSO 7: Executar batch com timeout
+        console.log('💾 [app.js] Salvando no Firestore...');
+        await withTimeout(batch.commit(), 15000);
+
+        console.log('✅ [app.js] Salvo com sucesso!');
         state.hasUnsavedChanges = false;
         updateSaveStatus();
-        showToast('Site atualizado!', 'success');
+        showToast('✅ Site atualizado com sucesso!', 'success');
+        showSaved();
 
     } catch (error) {
-        console.error("Erro:", error);
-        if (error.message.includes('tempo limite')) {
-            showToast('Tempo excedido. Tente novamente.', 'error');
-        } else if (error.message.includes('Missing or insufficient permissions')) {
-            console.log("Status de autenticação:", firebase.auth().currentUser);
-            showToast('Erro de permissão. Verifique as regras do Firestore.', 'error');
+        console.error('❌ [app.js] Erro ao salvar:', error);
+
+        // Tratamento específico de erros
+        if (error.code === 'permission-denied') {
+            showToast('❌ Erro de permissão. Verifique as regras do Firestore.', 'error');
+            console.error('📋 Verifique suas regras de segurança no Firebase Console');
+        } else if (error.message.includes('tempo limite')) {
+            showToast('⏱️ Tempo excedido. A conexão estava muito lenta.', 'error');
+        } else if (!window.authManager.isAuthenticated()) { // Usa AuthManager
+            showToast('🔓 Sessão expirada. Faça login novamente.', 'error');
+            // AuthManager cuidará do redirecionamento
         } else {
-            showToast('Erro ao salvar: ' + error.message, 'error');
+            showToast(`❌ Erro ao salvar: ${error.message}`, 'error');
         }
-        throw error;
     }
 }
 
@@ -614,14 +639,14 @@ function setLogoType(type) {
 
     if (imageGroup && logoTypeInput) {
         logoTypeInput.value = type; // Salva o valor no campo oculto
-        
+
         if (type === 'text') {
             imageGroup.classList.add('hidden');
         } else {
             imageGroup.classList.remove('hidden');
         }
     }
-    
+
     // Atualiza classes dos botões (se existirem)
     if (textBtn) {
         textBtn.classList.toggle('active', type === 'text');
@@ -629,16 +654,21 @@ function setLogoType(type) {
     if (imageBtn) {
         imageBtn.classList.toggle('active', type === 'image');
     }
-    
+
     markAsUnsaved();
     update();
 }
 
-function logout() {
-    firebase.auth().signOut().then(() => {
-        showToast('Saindo...', 'info');
-        window.location.href = 'login.html';
-    });
+async function logout() {
+    console.log('🔓 [app.js] Logout disparado.');
+    try {
+        await window.authManager.logout();
+        showToast('Logout realizado com sucesso!', 'success');
+        // AuthManager cuidará do redirecionamento
+    } catch (error) {
+        console.error('❌ [app.js] Erro ao fazer logout:', error);
+        showToast('Erro ao fazer logout: ' + error.message, 'error');
+    }
 }
 
 function getConfig() {
@@ -651,19 +681,19 @@ function getConfig() {
         bannerTitulo: document.getElementById('bannerTitulo')?.value || '',
         bannerSubtitulo: document.getElementById('bannerSubtitulo')?.value || '',
         bannerImagem: document.getElementById('bannerImagem')?.value || '',
-        
+
         global_settings: {
             fontUrl: document.getElementById('fontUrl')?.value || '',
             fontFamily: document.getElementById('fontFamily')?.value || '',
             trackingCode: document.getElementById('trackingCode')?.value || ''
         },
-        cores: { 
-            primaria: document.getElementById('corPrimaria')?.value || '#007bff', 
+        cores: {
+            primaria: document.getElementById('corPrimaria')?.value || '#007bff',
             secundaria: document.getElementById('corSecundaria')?.value || '#28a745'
         },
         modules: state.modules,
-        sobre: { 
-            texto: document.getElementById('sobreTexto')?.value || '', 
+        sobre: {
+            texto: document.getElementById('sobreTexto')?.value || '',
             imagem: document.getElementById('sobreImagem')?.value || ''
         },
         produtos: state.produtos,
@@ -682,34 +712,34 @@ function getConfig() {
 
 function loadConfig(config) {
     // CORREÇÃO: Verificação defensiva para todos os elementos
-    
+
     const logoTypeInput = document.getElementById('logoType');
     if (!logoTypeInput) {
         console.warn("Elemento 'logoType' não encontrado. O painel pode estar incompleto.");
     }
-    
+
     // Preenchendo campos com verificações defensivas
     if(document.getElementById('empresaNome')) document.getElementById('empresaNome').value = config.empresaNome || '';
     if(document.getElementById('bannerTitulo')) document.getElementById('bannerTitulo').value = config.bannerTitulo || '';
     if(document.getElementById('bannerSubtitulo')) document.getElementById('bannerSubtitulo').value = config.bannerSubtitulo || '';
     if(document.getElementById('bannerImagem')) document.getElementById('bannerImagem').value = config.bannerImagem || '';
-    
-    
+
+
     if (logoTypeInput) {
         const type = config.logoType || 'text';
         logoTypeInput.value = type;
         setLogoType(type); // Chama para atualizar o display dos botões
     }
-    
+
     if(document.getElementById('logoImageUrl')) document.getElementById('logoImageUrl').value = config.logoImageUrl || '';
-    
+
     const logoPreview = document.querySelector('#logoPreview');
     if (logoPreview && config.logoImageUrl) {
         logoPreview.style.backgroundImage = `url(${config.logoImageUrl})`;
     }
 
     if(document.getElementById('faviconImageUrl')) document.getElementById('faviconImageUrl').value = config.faviconImageUrl || '';
-    
+
     const faviconPreview = document.querySelector('#faviconPreview');
     if (faviconPreview && config.faviconImageUrl) {
         faviconPreview.style.backgroundImage = `url(${config.faviconImageUrl})`;
@@ -720,30 +750,30 @@ function loadConfig(config) {
         if(document.getElementById('fontFamily')) document.getElementById('fontFamily').value = config.global_settings.fontFamily || '';
         if(document.getElementById('trackingCode')) document.getElementById('trackingCode').value = config.global_settings.trackingCode || '';
     }
-    
+
     if (config.cores) {
         if(document.getElementById('corPrimaria')) document.getElementById('corPrimaria').value = config.cores.primaria || '#007bff';
         if(document.getElementById('corSecundaria')) document.getElementById('corSecundaria').value = config.cores.secundaria || '#28a745';
     }
-    
+
     if (config.sobre) {
         if(document.getElementById('sobreTexto')) document.getElementById('sobreTexto').value = config.sobre.texto || '';
         if(document.getElementById('sobreImagem')) document.getElementById('sobreImagem').value = config.sobre.imagem || '';
     }
-    
+
     if (config.modules) {
         Object.keys(config.modules).forEach(module => {
-            const sw = document.querySelector(`[data-module="${module}"]`);
+            const sw = document.querySelector(`[data-module=\"${module}\"]`);
             if (sw) sw.classList.toggle('active', config.modules[module]);
         });
     }
-    
+
     if (config.contato) {
         if(document.getElementById('telefone')) document.getElementById('telefone').value = config.contato.telefone || '';
         if(document.getElementById('telefone2')) document.getElementById('telefone2').value = config.contato.telefone2 || '';
         if(document.getElementById('email')) document.getElementById('email').value = config.contato.email || '';
         if(document.getElementById('endereco')) document.getElementById('endereco').value = config.contato.endereco || '';
-        
+
         const mostrarMapaCheckbox = document.getElementById('mostrarMapa');
         if (mostrarMapaCheckbox) {
             mostrarMapaCheckbox.checked = config.contato.mostrarMapa !== false;
@@ -751,16 +781,16 @@ function loadConfig(config) {
 
         const latInput = document.getElementById('latitude');
         if (latInput) latInput.value = config.contato.latitude || -23.5505;
-        
+
         const lonInput = document.getElementById('longitude');
         if (lonInput) lonInput.value = config.contato.longitude || -46.6333;
-        
+
         const latDisplay = document.getElementById('latitudeDisplay');
         const lonDisplay = document.getElementById('longitudeDisplay');
 
         if (latDisplay) latDisplay.textContent = (config.contato.latitude || -23.5505).toFixed(4);
         if (lonDisplay) lonDisplay.textContent = (config.contato.longitude || -46.6333).toFixed(4);
-        
+
         setTimeout(() => {
             if (typeof mapAdmin !== 'undefined' && mapAdmin) {
                 latitudeAtual = config.contato.latitude || -23.5505;
@@ -779,7 +809,7 @@ function loadConfig(config) {
 
 function update() {
     console.log('🔄 Atualizando preview...');
-    
+
     const fontUrl = document.getElementById('fontUrl');
     if (fontUrl && fontUrl.value) {
         let fontLink = document.getElementById('dynamic-font');
@@ -791,7 +821,7 @@ function update() {
         }
         fontLink.href = fontUrl.value;
     }
-    
+
     const fontFamilyInput = document.getElementById('fontFamily');
     if (fontFamilyInput && fontFamilyInput.value) {
         const previewSite = document.querySelector('.preview .site');
@@ -832,8 +862,8 @@ function update() {
             const img = document.createElement('img');
             img.src = logoImageUrl;
             img.alt = 'Logo Admin';
-            img.style.height = '24px'; 
-            img.style.verticalAlign = 'middle'; 
+            img.style.height = '24px';
+            img.style.verticalAlign = 'middle';
             img.style.marginRight = '8px';
             adminLogoIcon.appendChild(img);
         } else {
@@ -863,13 +893,13 @@ function update() {
 
     const corPrimaria = corPrimariaInput ? corPrimariaInput.value : '';
     const corSecundaria = corSecundariaInput ? corSecundariaInput.value : '';
-    
+
     const corPrimariaDisplay = document.querySelector('#corPrimaria + input');
     if (corPrimariaDisplay) corPrimariaDisplay.value = corPrimaria;
 
     const corSecundariaDisplay = document.querySelector('#corSecundaria + input');
     if (corSecundariaDisplay) corSecundariaDisplay.value = corSecundaria;
-    
+
     // NOVO: Atualizar preview do favicon no Admin
     const faviconPreview = document.getElementById('faviconPreview');
     const faviconImageUrlInput = document.getElementById('faviconImageUrl');
@@ -879,7 +909,7 @@ function update() {
 
     document.querySelectorAll('.site-nav-links a').forEach(a => a.style.color = corPrimaria);
     document.querySelectorAll('.contact-icon').forEach(icon => icon.style.background = corPrimaria);
-    
+
     const ctaBtn = document.querySelector('.cta-btn');
     if (ctaBtn) ctaBtn.style.background = corSecundaria;
 
@@ -926,7 +956,7 @@ function update() {
         const navContato = document.querySelector('.nav-contato');
         if (navContato) navContato.classList.toggle('hidden', !state.modules.contato);
     }
-    
+
     renderProdutos();
 }
 
@@ -945,7 +975,7 @@ function renderProdutos() {
             </div>
         `).join('');
     }
-    
+
     const list = document.getElementById('produtosList');
     if(list) {
         list.innerHTML = state.produtos.map((p, i) => `
@@ -979,11 +1009,11 @@ function initImageFocuser(initialFoco = '50% 50%') {
         const containerRect = container.getBoundingClientRect();
         const containerWidth = containerRect.width;
         const containerHeight = containerRect.height;
-        
+
         // Ajusta as coordenadas para estarem dentro do contêiner, considerando o tamanho do ponto de foco
         let newX = Math.max(targetSize / 2, Math.min(x, containerWidth - targetSize / 2));
         let newY = Math.max(targetSize / 2, Math.min(y, containerHeight - targetSize / 2));
-        
+
         // Atualiza a posição do ponto (considerando o translate(-50%, -50%) no CSS)
         target.style.left = `${newX}px`;
         target.style.top = `${newY}px`;
@@ -991,15 +1021,15 @@ function initImageFocuser(initialFoco = '50% 50%') {
         // Calcula a porcentagem do foco (Background Position)
         const focusX = Math.round(((newX - targetSize / 2) / (containerWidth - targetSize)) * 100);
         const focusY = Math.round(((newY - targetSize / 2) / (containerHeight - targetSize)) * 100);
-        
+
         const safeFocusX = Math.max(0, Math.min(100, focusX));
         const safeFocusY = Math.max(0, Math.min(100, focusY));
-        
+
         const focoValue = `${safeFocusX}% ${safeFocusY}%`;
-        
+
         hiddenInput.value = focoValue;
         display.textContent = focoValue;
-        
+
         // Aplica o foco na pré-visualização do container
         container.style.backgroundPosition = focoValue;
     }
@@ -1014,7 +1044,7 @@ function initImageFocuser(initialFoco = '50% 50%') {
         if (!isDragging) return;
 
         const containerRect = container.getBoundingClientRect();
-        
+
         // Obtém a posição do mouse/toque relativa ao container
         const clientX = e.clientX || e.touches[0].clientX;
         const clientY = e.clientY || e.touches[0].clientY;
@@ -1051,7 +1081,7 @@ function initImageFocuser(initialFoco = '50% 50%') {
     target.addEventListener('touchstart', startDrag);
     document.addEventListener('touchmove', onDrag);
     document.addEventListener('touchend', endDrag);
-    
+
     // Inicializa a posição do foco (o foco é dado em X% Y%)
     const [initialX, initialY] = initialFoco.split(' ').map(v => parseFloat(v) / 100);
 
@@ -1059,7 +1089,7 @@ function initImageFocuser(initialFoco = '50% 50%') {
     const initialContainerRect = container.getBoundingClientRect();
     const initialX_px = initialX * (initialContainerRect.width - targetSize) + targetSize / 2;
     const initialY_px = initialY * (initialContainerRect.height - targetSize) + targetSize / 2;
-    
+
     updateFoco(initialX_px, initialY_px);
 }
 // FIM IMAGE FOCUS DRAG LOGIC
@@ -1106,9 +1136,9 @@ function editarProduto(index) {
 
 
     const produto = state.produtos[index];
-    
+
     // NOVO: Carrega o foco do produto, usando '50% 50%' como fallback para produtos antigos
-    const produtoFoco = produto.foco || '50% 50%'; 
+    const produtoFoco = produto.foco || '50% 50%';
 
     title.textContent = 'Editar Produto';
     idInput.value = index;
@@ -1116,7 +1146,7 @@ function editarProduto(index) {
     precoInput.value = produto.preco;
     descricaoInput.value = produto.descricao || '';
     imagemInput.value = produto.imagem || '';
-    
+
     // Carrega o foco no campo oculto
     focoHidden.value = produtoFoco;
 
@@ -1146,10 +1176,10 @@ function saveProduto() {
         return;
     }
 
-    const produto = { 
-        nome, 
-        preco, 
-        descricao, 
+    const produto = {
+        nome,
+        preco,
+        descricao,
         imagem: imagem || 'https://via.placeholder.com/400',
         foco: foco // Salva o valor de foco
     };
@@ -1235,7 +1265,7 @@ async function buscarEnderecoMapa() {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
+
         const response = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`,
             {
@@ -1245,7 +1275,7 @@ async function buscarEnderecoMapa() {
                 }
             }
         );
-        
+
         clearTimeout(timeoutId);
 
         if (!response.ok) {
@@ -1321,8 +1351,8 @@ function atualizarCoordenadas(lat, lng) {
 }
 
 // ===== ATALHOS E EVENTOS =====
-function toggleHelp() { 
-    document.getElementById('shortcutsHelp').classList.toggle('show'); 
+function toggleHelp() {
+    document.getElementById('shortcutsHelp').classList.toggle('show');
 }
 
 document.addEventListener('keydown', async (e) => {
@@ -1336,24 +1366,24 @@ document.addEventListener('keydown', async (e) => {
         }
     }
     if (e.key === '?') { toggleHelp(); }
-    if (e.key === 'Escape') { 
+    if (e.key === 'Escape') {
         document.getElementById('shortcutsHelp').classList.remove('show');
         closeProdutoModal();
     }
 });
 
 document.querySelectorAll('input, textarea').forEach(el => {
-    el.addEventListener('change', () => { 
+    el.addEventListener('change', () => {
         markAsUnsaved();
         update();
     });
-    
-    el.addEventListener('input', () => { 
-        update(); 
+
+    el.addEventListener('input', () => {
+        update();
     });
-    
-    el.addEventListener('input', function() { 
-        this.classList.remove('error'); 
+
+    el.addEventListener('input', function() {
+        this.classList.remove('error');
     });
 });
 
@@ -1384,7 +1414,7 @@ window.openProdutoModal = openProdutoModal;
 window.closeProdutoModal = closeProdutoModal;
 window.saveProduto = saveProduto;
 window.setLogoType = setLogoType;
-window.logout = logout;
+window.logout = logout; // Agora usa a nova função logout
 window.toggleHelp = toggleHelp;
 window.saveConfig = saveConfig;
 window.editarProduto = editarProduto;

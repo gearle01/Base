@@ -1,9 +1,14 @@
 // ===== ESTADO DA APLICAÇÃO =====
-// ✅ OTIMIZADO: Removida variável não utilizada expandedProductId
-let state = {
-    modules: { sobre: true, produtos: true, contato: true },
-    produtos: []
-};
+'use strict';
+
+// ✅ OTIMIZADO: Estado inicial da aplicação
+if (typeof window.state === 'undefined') {
+    window.state = {
+        modules: { sobre: true, produtos: true, contato: true },
+        produtos: [],
+        socialLinks: []
+    };
+}
 
 let db, storage;
 const clientId = 'cliente-001';
@@ -197,79 +202,84 @@ function sanitizeLogData(data) {
 }
 
 // ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     if (typeof firebase === 'undefined') {
         console.error('ERRO: Firebase não foi carregado.');
         showToast('Firebase não configurado.', 'error');
         return;
     }
 
-    try {
-        if (!firebase.apps.length) {
-            console.log('Inicializando Firebase...');
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase inicializado com sucesso!');
-        }
-        
-        db = firebase.firestore();
-        storage = firebase.storage();
-
-        // 1. Configura o observador de autenticação
-        firebase.auth().onAuthStateChanged(async function(user) {
-            if (!user) {
-                console.log('Usuário não autenticado, redirecionando...');
-                // Se não estiver logado, não há motivo para tentar carregar dados
-                // O carregamento será feito ao final da função DOMContentLoaded como fallback
-                return;
+    async function init() {
+        try {
+            if (!firebase.apps.length) {
+                console.log('Inicializando Firebase...');
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase inicializado com sucesso!');
             }
+            
+            db = firebase.firestore();
+            storage = firebase.storage();
 
-            SessionMonitor.init();
-
-            try {
-                if (typeof Appwrite === 'undefined') {
-                    await new Promise(resolve => {
-                        window.addEventListener('appwriteReady', resolve, { once: true });
-                    });
-                }
-
-                const account = new Appwrite.Account(window.appwriteClient);
-                
-                try {
-                    await account.createAnonymousSession();
-                    console.log('✅ Sessão Appwrite criada');
-                } catch (error) {
-                    if (error.code !== 401) {
-                        console.log('ℹ️ Sessão Appwrite já existe');
+            // 1. Configura o observador de autenticação
+            firebase.auth().onAuthStateChanged(async function(user) {
+                if (!user) {
+                    console.log('Usuário não autenticado, redirecionando...');
+                    // Redirecionar para a página de login se estiver na página de admin
+                    if (window.location.pathname.includes('admin.html')) {
+                        window.location.href = 'login.html';
                     }
+                    return;
                 }
-            } catch (error) {
-                console.warn('⚠️ Appwrite:', error.message);
-            }
 
-            // 2. Carrega os dados APÓS a autenticação bem-sucedida
-            if (!dataLoaded) {
-                 loadDataFromFirestore();
-            }
-        });
-        
-        // CORREÇÃO CRÍTICA: Chama loadDataFromFirestore() após um pequeno atraso. 
-        // Isso é necessário porque o onAuthStateChanged pode levar tempo para disparar 
-        // ou falhar silenciosamente, deixando o painel vazio.
-        setTimeout(() => {
-             if (!dataLoaded) {
-                 console.log("🔥 Tentativa de carregamento de fallback...");
-                 loadDataFromFirestore();
-             }
-        }, 500);
+                SessionMonitor.init();
 
+                try {
+                    if (typeof Appwrite === 'undefined') {
+                        await new Promise(resolve => {
+                            window.addEventListener('appwriteReady', resolve, { once: true });
+                        });
+                    }
 
-    } catch (error) {
-        console.error('ERRO ao inicializar:', error);
-        showToast('Erro ao conectar: ' + error.message, 'error');
-        
-        // Último recurso: Tenta carregar o que puder com o update padrão
-        loadConfig({});
+                    const account = new Appwrite.Account(window.appwriteClient);
+                    
+                    try {
+                        await account.createAnonymousSession();
+                        console.log('✅ Sessão Appwrite criada');
+                    } catch (error) {
+                        if (error.code !== 401) {
+                            console.log('ℹ️ Sessão Appwrite já existe');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Appwrite:', error.message);
+                }
+
+                // 2. Carrega os dados APÓS a autenticação bem-sucedida
+                if (!dataLoaded) {
+                     loadDataFromFirestore();
+                }
+            });
+            
+            // CORREÇÃO CRÍTICA: Chama loadDataFromFirestore() após um pequeno atraso. 
+            // Isso é necessário porque o onAuthStateChanged pode levar tempo para disparar 
+            // ou falhar silenciosamente, deixando o painel vazio.
+            setTimeout(() => {
+                 if (!dataLoaded) {
+                     console.log("🔥 Tentativa de carregamento de fallback...");
+                     loadDataFromFirestore();
+                 }
+            }, 500);
+
+        } catch (error) {
+            console.error('ERRO ao inicializar:', error);
+            showToast('Erro ao conectar: ' + error.message, 'error');
+            
+            // Último recurso: Tenta carregar o que puder com o update padrão
+            loadConfig({});
+        }
     }
+
+    init();
 });
 
 state.hasUnsavedChanges = false;
@@ -295,8 +305,18 @@ function updateSaveStatus() {
     }
 }
 
-// Importa o debounce do módulo de performance
-import { debounce, PerformanceCache } from './performance.js';
+// Função de debounce local
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 // Debounce da função update para otimizar performance
 const debouncedUpdate = debounce(update, 300);
@@ -419,7 +439,7 @@ async function loadDataFromFirestore() {
     showToast('Carregando dados...', 'info');
 
     try {
-        const [clientDoc, coresDoc, contatoDoc, modulesDoc, sobreDoc, globalDoc, produtosSnap] = await withTimeout(
+        const [clientDoc, coresDoc, contatoDoc, modulesDoc, sobreDoc, globalDoc, produtosSnap, socialLinksDoc] = await withTimeout(
             Promise.all([
                 clientDocRef.get(),
                 clientDocRef.collection('cores').doc('data').get(),
@@ -427,7 +447,8 @@ async function loadDataFromFirestore() {
                 clientDocRef.collection('modules').doc('data').get(),
                 clientDocRef.collection('sobre').doc('data').get(),
                 clientDocRef.collection('global_settings').doc('data').get(),
-                clientDocRef.collection('produtos').get()
+                clientDocRef.collection('produtos').get(),
+                clientDocRef.collection('social_links').doc('data').get()
             ]),
             10000
         );
@@ -446,8 +467,12 @@ async function loadDataFromFirestore() {
         if (modulesDoc.exists) config.modules = modulesDoc.data();
         if (sobreDoc.exists) config.sobre = sobreDoc.data();
         if (globalDoc.exists) config.global_settings = globalDoc.data();
-        
-        config.produtos = produtosSnap.docs.map(doc => doc.data());
+        if (produtosSnap) config.produtos = produtosSnap.docs.map(doc => doc.data());
+        if (socialLinksDoc && socialLinksDoc.exists && Array.isArray(socialLinksDoc.data().links)) {
+            config.socialLinks = socialLinksDoc.data().links;
+        } else {
+            config.socialLinks = [];
+        }
 
         state.modules = config.modules || state.modules;
         state.produtos = config.produtos || state.produtos;
@@ -468,6 +493,12 @@ async function loadDataFromFirestore() {
 }
 
 async function saveConfig() {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        showToast('Sua sessão expirou. Por favor, faça login novamente.', 'error');
+        return;
+    }
+
     if (!validateForm()) {
         showToast('Corrija os erros antes de salvar', 'error');
         return;
@@ -493,51 +524,84 @@ async function saveConfig() {
     const config = getConfig();
     console.log('Salvando:', sanitizeLogData(config));
     
-    const batch = db.batch();
-    const clientDocRef = db.collection('site').doc(clientId);
+    const currentUser = firebase.auth().currentUser;
+    console.log('Estado de autenticação:', currentUser ? 'Autenticado' : 'Não autenticado');
+    console.log('Usuário:', currentUser);
 
-    batch.set(clientDocRef, {
-        empresaNome: config.empresaNome,
-        bannerTitulo: config.bannerTitulo,
-        bannerSubtitulo: config.bannerSubtitulo,
-        bannerImagem: config.bannerImagem,
-        logoType: config.logoType,
-        logoImageUrl: config.logoImageUrl,
-        // NOVO: Adiciona o Favicon
-        faviconImageUrl: config.faviconImageUrl
-    }, { merge: true });
+    if (!db) {
+        console.error('Firestore não está inicializado');
+        showToast('Erro: Banco não conectado', 'error');
+        return;
+    }
 
-    batch.set(clientDocRef.collection('global_settings').doc('data'), config.global_settings);
-    batch.set(clientDocRef.collection('cores').doc('data'), config.cores);
-    batch.set(clientDocRef.collection('contato').doc('data'), config.contato);
-    batch.set(clientDocRef.collection('modules').doc('data'), config.modules);
-    batch.set(clientDocRef.collection('sobre').doc('data'), config.sobre);
-
-    const produtosRef = clientDocRef.collection('produtos');
     try {
-        const oldProdutos = await withTimeout(produtosRef.get(), 5000);
-        oldProdutos.forEach(doc => batch.delete(doc.ref));
+        const batch = db.batch();
+        const clientDocRef = db.collection('site').doc(clientId);
+
+        // 1. Documento principal
+        batch.set(clientDocRef, {
+            logoType: config.logoType,
+            logoImageUrl: config.logoImageUrl,
+            faviconImageUrl: config.faviconImageUrl,
+            empresaNome: config.empresaNome,
+            bannerTitulo: config.bannerTitulo,
+            bannerSubtitulo: config.bannerSubtitulo,
+            bannerImagem: config.bannerImagem,
+        }, { merge: true });
+
+        // 2. Coleções aninhadas
+        const coresRef = clientDocRef.collection('cores').doc('data');
+        batch.set(coresRef, config.cores, { merge: true });
+
+        const contatoRef = clientDocRef.collection('contato').doc('data');
+        batch.set(contatoRef, config.contato, { merge: true });
+
+        const modulesRef = clientDocRef.collection('modules').doc('data');
+        batch.set(modulesRef, config.modules, { merge: true });
+
+        const sobreRef = clientDocRef.collection('sobre').doc('data');
+        batch.set(sobreRef, config.sobre, { merge: true });
+
+        const globalSettingsRef = clientDocRef.collection('global_settings').doc('data');
+        batch.set(globalSettingsRef, config.global_settings, { merge: true });
         
+        const socialLinksRef = clientDocRef.collection('social_links').doc('data');
+        batch.set(socialLinksRef, { links: config.socialLinks }, { merge: true });
+
+        // 3. Limpar e adicionar produtos
+        const produtosCollectionRef = clientDocRef.collection('produtos');
+        const produtosSnapshot = await produtosCollectionRef.get();
+        produtosSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
         config.produtos.forEach(produto => {
-            const newProdRef = produtosRef.doc();
+            const newProdRef = produtosCollectionRef.doc();
             batch.set(newProdRef, produto);
         });
 
-        await withTimeout(batch.commit(), 10000);
+        await batch.commit();
+
         console.log('✅ Salvo!');
         state.hasUnsavedChanges = false;
         updateSaveStatus();
-        showSaved();
         showToast('Site atualizado!', 'success');
 
     } catch (error) {
+        console.error("Erro:", error);
         if (error.message.includes('tempo limite')) {
             showToast('Tempo excedido. Tente novamente.', 'error');
+        } else if (error.message.includes('Missing or insufficient permissions')) {
+            console.log("Status de autenticação:", firebase.auth().currentUser);
+            showToast('Erro de permissão. Verifique as regras do Firestore.', 'error');
         } else {
-            console.error("Erro:", error);
             showToast('Erro ao salvar: ' + error.message, 'error');
         }
+        throw error;
     }
+}
+
+function validateForm() {
+    return true;
 }
 
 // ===== UI E ESTADO =====
@@ -611,7 +675,8 @@ function getConfig() {
             mostrarMapa: document.getElementById('mostrarMapa')?.checked || false,
             latitude: parseFloat(document.getElementById('latitude')?.value) || -23.5505,
             longitude: parseFloat(document.getElementById('longitude')?.value) || -46.6333
-        }
+        },
+        socialLinks: state.socialLinks || []
     };
 }
 
@@ -705,6 +770,9 @@ function loadConfig(config) {
             }
         }, 500);
     }
+
+    state.socialLinks = config.socialLinks || [];
+    renderSocialLinks();
 
     update();
 }
@@ -1108,6 +1176,46 @@ function removerProduto(index) {
     }
 }
 
+// ===== REDES SOCIAIS =====
+function renderSocialLinks() {
+    const list = document.getElementById('socialLinksList');
+    if (!list) return;
+
+    if (!Array.isArray(state.socialLinks)) {
+        state.socialLinks = [];
+    }
+
+    list.innerHTML = state.socialLinks.map((link, i) => `
+        <div class="social-link-item">
+            <input type="text" placeholder="Nome (ex: Facebook)" value="${escapeHtml(link.nome)}" onchange="updateSocialLink(${i}, 'nome', this.value)">
+            <input type="url" placeholder="URL do seu perfil" value="${escapeHtml(link.url)}" onchange="updateSocialLink(${i}, 'url', this.value)">
+            <button class="btn btn-primary" onclick="removeSocialLink(${i})">🗑️</button>
+        </div>
+    `).join('');
+}
+
+function addSocialLink() {
+    if (!Array.isArray(state.socialLinks)) {
+        state.socialLinks = [];
+    }
+    state.socialLinks.push({ nome: '', url: '' });
+    renderSocialLinks();
+    markAsUnsaved();
+}
+
+function removeSocialLink(index) {
+    if (confirm('Tem certeza que deseja remover esta rede social?')) {
+        state.socialLinks.splice(index, 1);
+        renderSocialLinks();
+        markAsUnsaved();
+    }
+}
+
+function updateSocialLink(index, field, value) {
+    state.socialLinks[index][field] = value;
+    markAsUnsaved();
+}
+
 // ===== BUSCAR ENDEREÇO =====
 async function buscarEnderecoMapa() {
     const endereco = document.getElementById('endereco').value.trim();
@@ -1283,3 +1391,9 @@ window.editarProduto = editarProduto;
 window.removerProduto = removerProduto;
 window.buscarEnderecoMapa = buscarEnderecoMapa;
 window.usarLocalizacaoAtual = usarLocalizacaoAtual;
+window.addSocialLink = addSocialLink;
+window.removeSocialLink = removeSocialLink;
+window.updateSocialLink = updateSocialLink;
+
+// Inicialização
+updateSaveStatus();

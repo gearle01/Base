@@ -148,6 +148,7 @@ async function loadDataFromFirestore() {
       fetchWithRetry(clientDocRef.collection("sobre").doc("data").get()),
       fetchWithRetry(clientDocRef.collection("global_settings").doc("data").get()),
       fetchWithRetry(clientDocRef.collection("produtos").get()),
+      fetchWithRetry(clientDocRef.collection("social_links").doc("data").get()),
     ]);
 
     const [
@@ -158,6 +159,7 @@ async function loadDataFromFirestore() {
       sobreDoc,
       globalDoc,
       produtosSnap,
+      socialLinksDoc,
     ] = await loadPromise;
 
     // Verifica se documento principal existe
@@ -190,6 +192,10 @@ async function loadDataFromFirestore() {
     if (globalDoc.exists) {
       config.global_settings = globalDoc.data();
       console.log("✅ Configurações globais carregadas");
+    }
+    if (socialLinksDoc.exists) {
+      config.socialLinks = socialLinksDoc.data().links;
+      console.log("✅ Links de redes sociais carregados");
     }
 
     // Produtos
@@ -355,6 +361,9 @@ function updatePublicSite(data) {
         renderProdutos(data.produtos, produtosGrid);
       }
     }
+
+    // Atualizar links de redes sociais
+    updateSocialLinks(data.socialLinks);
 
     console.log("🎉 Site atualizado com sucesso!");
 
@@ -596,6 +605,45 @@ function updateModuleVisibility(modules) {
   toggleModule('sobre', modules.sobre);
   toggleModule('produtos', modules.produtos);
   toggleModule('contato', modules.contato);
+}
+
+/**
+ * Atualiza os links de redes sociais
+ */
+function updateSocialLinks(socialLinks) {
+  if (!socialLinks) return;
+
+  const iconMap = {
+    'instagram': 'https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png',
+    'facebook': 'https://img.icons8.com/ios-filled/50/ffffff/facebook.png',
+    'twitter': 'https://img.icons8.com/ios-filled/50/ffffff/twitter.png',
+    'linkedin': 'https://img.icons8.com/ios-filled/50/ffffff/linkedin.png',
+    'youtube': 'https://img.icons8.com/ios-filled/50/ffffff/youtube-play.png',
+    'github': 'https://img.icons8.com/ios-filled/50/ffffff/github.png',
+    'default': 'https://img.icons8.com/ios-filled/50/ffffff/link.png'
+  };
+
+  const getIcon = (name) => {
+    const lowerCaseName = name.toLowerCase();
+    return iconMap[lowerCaseName] || iconMap['default'];
+  };
+
+  const socialIconsNav = document.querySelector(".social-icons-nav");
+  const socialIconsFooter = document.querySelector(".social-icons");
+
+  const generateHtml = (link) => `
+    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="${link.nome}">
+      <img src="${getIcon(link.nome)}" alt="${link.nome}">
+    </a>
+  `;
+
+  if (socialIconsNav) {
+    socialIconsNav.innerHTML = socialLinks.map(generateHtml).join('');
+  }
+
+  if (socialIconsFooter) {
+    socialIconsFooter.innerHTML = socialLinks.map(generateHtml).join('');
+  }
 }
 
 // Inicialização quando DOM estiver pronto

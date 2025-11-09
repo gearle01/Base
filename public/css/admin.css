@@ -17,6 +17,7 @@
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     transition: all 0.3s;
+    flex-wrap: wrap;
 }
 
 .social-link-item:hover {
@@ -199,12 +200,11 @@
     font-size: 16px;
 }
 
-.social-link-url {
+.social-link-url, .social-url {
     font-size: 0.85rem;
     color: #666;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;
+    hyphens: auto;
 }
 
 .social-link-actions {

@@ -88,6 +88,13 @@ if (window.self !== window.top) {
 }
 
 // ===== HELPERS DE SEGURANÇA =====
+function decodeHtmlEntities(text) {
+    if (typeof text !== 'string') return text;
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+}
+
 // ✅ OTIMIZADO: Função escapeHtml melhorada com proteção completa contra XSS
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') return unsafe;
@@ -219,27 +226,34 @@ async function initializeApp(user) {
         SessionMonitor.init();
         console.log('✅ [app.js] SessionMonitor inicializado.');
 
-        // Tenta usar Appwrite (mantém lógica existente)
-        try {
-            if (typeof Appwrite === 'undefined') {
-                await new Promise(resolve => {
-                    window.addEventListener('appwriteReady', resolve, { once: true });
-                });
-            }
-
-            const account = new Appwrite.Account(window.appwriteClient);
-
+        // Tenta usar Appwrite (de forma não bloqueante)
+        (async () => {
             try {
-                await account.createAnonymousSession();
-                console.log('✅ [app.js] Sessão Appwrite criada');
-            } catch (error) {
-                if (error.code !== 401) {
-                    console.log('ℹ️ [app.js] Sessão Appwrite já existe ou outro erro:', error.message);
+                if (typeof Appwrite === 'undefined') {
+                    // Adiciona um timeout para não esperar para sempre
+                    await new Promise((resolve, reject) => {
+                        const timer = setTimeout(() => reject(new Error('Appwrite não carregou a tempo')), 5000);
+                        window.addEventListener('appwriteReady', () => {
+                            clearTimeout(timer);
+                            resolve();
+                        }, { once: true });
+                    });
                 }
+
+                const account = new Appwrite.Account(window.appwriteClient);
+
+                try {
+                    await account.createAnonymousSession();
+                    console.log('✅ [app.js] Sessão Appwrite criada');
+                } catch (error) {
+                    if (error.code !== 401) { // 401 é "Unauthorized", geralmente significa que já há uma sessão
+                        console.log('ℹ️ [app.js] Sessão Appwrite já existe ou outro erro:', error.message);
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ [app.js] Appwrite não inicializado:', error.message);
             }
-        } catch (error) {
-            console.warn('⚠️ [app.js] Appwrite:', error.message);
-        }
+        })();
 
         await loadDataFromFirestore();
         console.log('✅ [app.js] Dados carregados do Firestore.');
@@ -254,6 +268,11 @@ async function initializeApp(user) {
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('📄 [app.js] DOM carregado');
+    
+    // Inicializa a lista de redes sociais se estivermos na página de admin
+    if (document.getElementById('socialLinksList')) {
+        renderSocialLinks();
+    }
 
     if (!window.authManager) {
         console.error('❌ [app.js] Auth Manager não está disponível.');
@@ -478,13 +497,14 @@ async function loadDataFromFirestore() {
         try {
             if (socialLinksDoc && socialLinksDoc.exists) {
                 const socialData = socialLinksDoc.data();
-                console.log('📱 Dados de redes sociais carregados:', socialData);
+                console.log('📱 Dados de redes sociais carregados:', JSON.stringify(socialData, null, 2));
                 
                 if (socialData && Array.isArray(socialData.links)) {
+                    console.log('✅ socialData.links é um array com', socialData.links.length, 'itens.');
                     // Validar cada item do array
                     config.socialLinks = socialData.links.filter(link => {
                         const isValid = link && typeof link === 'object' && 
-                                      typeof link.nome === 'string' && 
+                                      typeof (link.name || link.nome) === 'string' && 
                                       typeof link.url === 'string';
                         
                         if (!isValid) {
@@ -494,16 +514,16 @@ async function loadDataFromFirestore() {
                     });
                     
                     if (config.socialLinks.length > 0) {
-                        console.log('✅ Redes sociais configuradas:', config.socialLinks);
+                        console.log('✅ Redes sociais configuradas e válidas:', config.socialLinks);
                     } else {
-                        console.warn('⚠️ Nenhum link social válido encontrado');
+                        console.warn('⚠️ Nenhum link social válido encontrado após o filtro.');
                     }
                 } else {
-                    console.warn('⚠️ Dados de redes sociais inválidos:', socialData);
+                    console.warn('⚠️ Dados de redes sociais inválidos ou socialData.links não é um array:', socialData);
                     config.socialLinks = [];
                 }
             } else {
-                console.log('ℹ️ Nenhum dado de redes sociais encontrado');
+                console.log('ℹ️ Nenhum documento de redes sociais (social_links/data) encontrado.');
                 config.socialLinks = [];
             }
         } catch (error) {
@@ -515,8 +535,9 @@ async function loadDataFromFirestore() {
     state.produtos = config.produtos || state.produtos;
     
     console.log('📥 Carregando redes sociais do config:', config.socialLinks);
-    state.socialLinks = Array.isArray(config.socialLinks) ? [...config.socialLinks] : [];        loadConfig(config);
-        showToast('Dados carregados!', 'success');
+    state.socialLinks = Array.isArray(config.socialLinks) ? [...config.socialLinks] : [];
+    loadConfig(config);
+    showToast('Dados carregados!', 'success');
 
     } catch (error) {
         if (error.message.includes('tempo limite')) {
@@ -1272,7 +1293,7 @@ function renderSocialLinks() {
     if (socialIconsFooter) {
         socialIconsFooter.innerHTML = state.socialLinks.map(link => `
             <a href="${escapeHtml(link.url)}" class="social-icon" target="_blank" rel="noopener noreferrer">
-                <i class="${getIconClass(link.nome)}"></i>
+                ${link.icon || `<i class="${getIconClass(link.name || link.nome)}"></i>` || '📱'}
             </a>
         `).join('');
     }
@@ -1283,16 +1304,20 @@ function renderSocialLinks() {
         list.innerHTML = state.socialLinks.map((link, i) => `
             <div class="social-link-item">
                 <div class="social-preview">
-                    <i class="${getIconClass(link.nome)}" style="font-size: 24px;"></i>
-                    <span class="social-name">${escapeHtml(link.nome)}</span>
+                    ${link.icon || `<i class="${getIconClass(link.name || link.nome)}"></i>` || '📱'}
+                    <span class="social-name">${escapeHtml(link.name || link.nome || '')}</span>
                 </div>
                 <div class="social-inputs">
-                    <input type="text" placeholder="Nome (ex: Facebook)" value="${escapeHtml(link.nome)}" 
-                           onchange="updateSocialLink(${i}, 'nome', this.value)">
-                    <input type="url" placeholder="URL do seu perfil" value="${escapeHtml(link.url)}" 
-                           onchange="updateSocialLink(${i}, 'url', this.value)">
+                    <div class="social-url">
+                        <a href="${escapeHtml(link.url || '')}" target="_blank" rel="noopener noreferrer">
+                            ${escapeHtml(link.url || 'URL não definida')}
+                        </a>
+                    </div>
                 </div>
-                <button class="btn btn-danger" onclick="removeSocialLink(${i})">🗑️</button>
+                <div class="social-actions">
+                    <button class="btn btn-primary" onclick="editSocialLink(${i})">✏️</button>
+                    <button class="btn btn-danger" onclick="removeSocialLink(${i})">🗑️</button>
+                </div>
             </div>
         `).join('');
     }
@@ -1302,6 +1327,8 @@ function renderSocialLinks() {
     if (emptyState) {
         emptyState.style.display = state.socialLinks.length === 0 ? 'flex' : 'none';
     }
+    
+    console.log('✅ UI atualizada com', state.socialLinks.length, 'redes sociais');
 }
 
 function getIconClass(name) {
@@ -1330,106 +1357,173 @@ function getIconClass(name) {
     return 'fas fa-link';
 }
 
-function updateSocialLink(index, field, value) {
-    console.log('🔄 Atualizando rede social:', { index, field, value });
-    
-    if (!Array.isArray(state.socialLinks)) {
-        console.warn('⚠️ state.socialLinks não é um array, inicializando...');
-        state.socialLinks = [];
-    }
-    
-    if (state.socialLinks[index]) {
-        const oldValue = state.socialLinks[index][field];
-        state.socialLinks[index] = {
-            ...state.socialLinks[index],
-            [field]: value
-        };
-        
-        console.log('✅ Rede social atualizada:', {
-            index,
-            oldValue,
-            newValue: value,
-            currentState: state.socialLinks
-        });
-        
-        renderSocialLinks();
-        markAsUnsaved();
-    } else {
-        console.error('❌ Índice inválido ao atualizar rede social:', index);
-    }
-}
 
-function removeSocialLink(index) {
-    if (!Array.isArray(state.socialLinks)) return;
-    state.socialLinks.splice(index, 1);
-    renderSocialLinks();
-    markAsUnsaved();
+
+function editSocialLink(index) {
+    const modal = document.getElementById('socialLinkModal');
+    if (!modal) {
+        console.warn('⚠️ Modal de redes sociais não encontrado');
+        return;
+    }
+
+    // Se o índice for -1, é uma nova rede social
+    if (index === -1) {
+        document.getElementById('currentSocialLinkIndex').value = '';
+        document.getElementById('socialLinkName').value = '';
+        document.getElementById('socialLinkUrl').value = '';
+        modal.style.display = 'block';
+        return;
+    }
+
+    // Verifica se o índice é válido
+    if (!Array.isArray(state.socialLinks) || !state.socialLinks[index]) {
+        console.error('❌ Link social inválido para editar');
+        return;
+    }
+
+    const link = state.socialLinks[index];
+
+    // Preenche os dados do link existente no modal
+    document.getElementById('currentSocialLinkIndex').value = index;
+    document.getElementById('socialLinkName').value = link.name || link.nome || '';
+    document.getElementById('socialLinkUrl').value = link.url || '';
+    
+    modal.style.display = 'block';
 }
 
 function openSocialModal() {
     const modal = document.getElementById('socialModal');
-    if (modal) {
-        modal.style.display = 'block';
-        
-        // Adiciona os cliques nos botões das redes sociais predefinidas
-        const redesPredefinidas = [
-            { nome: 'Instagram', icon: 'fab fa-instagram' },
-            { nome: 'Facebook', icon: 'fab fa-facebook' },
-            { nome: 'Twitter', icon: 'fab fa-twitter' },
-            { nome: 'LinkedIn', icon: 'fab fa-linkedin' },
-            { nome: 'YouTube', icon: 'fab fa-youtube' },
-            { nome: 'WhatsApp', icon: 'fab fa-whatsapp' },
-            { nome: 'TikTok', icon: 'fab fa-tiktok' },
-            { nome: 'Pinterest', icon: 'fab fa-pinterest' }
-        ];
+    if (!modal) return;
 
-        const predefinedTab = document.getElementById('predefinedTab');
-        if (predefinedTab) {
-            predefinedTab.innerHTML = redesPredefinidas.map(rede => `
-                <button class="social-preset-btn" onclick="addPredefinedSocial('${rede.nome}')">
-                    <i class="${rede.icon}"></i>
-                    <span>${rede.nome}</span>
-                </button>
-            `).join('');
-        }
+    // Reset do formulário
+    const socialName = document.getElementById('socialName');
+    const socialUrl = document.getElementById('socialUrl');
+    const customIcon = document.getElementById('customIcon');
+    
+    if (socialName) socialName.value = '';
+    if (socialUrl) socialUrl.value = '';
+    if (customIcon) {
+        customIcon.value = '';
+        const preview = document.getElementById('customIconPreview');
+        if (preview) preview.innerHTML = '📱';
     }
+
+    // Adiciona os cliques nos botões das redes sociais predefinidas
+    const redesPredefinidas = [
+        { nome: 'Instagram', icon: 'fab fa-instagram' },
+        { nome: 'Facebook', icon: 'fab fa-facebook' },
+        { nome: 'Twitter', icon: 'fab fa-twitter' },
+        { nome: 'LinkedIn', icon: 'fab fa-linkedin' },
+        { nome: 'YouTube', icon: 'fab fa-youtube' },
+        { nome: 'WhatsApp', icon: 'fab fa-whatsapp' },
+        { nome: 'TikTok', icon: 'fab fa-tiktok' },
+        { nome: 'Pinterest', icon: 'fab fa-pinterest' }
+    ];
+
+    const predefinedTab = document.getElementById('predefinedTab');
+    if (predefinedTab) {
+        predefinedTab.innerHTML = redesPredefinidas.map(rede => `
+            <button class="social-preset-btn" onclick="addPredefinedSocial('${rede.nome}', '${rede.icon}')">
+                <i class="${rede.icon}"></i>
+                <span>${rede.nome}</span>
+            </button>
+        `).join('');
+    }
+
+    // Reseta a seleção
+    window.selectedNetwork = null;
+    if (!window.editingSocialLinkIndex) {
+        delete window.editingSocialLinkIndex;
+    }
+
+    modal.style.display = 'block';
 }
 
 function closeSocialModal() {
     const modal = document.getElementById('socialModal');
     if (modal) {
         modal.style.display = 'none';
+        delete window.editingSocialLinkIndex;
+        window.selectedNetwork = null;
     }
 }
 
-function addPredefinedSocial(nome) {
-    console.log('➕ Adicionando rede social:', nome);
+function addSocialLink() {
+    editSocialLink(-1); // Usa -1 para indicar nova rede social
+}
+
+function saveSocialLink() {
+    const name = document.getElementById('socialName')?.value.trim();
+    const url = document.getElementById('socialUrl')?.value.trim();
     
-    if (!Array.isArray(state.socialLinks)) {
-        console.warn('⚠️ state.socialLinks não é um array, inicializando...');
-        state.socialLinks = [];
+    if (!name || !url) {
+        showToast('⚠️ Preencha todos os campos obrigatórios', 'warning');
+        return;
     }
 
-    // Adiciona a nova rede social
-    const newSocialLink = { nome: nome, url: '' };
-    state.socialLinks.push(newSocialLink);
-    
-    console.log('✅ Rede social adicionada. Estado atual:', state.socialLinks);
-    
-    // Atualiza a interface
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        showToast('⚠️ URL inválida. Use o formato completo (http:// ou https://)', 'warning');
+        return;
+    }
+
+    let icon;
+    if (window.selectedNetwork) {
+        icon = `<i class="fab fa-${window.selectedNetwork}"></i>`;
+    } else {
+        const customIcon = document.getElementById('customIcon')?.value;
+        icon = customIcon || '📱';
+    }
+
+    const link = {
+        id: Date.now(),
+        name,
+        nome: name, // Para compatibilidade
+        url,
+        icon
+    };
+
+    if (window.editingSocialLinkIndex !== undefined) {
+        state.socialLinks[window.editingSocialLinkIndex] = link;
+        showToast('✅ Rede social atualizada!', 'success');
+        delete window.editingSocialLinkIndex;
+    } else {
+        if (!Array.isArray(state.socialLinks)) {
+            state.socialLinks = [];
+        }
+        state.socialLinks.push(link);
+        showToast('✅ Rede social adicionada!', 'success');
+    }
+
     renderSocialLinks();
     markAsUnsaved();
     closeSocialModal();
 }
 
-function addSocialLink() {
+function addPredefinedSocial(nome, iconClass) {
     if (!Array.isArray(state.socialLinks)) {
         state.socialLinks = [];
     }
-    state.socialLinks.push({ nome: '', url: '' });
+
+    const newLink = {
+        id: Date.now(),
+        name: nome,
+        nome: nome, // Para compatibilidade
+        url: '',
+        icon: `<i class="${iconClass}"></i>`
+    };
+
+    if (window.editingSocialLinkIndex !== undefined) {
+        state.socialLinks[window.editingSocialLinkIndex] = newLink;
+    } else {
+        state.socialLinks.push(newLink);
+    }
+
     renderSocialLinks();
     markAsUnsaved();
+    closeSocialModal();
 }
+    renderSocialLinks();
+    markAsUnsaved();
 
 function removeSocialLink(index) {
     if (confirm('Tem certeza que deseja remover esta rede social?')) {
@@ -1437,11 +1531,6 @@ function removeSocialLink(index) {
         renderSocialLinks();
         markAsUnsaved();
     }
-}
-
-function updateSocialLink(index, field, value) {
-    state.socialLinks[index][field] = value;
-    markAsUnsaved();
 }
 
 // ===== BUSCAR ENDEREÇO =====
@@ -1619,9 +1708,87 @@ window.editarProduto = editarProduto;
 window.removerProduto = removerProduto;
 window.buscarEnderecoMapa = buscarEnderecoMapa;
 window.usarLocalizacaoAtual = usarLocalizacaoAtual;
+// Atualiza uma rede social específica
+async function updateSocialLink(index, field, value) {
+    try {
+        if (!state.socialLinks || !Array.isArray(state.socialLinks)) {
+            console.error('❌ Lista de redes sociais inválida:', state.socialLinks);
+            return;
+        }
+
+        // Verifica se o índice é válido
+        if (index < 0 || index >= state.socialLinks.length) {
+            console.error('❌ Índice inválido:', index);
+            return;
+        }
+
+        // Atualiza o estado local
+        state.socialLinks[index][field] = value;
+        
+        console.log('🔄 Atualizando rede social:', {index, field, value});
+        
+        // Salva no Firebase
+        await saveSocialLinks();
+        
+        // Atualiza a UI
+        renderSocialLinks();
+        
+        showToast('✅ Rede social atualizada com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar rede social:', error);
+        showToast('❌ Erro ao atualizar rede social. Tente novamente.');
+    }
+}
+
+// Função removida pois estava duplicada
+
+// Salva as alterações feitas no modal de edição
+async function saveSocialLinkChanges() {
+    try {
+        const index = parseInt(document.getElementById('currentSocialLinkIndex').value);
+        const name = document.getElementById('socialLinkName').value.trim();
+        const url = document.getElementById('socialLinkUrl').value.trim();
+        
+        if (isNaN(index) || index < 0 || index >= state.socialLinks.length) {
+            throw new Error('Índice inválido');
+        }
+        
+        if (!name || !url) {
+            showToast('❌ Preencha todos os campos!');
+            return;
+        }
+        
+        // Atualiza os dados
+        state.socialLinks[index].name = name;
+        state.socialLinks[index].url = url;
+        
+        // Salva no Firebase
+        await saveSocialLinks();
+        
+        // Atualiza a UI
+        renderSocialLinks();
+        
+        // Fecha o modal
+        document.getElementById('socialLinkModal').style.display = 'none';
+        
+        showToast('✅ Rede social atualizada com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar alterações:', error);
+        showToast('❌ Erro ao salvar. Tente novamente.');
+    }
+}
+
+// Exporta funções para o escopo global
 window.addSocialLink = addSocialLink;
 window.removeSocialLink = removeSocialLink;
 window.updateSocialLink = updateSocialLink;
+window.editSocialLink = editSocialLink;
+window.saveSocialLinkChanges = saveSocialLinkChanges;
+window.closeSocialModal = closeSocialModal;
+window.renderSocialLinks = renderSocialLinks;
+window.saveSocialLink = saveSocialLink;
 
 // Inicialização
 updateSaveStatus();

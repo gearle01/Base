@@ -1463,12 +1463,15 @@ function openSocialModal() {
     modal.style.display = 'block';
 }
 
+// ATUALIZADA: Função para fechar o modal
 function closeSocialModal() {
-    const modal = document.getElementById('socialModal');
+    // CORREÇÃO: O ID correto é 'socialLinkModal'
+    const modal = document.getElementById('socialLinkModal'); 
     if (modal) {
         modal.style.display = 'none';
+        // Limpa os dados de edição
         delete window.editingSocialLinkIndex;
-        window.selectedNetwork = null;
+        document.getElementById('currentSocialLinkIndex').value = '';
     }
 }
 

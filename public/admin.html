@@ -309,29 +309,52 @@
 
                 <!-- Modal de Redes Sociais -->
                     <!-- Modal de Redes Sociais -->
-    <div id="socialLinkModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Editar Rede Social</h2>
-                <span class="close" onclick="closeSocialModal()">&times;</span>
+ <div id="socialLinkModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Editar Rede Social</h2>
+            <span class="close" onclick="closeSocialModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="currentSocialLinkIndex">
+            
+            <div class="form-group">
+                <label for="socialLinkSelect">Rede Social</label>
+                <select id="socialLinkSelect" class="form-group" onchange="toggleCustomSocialName(this.value)" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.95rem; background-color: white;">
+                    <option value="instagram">Instagram</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="twitter">Twitter / X</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="pinterest">Pinterest</option>
+                    <option value="github">GitHub</option>
+                    <option value="spotify">Spotify</option>
+                    <option value="discord">Discord</option>
+                    <option value="twitch">Twitch</option>
+                    <option value="behance">Behance</option>
+                    <option value="dribbble">Dribbble</option>
+                    <option value="custom">Outra (Personalizada)</option>
+                </select>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="currentSocialLinkIndex">
-                <div class="form-group">
-                    <label for="socialLinkName">Nome da Rede Social</label>
-                    <input type="text" id="socialLinkName" placeholder="Ex: Facebook, Instagram, LinkedIn">
-                </div>
-                <div class="form-group">
-                    <label for="socialLinkUrl">URL do Perfil</label>
-                    <input type="url" id="socialLinkUrl" placeholder="https://...">
-                </div>
+
+            <div class="form-group" id="socialLinkNameGroup" style="display: none;">
+                <label for="socialLinkName">Nome da Rede (Personalizado)</label>
+                <input type="text" id="socialLinkName" placeholder="Ex: Meu Blog"> 
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeSocialModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveSocialLinkChanges()">Salvar</button>
+
+            <div class="form-group">
+                <label for="socialLinkUrl">URL do Perfil</label>
+                <input type="url" id="socialLinkUrl" placeholder="https://..."> 
             </div>
         </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeSocialModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveSocialLinkChanges()">Salvar</button>
+        </div>
     </div>
+</div>
 
                 <!-- Font Awesome para ícones de redes sociais -->
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">

@@ -625,9 +625,9 @@ function updateSocialLinks(socialLinks) {
   }
 
   const generateHtml = (link) => {
-    const iconHtml = link.icon.includes('fa-') ? 
+    const iconHtml = (link.icon && link.icon.includes('fa-')) ? 
       link.icon : 
-      `<span style="font-size: 24px;">${link.icon}</span>`;
+      `<span style="font-size: 24px;">${link.icon || '📱'}</span>`;
 
     return `
       <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="${link.name}">

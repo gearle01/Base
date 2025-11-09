@@ -631,11 +631,12 @@ async function saveConfig() {
 
         // Salva as redes sociais
         console.log('📤 Salvando redes sociais:', state.socialLinks);
-        const socialLinksRef = clientDocRef.collection('social_links').doc('data');
+       const socialLinksRef = clientDocRef.collection('social_links').doc('data');
         batch.set(socialLinksRef, { 
             links: state.socialLinks.map(link => ({
                 nome: link.nome || '',
-                url: link.url || ''
+                url: link.url || '',
+                icon: link.icon || '' // <- ADICIONE ESTA LINHA
             }))
         });
 
@@ -1359,6 +1360,17 @@ function getIconClass(name) {
 
 
 
+// ATUALIZADA: Função para mostrar/ocultar o campo de nome personalizado
+function toggleCustomSocialName(value) {
+    const customNameGroup = document.getElementById('socialLinkNameGroup');
+    if (value === 'custom') {
+        customNameGroup.style.display = 'block';
+    } else {
+        customNameGroup.style.display = 'none';
+    }
+}
+
+// ATUALIZADA: Função para abrir o modal de edição/criação
 function editSocialLink(index) {
     const modal = document.getElementById('socialLinkModal');
     if (!modal) {
@@ -1366,31 +1378,43 @@ function editSocialLink(index) {
         return;
     }
 
-    // Se o índice for -1, é uma nova rede social
+    const select = document.getElementById('socialLinkSelect');
+    const customNameInput = document.getElementById('socialLinkName');
+    const urlInput = document.getElementById('socialLinkUrl');
+    const indexInput = document.getElementById('currentSocialLinkIndex');
+
     if (index === -1) {
-        document.getElementById('currentSocialLinkIndex').value = '';
-        document.getElementById('socialLinkName').value = '';
-        document.getElementById('socialLinkUrl').value = '';
-        modal.style.display = 'block';
-        return;
+        // Adicionando nova rede
+        indexInput.value = '';
+        select.value = 'instagram'; // Padrão
+        customNameInput.value = '';
+        urlInput.value = '';
+    } else {
+        // Editando rede existente
+        if (!Array.isArray(state.socialLinks) || !state.socialLinks[index]) {
+            console.error('❌ Link social inválido para editar');
+            return;
+        }
+
+        const link = state.socialLinks[index];
+        const key = link.key || 'custom'; // Usa a 'key' salva, ou 'custom' como fallback
+
+        indexInput.value = index;
+        select.value = key;
+        urlInput.value = link.url || '';
+        
+        // Preenche o nome personalizado apenas se for 'custom'
+        if (key === 'custom') {
+            customNameInput.value = link.name || link.nome || '';
+        } else {
+            customNameInput.value = '';
+        }
     }
-
-    // Verifica se o índice é válido
-    if (!Array.isArray(state.socialLinks) || !state.socialLinks[index]) {
-        console.error('❌ Link social inválido para editar');
-        return;
-    }
-
-    const link = state.socialLinks[index];
-
-    // Preenche os dados do link existente no modal
-    document.getElementById('currentSocialLinkIndex').value = index;
-    document.getElementById('socialLinkName').value = link.name || link.nome || '';
-    document.getElementById('socialLinkUrl').value = link.url || '';
     
+    // Garante que o campo de nome personalizado tenha a visibilidade correta
+    toggleCustomSocialName(select.value);
     modal.style.display = 'block';
 }
-
 function openSocialModal() {
     const modal = document.getElementById('socialModal');
     if (!modal) return;
@@ -1744,57 +1768,68 @@ async function updateSocialLink(index, field, value) {
 // Função removida pois estava duplicada
 
 // Salva as alterações feitas no modal de edição
+// ATUALIZADA: Função para salvar as alterações do modal
 async function saveSocialLinkChanges() {
     try {
-        const indexInput = document.getElementById('currentSocialLinkIndex').value;
-        const index = parseInt(indexInput); // Será NaN se o input for ''
-        const name = document.getElementById('socialLinkName').value.trim();
-        const url = document.getElementById('socialLinkUrl').value.trim();
+        const indexInput = document.getElementById('currentSocialLinkIndex');
+        const select = document.getElementById('socialLinkSelect');
+        const urlInput = document.getElementById('socialLinkUrl');
+        const customNameInput = document.getElementById('socialLinkName');
+
+        const index = indexInput.value ? parseInt(indexInput.value) : -1;
+        const url = urlInput.value.trim();
+        const networkKey = select.value;
+        
+        let name;
+
+        if (networkKey === 'custom') {
+            name = customNameInput.value.trim();
+        } else {
+            name = select.options[select.selectedIndex].text;
+        }
 
         if (!name || !url) {
-            showToast('❌ Preencha todos os campos!');
+            showToast('❌ Preencha o Nome e a URL!', 'error');
+            return;
+        }
+        
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            showToast('⚠️ URL inválida. Use o formato completo (http:// ou https://)', 'warning');
             return;
         }
 
-        // Usar getIconClass para gerar a string do ícone
-        const icon = getIconClass(name); 
+        // Pega o ícone correto usando a 'key'
+        const icon = getIconClass(networkKey); //
 
-        const linkData = {
-            id: Date.now(),
+        const newLink = {
+            id: index !== -1 ? state.socialLinks[index].id : Date.now(),
             name: name,
             nome: name, // Para compatibilidade
             url: url,
-            icon: `<i class="${icon}"></i>` // Guardar o HTML do ícone
+            icon: `<i class="${icon}"></i>`,
+            key: networkKey // Salva a 'key' para edição futura
         };
 
-        if (isNaN(index)) {
-            // --- ADICIONAR UM NOVO LINK ---
+        if (index !== -1) {
+            // Atualiza link existente
+            state.socialLinks[index] = newLink;
+        } else {
+            // Adiciona novo link
             if (!Array.isArray(state.socialLinks)) {
                 state.socialLinks = [];
             }
-            state.socialLinks.push(linkData);
-            showToast('✅ Rede social adicionada!', 'success');
-        } else {
-            // --- EDITAR UM LINK EXISTENTE ---
-            if (index < 0 || index >= state.socialLinks.length) {
-                throw new Error('Índice inválido ao editar');
-            }
-            // Atualizar dados do link existente
-            state.socialLinks[index].name = name;
-            state.socialLinks[index].nome = name;
-            state.socialLinks[index].url = url;
-            state.socialLinks[index].icon = linkData.icon; // Atualizar o ícone também
-            showToast('✅ Rede social atualizada!', 'success');
+            state.socialLinks.push(newLink);
         }
-        
-        // CORREÇÃO DO BUG 2: Chamar a função de gravação correta
-        await saveConfig(); 
+
+        // Salva no Firebase
+        await saveConfig(); // Usa a função saveConfig para salvar tudo
         
         // Atualiza a UI
         renderSocialLinks();
         
-        // Fecha o modal
         document.getElementById('socialLinkModal').style.display = 'none';
+        
+        showToast('✅ Rede social salva com sucesso!', 'success');
         
     } catch (error) {
         console.error('❌ Erro ao salvar alterações:', error);

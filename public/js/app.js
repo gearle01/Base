@@ -407,6 +407,12 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
             update();
             markAsUnsaved();
 
+            // Atualiza e salva automaticamente se for link social
+            if (window.state && window.state.socialLinks) {
+                renderSocialLinks();
+                saveConfig();
+            }
+
         }, function (error) {
             console.error("Erro no upload: ", error);
             showToast('Falha no upload: ' + error.message, 'error');
@@ -468,16 +474,48 @@ async function loadDataFromFirestore() {
         if (sobreDoc.exists) config.sobre = sobreDoc.data();
         if (globalDoc.exists) config.global_settings = globalDoc.data();
         if (produtosSnap) config.produtos = produtosSnap.docs.map(doc => doc.data());
-        if (socialLinksDoc && socialLinksDoc.exists && Array.isArray(socialLinksDoc.data().links)) {
-            config.socialLinks = socialLinksDoc.data().links;
-        } else {
+        // Carrega os dados das redes sociais
+        try {
+            if (socialLinksDoc && socialLinksDoc.exists) {
+                const socialData = socialLinksDoc.data();
+                console.log('📱 Dados de redes sociais carregados:', socialData);
+                
+                if (socialData && Array.isArray(socialData.links)) {
+                    // Validar cada item do array
+                    config.socialLinks = socialData.links.filter(link => {
+                        const isValid = link && typeof link === 'object' && 
+                                      typeof link.nome === 'string' && 
+                                      typeof link.url === 'string';
+                        
+                        if (!isValid) {
+                            console.warn('⚠️ Link social inválido ignorado:', link);
+                        }
+                        return isValid;
+                    });
+                    
+                    if (config.socialLinks.length > 0) {
+                        console.log('✅ Redes sociais configuradas:', config.socialLinks);
+                    } else {
+                        console.warn('⚠️ Nenhum link social válido encontrado');
+                    }
+                } else {
+                    console.warn('⚠️ Dados de redes sociais inválidos:', socialData);
+                    config.socialLinks = [];
+                }
+            } else {
+                console.log('ℹ️ Nenhum dado de redes sociais encontrado');
+                config.socialLinks = [];
+            }
+        } catch (error) {
+            console.error('❌ Erro ao processar dados de redes sociais:', error);
             config.socialLinks = [];
         }
 
-        state.modules = config.modules || state.modules;
-        state.produtos = config.produtos || state.produtos;
-
-        loadConfig(config);
+    state.modules = config.modules || state.modules;
+    state.produtos = config.produtos || state.produtos;
+    
+    console.log('📥 Carregando redes sociais do config:', config.socialLinks);
+    state.socialLinks = Array.isArray(config.socialLinks) ? [...config.socialLinks] : [];        loadConfig(config);
         showToast('Dados carregados!', 'success');
 
     } catch (error) {
@@ -570,8 +608,15 @@ async function saveConfig() {
         const globalSettingsRef = clientDocRef.collection('global_settings').doc('data');
         batch.set(globalSettingsRef, config.global_settings, { merge: true });
 
+        // Salva as redes sociais
+        console.log('📤 Salvando redes sociais:', state.socialLinks);
         const socialLinksRef = clientDocRef.collection('social_links').doc('data');
-        batch.set(socialLinksRef, { links: config.socialLinks || [] }, { merge: true });
+        batch.set(socialLinksRef, { 
+            links: state.socialLinks.map(link => ({
+                nome: link.nome || '',
+                url: link.url || ''
+            }))
+        });
 
         // Produtos - com tratamento melhorado
         const produtosCollectionRef = clientDocRef.collection('produtos');
@@ -801,8 +846,16 @@ function loadConfig(config) {
         }, 500);
     }
 
-    state.socialLinks = config.socialLinks || [];
-    renderSocialLinks();
+    // Atualiza o estado das redes sociais
+    if (Array.isArray(config.socialLinks)) {
+        console.log('🔄 Atualizando estado das redes sociais:', config.socialLinks);
+        state.socialLinks = [...config.socialLinks];
+        renderSocialLinks();
+    } else {
+        console.warn('⚠️ config.socialLinks não é um array:', config.socialLinks);
+        state.socialLinks = [];
+        renderSocialLinks();
+    }
 
     update();
 }
@@ -1208,20 +1261,165 @@ function removerProduto(index) {
 
 // ===== REDES SOCIAIS =====
 function renderSocialLinks() {
-    const list = document.getElementById('socialLinksList');
-    if (!list) return;
-
     if (!Array.isArray(state.socialLinks)) {
         state.socialLinks = [];
     }
 
-    list.innerHTML = state.socialLinks.map((link, i) => `
-        <div class="social-link-item">
-            <input type="text" placeholder="Nome (ex: Facebook)" value="${escapeHtml(link.nome)}" onchange="updateSocialLink(${i}, 'nome', this.value)">
-            <input type="url" placeholder="URL do seu perfil" value="${escapeHtml(link.url)}" onchange="updateSocialLink(${i}, 'url', this.value)">
-            <button class="btn btn-primary" onclick="removeSocialLink(${i})">🗑️</button>
-        </div>
-    `).join('');
+    console.log('🔄 Renderizando redes sociais:', state.socialLinks);
+
+    // Renderiza no footer do site público
+    const socialIconsFooter = document.querySelector(".social-icons-footer");
+    if (socialIconsFooter) {
+        socialIconsFooter.innerHTML = state.socialLinks.map(link => `
+            <a href="${escapeHtml(link.url)}" class="social-icon" target="_blank" rel="noopener noreferrer">
+                <i class="${getIconClass(link.nome)}"></i>
+            </a>
+        `).join('');
+    }
+
+    // Renderiza na lista do admin
+    const list = document.getElementById('socialLinksList');
+    if (list) {
+        list.innerHTML = state.socialLinks.map((link, i) => `
+            <div class="social-link-item">
+                <div class="social-preview">
+                    <i class="${getIconClass(link.nome)}" style="font-size: 24px;"></i>
+                    <span class="social-name">${escapeHtml(link.nome)}</span>
+                </div>
+                <div class="social-inputs">
+                    <input type="text" placeholder="Nome (ex: Facebook)" value="${escapeHtml(link.nome)}" 
+                           onchange="updateSocialLink(${i}, 'nome', this.value)">
+                    <input type="url" placeholder="URL do seu perfil" value="${escapeHtml(link.url)}" 
+                           onchange="updateSocialLink(${i}, 'url', this.value)">
+                </div>
+                <button class="btn btn-danger" onclick="removeSocialLink(${i})">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    // Atualiza o estado vazio
+    const emptyState = document.getElementById('socialEmptyState');
+    if (emptyState) {
+        emptyState.style.display = state.socialLinks.length === 0 ? 'flex' : 'none';
+    }
+}
+
+function getIconClass(name) {
+    const socialIcons = {
+        'facebook': 'fab fa-facebook',
+        'instagram': 'fab fa-instagram',
+        'twitter': 'fab fa-twitter',
+        'linkedin': 'fab fa-linkedin',
+        'youtube': 'fab fa-youtube',
+        'whatsapp': 'fab fa-whatsapp',
+        'github': 'fab fa-github',
+        'tiktok': 'fab fa-tiktok',
+        'pinterest': 'fab fa-pinterest',
+        'telegram': 'fab fa-telegram'
+    };
+
+    // Procura pela rede social ignorando maiúsculas/minúsculas
+    const socialName = name.toLowerCase();
+    for (const [key, value] of Object.entries(socialIcons)) {
+        if (socialName.includes(key)) {
+            return value;
+        }
+    }
+
+    // Ícone padrão se não encontrar correspondência
+    return 'fas fa-link';
+}
+
+function updateSocialLink(index, field, value) {
+    console.log('🔄 Atualizando rede social:', { index, field, value });
+    
+    if (!Array.isArray(state.socialLinks)) {
+        console.warn('⚠️ state.socialLinks não é um array, inicializando...');
+        state.socialLinks = [];
+    }
+    
+    if (state.socialLinks[index]) {
+        const oldValue = state.socialLinks[index][field];
+        state.socialLinks[index] = {
+            ...state.socialLinks[index],
+            [field]: value
+        };
+        
+        console.log('✅ Rede social atualizada:', {
+            index,
+            oldValue,
+            newValue: value,
+            currentState: state.socialLinks
+        });
+        
+        renderSocialLinks();
+        markAsUnsaved();
+    } else {
+        console.error('❌ Índice inválido ao atualizar rede social:', index);
+    }
+}
+
+function removeSocialLink(index) {
+    if (!Array.isArray(state.socialLinks)) return;
+    state.socialLinks.splice(index, 1);
+    renderSocialLinks();
+    markAsUnsaved();
+}
+
+function openSocialModal() {
+    const modal = document.getElementById('socialModal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // Adiciona os cliques nos botões das redes sociais predefinidas
+        const redesPredefinidas = [
+            { nome: 'Instagram', icon: 'fab fa-instagram' },
+            { nome: 'Facebook', icon: 'fab fa-facebook' },
+            { nome: 'Twitter', icon: 'fab fa-twitter' },
+            { nome: 'LinkedIn', icon: 'fab fa-linkedin' },
+            { nome: 'YouTube', icon: 'fab fa-youtube' },
+            { nome: 'WhatsApp', icon: 'fab fa-whatsapp' },
+            { nome: 'TikTok', icon: 'fab fa-tiktok' },
+            { nome: 'Pinterest', icon: 'fab fa-pinterest' }
+        ];
+
+        const predefinedTab = document.getElementById('predefinedTab');
+        if (predefinedTab) {
+            predefinedTab.innerHTML = redesPredefinidas.map(rede => `
+                <button class="social-preset-btn" onclick="addPredefinedSocial('${rede.nome}')">
+                    <i class="${rede.icon}"></i>
+                    <span>${rede.nome}</span>
+                </button>
+            `).join('');
+        }
+    }
+}
+
+function closeSocialModal() {
+    const modal = document.getElementById('socialModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function addPredefinedSocial(nome) {
+    console.log('➕ Adicionando rede social:', nome);
+    
+    if (!Array.isArray(state.socialLinks)) {
+        console.warn('⚠️ state.socialLinks não é um array, inicializando...');
+        state.socialLinks = [];
+    }
+
+    // Adiciona a nova rede social
+    const newSocialLink = { nome: nome, url: '' };
+    state.socialLinks.push(newSocialLink);
+    
+    console.log('✅ Rede social adicionada. Estado atual:', state.socialLinks);
+    
+    // Atualiza a interface
+    renderSocialLinks();
+    markAsUnsaved();
+    closeSocialModal();
 }
 
 function addSocialLink() {

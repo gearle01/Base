@@ -1,4 +1,467 @@
 /* Estilos Globais para a página de Admin */
+
+/* Estilos para o gerenciador de redes sociais */
+.social-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.social-link-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.social-link-item:hover {
+    background: #f0f7ff;
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.social-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 200px;
+    padding: 8px 16px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.social-preview i {
+    color: #333;
+}
+
+.social-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.social-inputs {
+    flex: 1;
+    display: flex;
+    gap: 12px;
+}
+
+.social-inputs input {
+    flex: 1;
+    min-width: 0;
+}
+
+.social-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: #f9f9f9;
+    border: 2px dashed #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    color: #666;
+}
+
+.social-empty-state-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+/* Ajustes para o modal de redes sociais */
+.social-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.social-modal-content {
+    background: white;
+    width: 90%;
+    max-width: 600px;
+    margin: 50px auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.social-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.social-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    color: #666;
+}
+
+.social-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.social-tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.social-tab-btn.active {
+    background: #007bff;
+    color: white;
+}
+
+.social-tab-content {
+    display: none;
+}
+
+.social-tab-content.active {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.social-preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.social-preset-btn:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+    transform: translateY(-2px);
+}
+
+.social-preset-btn i {
+    font-size: 24px;
+    color: #333;
+}
+
+#socialLinksList {
+    margin-bottom: 20px;
+}
+
+.social-link-item {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.social-empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #6c757d;
+}
+
+.social-empty-state-icon {
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+.social-empty-state p {
+    margin: 0;
+    font-size: 16px;
+}
+
+.social-link-url {
+    font-size: 0.85rem;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.social-link-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    width: auto;
+    margin: 0 !important;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-secondary-small {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary-small:hover {
+    background: #5a6268;
+}
+
+.btn-danger-small {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger-small:hover {
+    background: #c82333;
+}
+
+.social-empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    background: #f9f9f9;
+    border: 1px dashed #ddd;
+    border-radius: 6px;
+    color: #999;
+}
+
+.social-empty-state-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+/* Modal para Redes Sociais */
+.social-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.social-modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.social-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.social-modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.social-close {
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.3s;
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+.social-close:hover {
+    color: #000;
+}
+
+.social-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.social-tab-btn {
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #999;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    margin-bottom: -2px;
+}
+
+.social-tab-btn.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+.social-tab-content {
+    display: none;
+}
+
+.social-tab-content.active {
+    display: block;
+}
+
+.social-network-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.social-network-option {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s;
+    background: white;
+}
+
+.social-network-option:hover {
+    border-color: #007bff;
+    background: #f0f7ff;
+}
+
+.social-network-option.selected {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.social-network-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.social-network-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.social-icon-preview-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    background: #f0f0f0;
+    font-size: 32px;
+    margin: 0 auto 15px;
+}
+
+.social-custom-icon-input {
+    font-size: 2rem !important;
+    text-align: center;
+    padding: 16px !important;
+    letter-spacing: 8px;
+}
+
+.social-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.social-modal-actions .btn {
+    flex: 1;
+    padding: 12px;
+    margin: 0 !important;
+}
+
+.btn-social-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-social-cancel:hover {
+    background: #5a6268;
+}
+
+.btn-social-save {
+    background: #28a745;
+    color: white;
+}
+
+.btn-social-save:hover {
+    background: #218838;
+}
+
+.social-common-info {
+    display: none;
+}
+
+.social-common-info.show {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .social-network-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .social-modal-content {
+        width: 95%;
+        margin: 20% auto;
+    }
+}
 .admin-page {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     height: 100vh;

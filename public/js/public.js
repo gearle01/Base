@@ -613,37 +613,30 @@ function updateModuleVisibility(modules) {
 function updateSocialLinks(socialLinks) {
   if (!socialLinks) return;
 
-  const iconMap = {
-    'instagram': 'https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png',
-    'facebook': 'https://img.icons8.com/ios-filled/50/ffffff/facebook.png',
-    'twitter': 'https://img.icons8.com/ios-filled/50/ffffff/twitter.png',
-    'linkedin': 'https://img.icons8.com/ios-filled/50/ffffff/linkedin.png',
-    'youtube': 'https://img.icons8.com/ios-filled/50/ffffff/youtube-play.png',
-    'github': 'https://img.icons8.com/ios-filled/50/ffffff/github.png',
-    'default': 'https://img.icons8.com/ios-filled/50/ffffff/link.png'
-  };
+  const socialIconsFooter = document.querySelector(".social-icons-footer");
+  if (!socialIconsFooter) return;
 
-  const getIcon = (name) => {
-    const lowerCaseName = name.toLowerCase();
-    return iconMap[lowerCaseName] || iconMap['default'];
-  };
-
-  const socialIconsNav = document.querySelector(".social-icons-nav");
-  const socialIconsFooter = document.querySelector(".social-icons");
-
-  const generateHtml = (link) => `
-    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="${link.nome}">
-      <img src="${getIcon(link.nome)}" alt="${link.nome}">
-    </a>
-  `;
-
-  if (socialIconsNav) {
-    socialIconsNav.innerHTML = socialLinks.map(generateHtml).join('');
+  // Adiciona o Font Awesome se ainda não estiver carregado
+  if (!document.querySelector('link[href*="font-awesome"]')) {
+    const fontAwesomeLink = document.createElement('link');
+    fontAwesomeLink.rel = 'stylesheet';
+    fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css';
+    document.head.appendChild(fontAwesomeLink);
   }
 
-  if (socialIconsFooter) {
-    socialIconsFooter.innerHTML = socialLinks.map(generateHtml).join('');
-  }
+  const generateHtml = (link) => {
+    const iconHtml = link.icon.includes('fa-') ? 
+      link.icon : 
+      `<span style="font-size: 24px;">${link.icon}</span>`;
+
+    return `
+      <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="${link.name}">
+        ${iconHtml}
+      </a>
+    `;
+  };
+
+  socialIconsFooter.innerHTML = socialLinks.map(generateHtml).join('');
 }
 
 // Inicialização quando DOM estiver pronto

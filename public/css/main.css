@@ -49,6 +49,56 @@
     font-weight: bold;
 }
 
+/* Links Sociais */
+.social-links {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.social-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    color: white !important;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: translateY(-2px);
+    color: #ccc !important;
+}
+
+.social-icon i, 
+.social-icon span {
+    font-size: 20px;
+    color: white !important;
+}
+
+/* Oculta os ícones sociais na barra de navegação */
+.social-icons-nav {
+    display: none !important;
+}
+
+.site-footer .social-links {
+    justify-content: center;
+    margin: 1.5rem 0;
+    gap: 20px;
+}
+
+.social-icons-footer .social-icon i,
+.social-icons-footer .social-icon span {
+    color: #fff !important;
+    font-size: 32px;
+}
+
+.social-icons-footer .social-icon:hover i,
+.social-icons-footer .social-icon:hover span {
+    color: #ccc !important;
+}
+
 .site-nav-links {
     display: flex;
     gap: 2rem;

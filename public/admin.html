@@ -8,6 +8,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 
 <body class="admin-page">
@@ -296,9 +297,102 @@
 
                 <div class="section">
                     <h3>📱 Redes Sociais</h3>
-                    <div id="socialLinksList"></div>
-                    <button class="btn btn-success" id="addSocialLinkBtn">+ Adicionar Rede Social</button>
+                    <div class="social-empty-state" id="socialEmptyState">
+                        <div class="social-empty-state-icon">📱</div>
+                        <p>Nenhuma rede social adicionada ainda</p>
+                    </div>
+                    <div id="socialLinksList" class="social-links-list">
+                        <!-- Lista de redes sociais será renderizada aqui -->
+                    </div>
+                    <button class="btn btn-success" id="addSocialLinkBtn" onclick="openSocialModal()">+ Adicionar Rede Social</button>
                 </div>
+
+                <!-- Modal de Redes Sociais -->
+                <div id="socialModal" class="social-modal">
+                    <div class="social-modal-content">
+                        <div class="social-modal-header">
+                            <h3 id="socialModalTitle">Adicionar Rede Social</h3>
+                            <button class="social-close" onclick="closeSocialModal()">&times;</button>
+                        </div>
+
+                        <div class="social-tabs">
+                            <button class="social-tab-btn active" data-tab="predefined">Redes Populares</button>
+                            <button class="social-tab-btn" data-tab="custom">Personalizado</button>
+                        </div>
+
+                        <div class="social-tab-content active" id="predefinedTab">
+                            <div class="social-network-grid">
+                                <!-- Redes Sociais Predefinidas -->
+                                <div class="social-network-option" data-network="instagram">
+                                    <i class="fab fa-instagram social-network-icon"></i>
+                                    <div class="social-network-name">Instagram</div>
+                                </div>
+                                <div class="social-network-option" data-network="facebook">
+                                    <i class="fab fa-facebook social-network-icon"></i>
+                                    <div class="social-network-name">Facebook</div>
+                                </div>
+                                <div class="social-network-option" data-network="twitter">
+                                    <i class="fab fa-twitter social-network-icon"></i>
+                                    <div class="social-network-name">Twitter</div>
+                                </div>
+                                <div class="social-network-option" data-network="linkedin">
+                                    <i class="fab fa-linkedin social-network-icon"></i>
+                                    <div class="social-network-name">LinkedIn</div>
+                                </div>
+                                <div class="social-network-option" data-network="youtube">
+                                    <i class="fab fa-youtube social-network-icon"></i>
+                                    <div class="social-network-name">YouTube</div>
+                                </div>
+                                <div class="social-network-option" data-network="whatsapp">
+                                    <i class="fab fa-whatsapp social-network-icon"></i>
+                                    <div class="social-network-name">WhatsApp</div>
+                                </div>
+                                <div class="social-network-option" data-network="telegram">
+                                    <i class="fab fa-telegram social-network-icon"></i>
+                                    <div class="social-network-name">Telegram</div>
+                                </div>
+                                <div class="social-network-option" data-network="pinterest">
+                                    <i class="fab fa-pinterest social-network-icon"></i>
+                                    <div class="social-network-name">Pinterest</div>
+                                </div>
+                                <div class="social-network-option" data-network="tiktok">
+                                    <i class="fab fa-tiktok social-network-icon"></i>
+                                    <div class="social-network-name">TikTok</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="social-tab-content" id="customTab">
+                            <div class="form-group">
+                                <label for="customIcon">Ícone Personalizado</label>
+                                <input type="text" id="customIcon" class="social-custom-icon-input" maxlength="2" placeholder="📱">
+                                <small class="small-text">Digite um emoji ou símbolo para usar como ícone</small>
+                            </div>
+                            <div class="social-icon-preview-box" id="customIconPreview">
+                                📱
+                            </div>
+                        </div>
+
+                        <div class="social-common-info">
+                            <div class="form-group">
+                                <label for="socialName">Nome da Rede Social *</label>
+                                <input type="text" id="socialName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="socialUrl">URL do Perfil *</label>
+                                <input type="url" id="socialUrl" required placeholder="https://">
+                            </div>
+                        </div>
+
+                        <div class="social-modal-actions">
+                            <button class="btn btn-social-cancel" onclick="closeSocialModal()">Cancelar</button>
+                            <button class="btn btn-social-save" onclick="saveSocialLink()">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Font Awesome para ícones de redes sociais -->
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
@@ -476,6 +570,306 @@
                 adminButton.style.display = 'none';
             }
         };
+    </script>
+
+    <script>
+        // Sistema de Notificações Toast
+        const toastSystem = {
+            show: function(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.textContent = message;
+
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 100);
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        container.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+        };
+
+        // Gerenciamento de Redes Sociais
+        let selectedNetwork = null;
+        if (typeof window.state === 'undefined') {
+            window.state = {
+                modules: { sobre: true, produtos: true, contato: true },
+                produtos: [],
+                socialLinks: []
+            };
+        }
+
+        // Abrir Modal
+        function openSocialModal() {
+            document.getElementById('socialModal').style.display = 'block';
+            document.getElementById('socialName').value = '';
+            document.getElementById('socialUrl').value = '';
+            document.getElementById('customIcon').value = '';
+            document.querySelector('.social-common-info').classList.remove('show');
+            
+            // Resetar seleção de rede social
+            const options = document.querySelectorAll('.social-network-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            selectedNetwork = null;
+        }
+
+        // Fechar Modal
+        function closeSocialModal() {
+            document.getElementById('socialModal').style.display = 'none';
+        }
+
+        // Switch entre abas
+        document.querySelectorAll('.social-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Alternar botões
+                document.querySelectorAll('.social-tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Alternar conteúdo
+                document.querySelectorAll('.social-tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
+
+                // Mostrar/ocultar informações comuns
+                if (this.dataset.tab === 'custom') {
+                    document.querySelector('.social-common-info').classList.add('show');
+                } else {
+                    document.querySelector('.social-common-info').classList.remove('show');
+                }
+            });
+        });
+
+        // Selecionar rede social predefinida
+        document.querySelectorAll('.social-network-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.social-network-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedNetwork = this.dataset.network;
+                
+                // Preencher nome e mostrar campos comuns
+                document.getElementById('socialName').value = this.querySelector('.social-network-name').textContent;
+                document.querySelector('.social-common-info').classList.add('show');
+                document.getElementById('socialUrl').focus();
+            });
+        });
+
+        // Preview do ícone personalizado
+        document.getElementById('customIcon').addEventListener('input', function() {
+            document.getElementById('customIconPreview').textContent = this.value || '📱';
+        });
+
+        // Salvar link social
+        function saveSocialLink() {
+            const name = document.getElementById('socialName').value.trim();
+            const url = document.getElementById('socialUrl').value.trim();
+            
+            if (!name || !url) {
+                toastSystem.show('⚠️ Preencha todos os campos obrigatórios', 'warning');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                toastSystem.show('⚠️ URL inválida. Use o formato completo (http:// ou https://)', 'warning');
+                return;
+            }
+
+            let icon;
+            if (selectedNetwork) {
+                // Usar ícone da rede social predefinida
+                icon = `<i class="fab fa-${selectedNetwork}"></i>`;
+            } else {
+                // Usar ícone personalizado
+                icon = document.getElementById('customIcon').value || '📱';
+            }
+
+            const link = {
+                id: Date.now(),
+                name,
+                url,
+                icon
+            };
+
+            window.state.socialLinks.push(link);
+            renderSocialLinks();
+            closeSocialModal();
+            if (typeof markAsUnsaved === 'function') markAsUnsaved();
+            if (typeof update === 'function') update();
+            
+            // Atualiza o preview e salva no Firebase
+            updatePreviewSocialLinks();
+
+            // Salva imediatamente no Firebase
+            const user = firebase.auth().currentUser;
+            if (user && firebase.firestore) {
+                const db = firebase.firestore();
+                const socialLinksRef = db.collection('site').doc('cliente-001').collection('social_links').doc('data');
+                socialLinksRef.set({ 
+                    links: window.state.socialLinks 
+                }, { merge: true })
+                .then(() => {
+                    toastSystem.show('✅ Rede social adicionada e salva com sucesso!', 'success');
+                })
+                .catch(error => {
+                    console.error('Erro ao salvar no Firebase:', error);
+                    toastSystem.show('⚠️ Rede social adicionada, mas houve erro ao salvar no Firebase', 'warning');
+                });
+            }
+        }
+
+        // Renderizar lista de links sociais
+        // Função de sanitização de HTML para uso local
+        function sanitizeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Função para atualizar links no preview do iframe
+        function updatePreviewSocialLinks() {
+            const previewIframe = document.getElementById('preview-iframe');
+            if (previewIframe && previewIframe.contentWindow) {
+                const previewDoc = previewIframe.contentWindow.document;
+                const previewLinks = previewDoc.querySelector('.social-links');
+                if (previewLinks) {
+                    previewLinks.innerHTML = window.state.socialLinks.map(link => `
+                        <a href="${sanitizeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="social-link">
+                            ${link.icon}
+                        </a>
+                    `).join('');
+                }
+            }
+        }
+
+        function renderSocialLinks() {
+            const container = document.getElementById('socialLinksList');
+            if (!container) {
+                console.error('Elemento socialLinksList não encontrado');
+                return;
+            }
+
+            // Atualiza também os links no preview
+            const previewLinks = document.querySelector('.social-links');
+            if (previewLinks) {
+                previewLinks.innerHTML = window.state.socialLinks.map(link => `
+                    <a href="${sanitizeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="social-link">
+                        ${link.icon}
+                    </a>
+                `).join('');
+            }
+
+            // Verifica se o estado vazio já existe, se não, cria
+            let emptyState = document.getElementById('socialEmptyState');
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.id = 'socialEmptyState';
+                emptyState.className = 'social-empty-state';
+                emptyState.innerHTML = `
+                    <div class="social-empty-state-icon">📱</div>
+                    <p>Nenhuma rede social adicionada ainda</p>
+                `;
+                container.appendChild(emptyState);
+            }
+            
+            // Limpa o container antes de renderizar
+            container.innerHTML = '';
+            
+            if (window.state.socialLinks.length === 0) {
+                container.appendChild(emptyState);
+                return;
+            }
+
+            // Renderiza os links sociais
+            const linksHTML = window.state.socialLinks.map(link => `
+                <div class="social-link-item">
+                    <div class="social-icon-preview">
+                        ${link.icon}
+                    </div>
+                    <div class="social-link-info">
+                        <div class="social-link-name">${sanitizeHtml(link.name)}</div>
+                        <div class="social-link-url">${sanitizeHtml(link.url)}</div>
+                    </div>
+                    <div class="social-link-actions">
+                        <button class="btn-small btn-secondary-small" onclick="editSocialLink(${link.id})">✏️</button>
+                        <button class="btn-small btn-danger-small" onclick="deleteSocialLink(${link.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = linksHTML;
+        }
+
+        // Editar link social
+        function editSocialLink(id) {
+            const link = socialLinks.find(l => l.id === id);
+            if (!link) return;
+
+            document.getElementById('socialName').value = link.name;
+            document.getElementById('socialUrl').value = link.url;
+
+            // Se for um ícone predefinido
+            if (link.icon.includes('fa-')) {
+                const network = link.icon.match(/fa-(\w+)/)[1];
+                const option = document.querySelector(`[data-network="${network}"]`);
+                if (option) {
+                    option.click();
+                }
+            } else {
+                // Se for um ícone personalizado
+                document.querySelector('[data-tab="custom"]').click();
+                document.getElementById('customIcon').value = link.icon;
+                document.getElementById('customIconPreview').textContent = link.icon;
+            }
+
+            openSocialModal();
+            
+            // Remover o link antigo
+            socialLinks = socialLinks.filter(l => l.id !== id);
+        }
+
+        // Deletar link social
+        function deleteSocialLink(id) {
+            if (confirm('Tem certeza que deseja excluir esta rede social?')) {
+                window.state.socialLinks = window.state.socialLinks.filter(l => l.id !== id);
+                renderSocialLinks();
+                if (typeof markAsUnsaved === 'function') markAsUnsaved();
+                if (typeof update === 'function') update();
+                
+                // Atualiza o preview e remove do Firebase
+                updatePreviewSocialLinks();
+
+                // Remove do Firebase
+                const user = firebase.auth().currentUser;
+                if (user && firebase.firestore) {
+                    const db = firebase.firestore();
+                    const socialLinksRef = db.collection('site').doc('cliente-001').collection('social_links').doc('data');
+                    socialLinksRef.set({ 
+                        links: window.state.socialLinks 
+                    }, { merge: true })
+                    .then(() => {
+                        toastSystem.show('✅ Rede social removida e salva com sucesso!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Erro ao salvar no Firebase:', error);
+                        toastSystem.show('⚠️ Rede social removida, mas houve erro ao salvar no Firebase', 'warning');
+                    });
+                }
+            }
+        }
+
+        // Inicializar lista vazia
+        renderSocialLinks();
     </script>
 
 </body>

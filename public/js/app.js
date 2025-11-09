@@ -1746,33 +1746,55 @@ async function updateSocialLink(index, field, value) {
 // Salva as alterações feitas no modal de edição
 async function saveSocialLinkChanges() {
     try {
-        const index = parseInt(document.getElementById('currentSocialLinkIndex').value);
+        const indexInput = document.getElementById('currentSocialLinkIndex').value;
+        const index = parseInt(indexInput); // Será NaN se o input for ''
         const name = document.getElementById('socialLinkName').value.trim();
         const url = document.getElementById('socialLinkUrl').value.trim();
-        
-        if (isNaN(index) || index < 0 || index >= state.socialLinks.length) {
-            throw new Error('Índice inválido');
-        }
-        
+
         if (!name || !url) {
             showToast('❌ Preencha todos os campos!');
             return;
         }
+
+        // Usar getIconClass para gerar a string do ícone
+        const icon = getIconClass(name); 
+
+        const linkData = {
+            id: Date.now(),
+            name: name,
+            nome: name, // Para compatibilidade
+            url: url,
+            icon: `<i class="${icon}"></i>` // Guardar o HTML do ícone
+        };
+
+        if (isNaN(index)) {
+            // --- ADICIONAR UM NOVO LINK ---
+            if (!Array.isArray(state.socialLinks)) {
+                state.socialLinks = [];
+            }
+            state.socialLinks.push(linkData);
+            showToast('✅ Rede social adicionada!', 'success');
+        } else {
+            // --- EDITAR UM LINK EXISTENTE ---
+            if (index < 0 || index >= state.socialLinks.length) {
+                throw new Error('Índice inválido ao editar');
+            }
+            // Atualizar dados do link existente
+            state.socialLinks[index].name = name;
+            state.socialLinks[index].nome = name;
+            state.socialLinks[index].url = url;
+            state.socialLinks[index].icon = linkData.icon; // Atualizar o ícone também
+            showToast('✅ Rede social atualizada!', 'success');
+        }
         
-        // Atualiza os dados
-        state.socialLinks[index].name = name;
-        state.socialLinks[index].url = url;
-        
-        // Salva no Firebase
-        await saveSocialLinks();
+        // CORREÇÃO DO BUG 2: Chamar a função de gravação correta
+        await saveConfig(); 
         
         // Atualiza a UI
         renderSocialLinks();
         
         // Fecha o modal
         document.getElementById('socialLinkModal').style.display = 'none';
-        
-        showToast('✅ Rede social atualizada com sucesso!');
         
     } catch (error) {
         console.error('❌ Erro ao salvar alterações:', error);

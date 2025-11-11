@@ -14,7 +14,7 @@
 
         client
             .setEndpoint('https://sfo.cloud.appwrite.io/v1')
-            .setProject('68f04b740016e7f878b3');
+            .setProject('691287dd003bc7260e15');
 
         window.appwriteStorage = new Appwrite.Storage(client);
         window.appwriteClient = client;

@@ -226,34 +226,25 @@ async function initializeApp(user) {
         SessionMonitor.init();
         console.log('✅ [app.js] SessionMonitor inicializado.');
 
-        // Tenta usar Appwrite (de forma não bloqueante)
-        (async () => {
+        // Aguarda Appwrite estar pronto e cria uma sessão anônima
+        window.addEventListener('appwriteReady', async () => {
             try {
-                if (typeof Appwrite === 'undefined') {
-                    // Adiciona um timeout para não esperar para sempre
-                    await new Promise((resolve, reject) => {
-                        const timer = setTimeout(() => reject(new Error('Appwrite não carregou a tempo')), 5000);
-                        window.addEventListener('appwriteReady', () => {
-                            clearTimeout(timer);
-                            resolve();
-                        }, { once: true });
-                    });
+                if (!window.appwriteClient) {
+                    console.error('❌ [app.js] Cliente Appwrite não encontrado após appwriteReady.');
+                    return;
                 }
-
                 const account = new Appwrite.Account(window.appwriteClient);
-
-                try {
-                    await account.createAnonymousSession();
-                    console.log('✅ [app.js] Sessão Appwrite criada');
-                } catch (error) {
-                    if (error.code !== 401) { // 401 é "Unauthorized", geralmente significa que já há uma sessão
-                        console.log('ℹ️ [app.js] Sessão Appwrite já existe ou outro erro:', error.message);
-                    }
-                }
+                await account.createAnonymousSession();
+                console.log('✅ [app.js] Sessão anônima Appwrite criada com sucesso.');
             } catch (error) {
-                console.warn('⚠️ [app.js] Appwrite não inicializado:', error.message);
+                // Erro 409 (Conflict) geralmente significa que uma sessão já existe, o que é seguro ignorar.
+                if (error.code !== 409) { 
+                    console.warn('⚠️ [app.js] Não foi possível criar sessão anônima no Appwrite:', error.message);
+                } else {
+                    console.log('ℹ️ [app.js] Sessão anônima no Appwrite já existia.');
+                }
             }
-        })();
+        }, { once: true });
 
         await loadDataFromFirestore();
         console.log('✅ [app.js] Dados carregados do Firestore.');
@@ -399,15 +390,15 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
 
         showToast(`Fazendo upload de ${file.name}...`, 'info');
 
-        const promise = appwriteStorage.createFile(
-            '68f04fe50018c9e1abc4',
+        const promise = window.appwriteStorage.createFile(
+            '691287dd003bc7260e15',
             'unique()',
             compressedFile
         );
 
         promise.then(function (response) {
             const fileId = response.$id;
-            const viewResult = appwriteStorage.getFileView('68f04fe50018c9e1abc4', fileId);
+            const viewResult = window.appwriteStorage.getFileView('691287dd003bc7260e15', fileId);
             const downloadURL = viewResult.href;
 
             document.getElementById(targetInputId).value = downloadURL;

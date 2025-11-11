@@ -544,6 +544,13 @@ function updateContactSection(contato) {
   const emailPreview = document.getElementById("emailPreview");
   if (emailPreview) emailPreview.textContent = contato.email || "";
 
+  // Atualizar link de email dinamicamente
+  const emailLink = document.getElementById('emailLink');
+  if (emailLink && contato && contato.email) {
+      emailLink.href = `mailto:${contato.email}`;
+      emailLink.title = `Enviar email para ${contato.email}`;
+  }
+
   const enderecoPreview = document.getElementById("enderecoPreview");
   if (enderecoPreview) enderecoPreview.textContent = contato.endereco || "";
 

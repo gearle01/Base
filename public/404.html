@@ -1,33 +1,504 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="pt-BR">
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Page Not Found</title>
+    <title>Página Não Encontrada</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px 16px; border-radius: 3px; }
-      #message h3 { color: #888; font-weight: normal; font-size: 16px; margin: 16px 0 12px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
+        :root {
+            --color-primary: #007bff;
+            --color-secondary: #28a745;
+            --color-dark: #343a40;
+            --color-light: #f8f9fa;
+            --color-text: #495057;
+            --color-border: #dee2e6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 60px 40px;
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+            border-top: 5px solid var(--color-primary);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: 900;
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+            text-shadow: 2px 2px 4px rgba(0, 123, 255, 0.1);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .error-icon {
+            font-size: 80px;
+            color: var(--color-secondary);
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .error-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-dark);
+            margin-bottom: 15px;
+        }
+
+        .error-description {
+            font-size: 16px;
+            color: var(--color-text);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            box-shadow: 0 10px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 123, 255, 0.6);
+        }
+
+        .btn-secondary {
+            background: var(--color-light);
+            color: var(--color-dark);
+            border: 2px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-secondary);
+            color: white;
+            border-color: var(--color-secondary);
+        }
+
+        /* Seção de Redes Sociais */
+        .social-section {
+            padding-top: 40px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .social-title {
+            font-size: 14px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 50px;
+            align-items: center;
+        }
+
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--color-light);
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            border: 2px solid var(--color-border);
+        }
+
+        .social-icon:hover {
+            background: var(--color-primary);
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .social-icon.instagram:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .social-icon.facebook:hover {
+            background: #1877F2;
+            border-color: #1877F2;
+        }
+
+        .social-icon.linkedin:hover {
+            background: #0A66C2;
+            border-color: #0A66C2;
+        }
+
+        .social-icon.twitter:hover {
+            background: #1DA1F2;
+            border-color: #1DA1F2;
+        }
+
+        .social-icon.whatsapp:hover {
+            background: #25D366;
+            border-color: #25D366;
+        }
+
+        .social-icon.youtube:hover {
+            background: #FF0000;
+            border-color: #FF0000;
+        }
+
+        /* Design Responsivo */
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 25px;
+            }
+
+            .error-code {
+                font-size: 80px;
+            }
+
+            .error-icon {
+                font-size: 60px;
+            }
+
+            .error-title {
+                font-size: 24px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .social-section {
+                padding-top: 30px;
+                margin-top: 30px;
+            }
+
+            .social-links {
+                gap: 12px;
+                justify-content: center;
+            }
+
+            .social-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .logo-section {
+                margin-bottom: 30px;
+                padding-bottom: 15px;
+            }
+
+            .logo-section img {
+                max-height: 50px;
+            }
+
+            .logo-section div {
+                font-size: 16px;
+            }
+        }
+
+        /* Modo Escuro */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #004e99 0%, #1a4d2e 100%);
+            }
+
+            .container {
+                background: #1a1a1a;
+                border-top-color: var(--color-primary);
+            }
+
+            .error-title {
+                color: #ecf0f1;
+            }
+
+            .error-description {
+                color: #bdc3c7;
+            }
+
+            .btn-secondary {
+                background: #2c3e50;
+                color: #ecf0f1;
+                border-color: #34495e;
+            }
+
+            .btn-secondary:hover {
+                background: var(--color-secondary);
+                border-color: var(--color-secondary);
+            }
+
+            .social-section {
+                border-top-color: #34495e;
+            }
+
+            .social-icon {
+                background: #2c3e50;
+                border-color: #34495e;
+                color: var(--color-secondary);
+            }
+        }
+
+        .details {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .logo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border-bottom: 3px solid var(--color-primary);
+            background: var(--color-light);
+            border-radius: 8px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-section img {
+            max-height: 70px;
+            opacity: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .logo-section div {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+            word-break: break-word;
+        }
     </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>404</h2>
-      <h1>Page Not Found</h1>
-      <p>The specified file was not found on this website. Please check the URL for mistakes and try again.</p>
-      <h3>Why am I seeing this?</h3>
-      <p>This page was generated by the Firebase Command-Line Interface. To modify it, edit the <code>404.html</code> file in your project's configured <code>public</code> directory.</p>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-section" id="logoSection"></div>
+        
+        <div class="error-icon">😕</div>
+        <div class="error-code">404</div>
+        <h1 class="error-title">Página Não Encontrada</h1>
+        <p class="error-description">
+            Desculpe! A página que você está procurando não existe ou foi movida.
+        </p>
+
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Voltar ao Início
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
+            </a>
+        </div>
+
+        <!-- Seção de Redes Sociais -->
+        <div class="social-section">
+            <div class="social-title">Siga-nos</div>
+            <div class="social-links" id="socialLinks">
+                <!-- Será preenchido dinamicamente do Firebase -->
+            </div>
+        </div>
+
+        <div class="details">
+            Código de erro: 404 | Página não encontrada
+        </div>
     </div>
-  </body>
+
+    <script>
+        // Inicializar Firebase
+        async function loadConfig() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    console.log('⏳ Aguardando Firebase SDK...');
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    return loadConfig();
+                }
+
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+
+                const db = firebase.firestore();
+                const clientId = 'cliente-001';
+                
+                // Carregar configurações
+                const [clientDoc, socialLinksDoc] = await Promise.all([
+                    db.collection('site').doc(clientId).get(),
+                    db.collection('site').doc(clientId).collection('social_links').doc('data').get()
+                ]);
+
+                if (clientDoc.exists) {
+                    const data = clientDoc.data();
+                    
+                    // Aplicar cores do site
+                    if (data.cores) {
+                        document.documentElement.style.setProperty('--color-primary', data.cores.primaria || '#007bff');
+                        document.documentElement.style.setProperty('--color-secondary', data.cores.secundaria || '#28a745');
+                    }
+
+                    // Mostrar logo se existir
+                    if (data.logoImageUrl || data.empresaNome) {
+                        const logoSection = document.getElementById('logoSection');
+                        if (data.logoImageUrl && data.logoType === 'image') {
+                            logoSection.innerHTML = `<img src="${data.logoImageUrl}" alt="${data.empresaNome}">`;
+                        } else if (data.empresaNome) {
+                            logoSection.innerHTML = `<div style="font-weight: bold; font-size: 18px; color: var(--color-primary);">${data.empresaNome}</div>`;
+                        }
+                    }
+                }
+
+                // Carregar redes sociais
+                if (socialLinksDoc.exists) {
+                    const socialData = socialLinksDoc.data();
+                    if (socialData.links && Array.isArray(socialData.links) && socialData.links.length > 0) {
+                        const socialLinks = document.getElementById('socialLinks');
+                        socialLinks.innerHTML = socialData.links.map(link => `
+                            <a href="${link.url}" class="social-icon ${getNetworkClass(link.name)}" title="${link.name}" target="_blank" rel="noopener noreferrer">
+                                <i class="${getIconClass(link.name)}"></i>
+                            </a>
+                        `).join('');
+                    } else {
+                        renderDefaultSocialLinks();
+                    }
+                } else {
+                    renderDefaultSocialLinks();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+                // Usar valores padrão
+                renderDefaultSocialLinks();
+            }
+        }
+
+        function getNetworkClass(name) {
+            if (!name) return '';
+            const lower = name.toLowerCase();
+            if (lower.includes('instagram')) return 'instagram';
+            if (lower.includes('facebook')) return 'facebook';
+            if (lower.includes('linkedin')) return 'linkedin';
+            if (lower.includes('twitter') || lower.includes('x')) return 'twitter';
+            if (lower.includes('whatsapp')) return 'whatsapp';
+            if (lower.includes('youtube')) return 'youtube';
+            return '';
+        }
+
+        function getIconClass(name) {
+            if (!name) return 'fas fa-link';
+            const lower = name.toLowerCase();
+            if (lower.includes('instagram')) return 'fab fa-instagram';
+            if (lower.includes('facebook')) return 'fab fa-facebook-f';
+            if (lower.includes('linkedin')) return 'fab fa-linkedin-in';
+            if (lower.includes('twitter') || lower.includes('x')) return 'fab fa-twitter';
+            if (lower.includes('whatsapp')) return 'fab fa-whatsapp';
+            if (lower.includes('youtube')) return 'fab fa-youtube';
+            return 'fas fa-link';
+        }
+
+        function renderDefaultSocialLinks() {
+            // Renderizar links padrão se não conseguir do Firebase
+            const socialLinks = document.getElementById('socialLinks');
+            socialLinks.innerHTML = `
+                <a href="#" class="social-icon instagram" title="Instagram" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="social-icon facebook" title="Facebook" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-icon linkedin" title="LinkedIn" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="#" class="social-icon twitter" title="Twitter" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="social-icon whatsapp" title="WhatsApp" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            `;
+        }
+
+        // Carregar quando a página estiver pronta
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
 </html>

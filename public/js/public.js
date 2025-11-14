@@ -235,14 +235,25 @@ async function loadDataFromFirestore() {
  * Cria Virtual DOM para um produto
  */
 function createProductVNode(produto) {
+  // Otimização: se a imagem for do Unsplash, redimensiona para performance
+  const imageUrl = (produto.imagem && produto.imagem.includes('unsplash.com'))
+    ? `${produto.imagem}&q=80&w=400`
+    : produto.imagem || 'https://via.placeholder.com/400';
+
   return vdom.createElement('div', { 
     className: 'product-card', 
     'data-id': produto.id 
   },
     vdom.createElement('div', { 
-      className: 'product-image',
-      style: `background-image: url(${produto.imagem || 'https://via.placeholder.com/400'}); background-position: ${produto.foco || 'center'};`
-    }),
+      className: 'product-image'
+    },
+      vdom.createElement('img', {
+        src: imageUrl,
+        alt: produto.nome || 'Imagem do produto',
+        loading: 'lazy', // Adiciona lazy loading
+        style: `object-position: ${produto.foco || 'center'};`
+      })
+    ),
     vdom.createElement('div', { className: 'product-info' },
       vdom.createElement('h3', {}, produto.nome),
       vdom.createElement('div', { className: 'product-price' }, produto.preco),
@@ -464,24 +475,52 @@ function updateBanner(data) {
 }
 
 /**
- * Aplica cores do tema
+ * Aplica cores do tema com verificação de acessibilidade
  */
 function applyColors(cores) {
-  if (!cores) return;
+  if (!cores || !window.ColorContrast) return;
 
-  document.documentElement.style.setProperty("--primary-color", cores.primaria);
-  document.documentElement.style.setProperty("--secondary-color", cores.secundaria);
+  const { getContrastRatio, getAccessibleTextColor } = window.ColorContrast;
+  const MIN_CONTRAST_RATIO = 4.5; // WCAG AA para texto normal
 
+  const primaryColor = cores.primaria;
+  const secondaryColor = cores.secundaria;
+  const white = '#FFFFFF';
+  const bodyBg = getComputedStyle(document.body).backgroundColor || white;
+
+  // Aplica variáveis CSS globais
+  document.documentElement.style.setProperty("--primary-color", primaryColor);
+  document.documentElement.style.setProperty("--secondary-color", secondaryColor);
+
+  // 1. Links de navegação (texto primário em fundo branco/body)
   document.querySelectorAll(".site-nav-links a").forEach(a => {
-    a.style.color = cores.primaria;
+    const contrast = getContrastRatio(primaryColor, bodyBg);
+    if (contrast !== null && contrast < MIN_CONTRAST_RATIO) {
+      console.warn(`Contraste baixo (${contrast.toFixed(2)}:1) para links de navegação. Considere uma cor primária mais escura.`);
+      // Poderia adicionar uma classe de fallback ou ajustar a cor aqui se necessário
+    }
+    a.style.color = primaryColor;
   });
 
+  // 2. Ícones de contato (ícone branco em fundo primário)
   document.querySelectorAll(".contact-icon").forEach(icon => {
-    icon.style.background = cores.primaria;
+    icon.style.background = primaryColor;
+    // O ícone é SVG, a cor é definida como 'white' no HTML.
+    // Vamos garantir que o contraste seja bom.
+    const accessibleColor = getAccessibleTextColor(primaryColor);
+    const svgIcon = icon.querySelector('svg');
+    if (svgIcon) {
+      svgIcon.style.fill = accessibleColor;
+    }
   });
 
+  // 3. Botão CTA (texto em fundo secundário)
   const ctaBtn = document.querySelector(".cta-btn");
-  if (ctaBtn) ctaBtn.style.background = cores.secundaria;
+  if (ctaBtn) {
+    ctaBtn.style.background = secondaryColor;
+    const accessibleColor = getAccessibleTextColor(secondaryColor);
+    ctaBtn.style.color = accessibleColor;
+  }
 }
 
 /**
@@ -493,9 +532,17 @@ function updateAboutSection(sobre) {
   const sobreTexto = document.getElementById("sobreTextoPreview");
   if (sobreTexto) sobreTexto.textContent = sobre.texto || "";
 
-  const sobreImagem = document.getElementById("sobreImagemPreview");
-  if (sobreImagem && sobre.imagem) {
-    sobreImagem.style.backgroundImage = `url(${sobre.imagem})`;
+  const sobreImagemContainer = document.getElementById("sobreImagemPreview");
+  if (sobreImagemContainer && sobre.imagem) {
+    sobreImagemContainer.innerHTML = ''; // Limpa conteúdo anterior
+    const img = document.createElement('img');
+    img.src = sobre.imagem;
+    img.alt = "Imagem da seção Sobre Nós";
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '8px';
+    sobreImagemContainer.appendChild(img);
   }
 }
 
@@ -577,6 +624,7 @@ function updateMap(contato) {
         height="100%" 
         style="border:0; min-height: 350px; border-radius: 8px;" 
         loading="lazy"
+        title="Mapa de localização da empresa"
         referrerpolicy="no-referrer-when-downgrade"
         src="${mapUrl}">
       </iframe>

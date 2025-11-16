@@ -1,10 +1,22 @@
 /**
  * ✅ CORRIGIDO: Script público com melhor tratamento de carregamento
+ *
+ * ✅ CORREÇÃO:
+ * - Lógica do Logo para renderizar imagem ou texto.
+ * - Lógica do Título para usar o nome da empresa ou um fallback genérico (não "GSM").
  */
 
 console.log('🚀 [public.js] Iniciando...');
 
-const { debounce, cache, vdom, imageLoader, loading } = window.SiteModules || {};
+// Tenta obter módulos, mas define fallbacks se não existirem
+const { debounce, cache, vdom, imageLoader, loading } = window.SiteModules || {
+    debounce: (fn, t) => fn,
+    cache: { get: () => null, set: () => {} },
+    vdom: {},
+    imageLoader: { init: () => {} },
+    loading: { show: () => {}, hide: () => {} }
+};
+
 
 let isLoading = false;
 let loadPromise = null;
@@ -66,6 +78,20 @@ async function initializeFirebase() {
             firebase.initializeApp(firebaseConfig);
             console.log('✅ [Firebase] App inicializado');
         }
+        
+        // Ativar persistência
+        try {
+            const db = firebase.firestore();
+            await db.enablePersistence({ synchronizeTabs: true });
+            console.log('✅ [Firebase] Persistência offline ativada');
+        } catch (err) {
+            if (err.code == 'failed-precondition') {
+                console.warn('⚠️ [Firebase] Persistência falhou (múltiplas abas).');
+            } else if (err.code == 'unimplemented') {
+                console.warn('⚠️ [Firebase] Persistência não suportada.');
+            }
+        }
+
 
         return firebase;
 
@@ -92,18 +118,19 @@ async function loadDataFromFirestore() {
 
         const fb = await initializeFirebase();
         const db = fb.firestore();
+        const clientId = 'cliente-001';
 
         // Timeout para operação
         loadPromise = Promise.race([
             Promise.all([
-                db.collection('site').doc('cliente-001').get(),
-                db.collection('site').doc('cliente-001').collection('cores').doc('data').get(),
-                db.collection('site').doc('cliente-001').collection('contato').doc('data').get(),
-                db.collection('site').doc('cliente-001').collection('modules').doc('data').get(),
-                db.collection('site').doc('cliente-001').collection('sobre').doc('data').get(),
-                db.collection('site').doc('cliente-001').collection('global_settings').doc('data').get(),
-                db.collection('site').doc('cliente-001').collection('produtos').get(),
-                db.collection('site').doc('cliente-001').collection('social_links').doc('data').get()
+                db.collection('site').doc(clientId).get(),
+                db.collection('site').doc(clientId).collection('cores').doc('data').get(),
+                db.collection('site').doc(clientId).collection('contato').doc('data').get(),
+                db.collection('site').doc(clientId).collection('modules').doc('data').get(),
+                db.collection('site').doc(clientId).collection('sobre').doc('data').get(),
+                db.collection('site').doc(clientId).collection('global_settings').doc('data').get(),
+                db.collection('site').doc(clientId).collection('produtos').get(),
+                db.collection('site').doc(clientId).collection('social_links').doc('data').get()
             ]),
             new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('Timeout ao carregar dados')), 10000)
@@ -136,7 +163,7 @@ async function loadDataFromFirestore() {
         if (contatoDoc.exists) config.contato = contatoDoc.data();
         if (modulesDoc.exists) config.modules = modulesDoc.data();
         if (sobreDoc.exists) config.sobre = sobreDoc.data();
-        if (globalDoc.exists) config.globalSettings = globalDoc.data();
+        if (globalDoc.exists) config.global_settings = globalDoc.data();
         if (socialLinksDoc.exists) {
             config.socialLinks = socialLinksDoc.data().links || [];
         }
@@ -166,12 +193,14 @@ async function loadDataFromFirestore() {
 function showDefaultContent() {
     console.log('📋 Mostrando conteúdo padrão');
     
+    document.title = "Site Profissional"; // Título padrão
     document.getElementById('bannerH1').textContent = 'Bem-vindo ao GSM';
     document.getElementById('bannerP').textContent = 'Seu site profissional está pronto';
-    document.getElementById('footerNome').textContent = 'GSM';
+    document.getElementById('footerNome').textContent = 'Seu Site';
     document.getElementById('telPreview').textContent = 'Telefone não configurado';
     document.getElementById('emailPreview').textContent = 'Email não configurado';
     document.getElementById('sobreTextoPreview').textContent = 'Seção sobre não configurada';
+    document.getElementById('logo').textContent = 'Seu Site';
 }
 
 /**
@@ -181,17 +210,49 @@ function updatePublicSite(data) {
     console.log('🎨 [UI] Atualizando interface...');
 
     try {
-        // Logo
+        // Lógica do Logo
         const logoEl = document.getElementById('logo');
-        if (logoEl && data.empresaNome) {
-            logoEl.textContent = data.empresaNome;
+        if (logoEl) {
+            // Limpa o conteúdo antigo
+            logoEl.innerHTML = '';
+            
+            if (data.logoType === 'image' && data.logoImageUrl) {
+                // Se for imagem, cria uma tag <img>
+                const img = document.createElement('img');
+                img.src = data.logoImageUrl;
+                img.alt = data.empresaNome || 'Logo';
+                // Adiciona um estilo básico para o logo não ficar gigante
+                img.style.height = '40px'; 
+                img.style.width = 'auto';
+                img.style.borderRadius = '4px';
+                logoEl.appendChild(img);
+            } else if (data.empresaNome && data.empresaNome.trim() !== '') {
+                // Se for texto, define o textContent
+                logoEl.textContent = data.empresaNome;
+            } else {
+                // Fallback
+                logoEl.textContent = 'Site Profissional';
+            }
         }
 
         // Footer
         const footerEl = document.getElementById('footerNome');
-        if (footerEl && data.empresaNome) {
-            footerEl.textContent = data.empresaNome;
+        if (footerEl) {
+            if (data.empresaNome && data.empresaNome.trim() !== '') {
+                footerEl.textContent = data.empresaNome;
+            } else {
+                footerEl.textContent = 'Site Profissional';
+            }
         }
+
+        // ✅✅✅ CORREÇÃO ADICIONADA AQUI ✅✅✅
+        // Atualiza o <title> da página
+        if (data.empresaNome && data.empresaNome.trim() !== '') {
+            document.title = data.empresaNome;
+        } else {
+            document.title = "Site Profissional"; // Fallback genérico
+        }
+        // ✅✅✅ FIM DA CORREÇÃO ✅✅✅
 
         // Banner
         if (data.bannerTitulo) {
@@ -236,6 +297,8 @@ function updatePublicSite(data) {
             if (data.contato.telefone2) {
                 document.getElementById('telPreview2').textContent = data.contato.telefone2;
                 document.getElementById('contact-tel2').classList.remove('hidden');
+            } else {
+                 document.getElementById('contact-tel2').classList.add('hidden');
             }
             if (data.contato.email) {
                 document.getElementById('emailPreview').textContent = data.contato.email;
@@ -248,11 +311,14 @@ function updatePublicSite(data) {
             }
 
             // Mapa
-            if (data.contato.latitude && data.contato.longitude) {
+            if (data.contato.mostrarMapa && data.contato.latitude && data.contato.longitude) {
                 const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${data.contato.latitude},${data.contato.longitude}`;
                 document.getElementById('googleMapEmbed').innerHTML = `
                     <iframe width="100%" height="100%" style="border:0;" loading="lazy" src="${mapUrl}"></iframe>
                 `;
+                document.getElementById('mapContainer').classList.remove('hidden');
+            } else {
+                 document.getElementById('mapContainer').classList.add('hidden');
             }
 
             // WhatsApp
@@ -291,7 +357,7 @@ function updatePublicSite(data) {
             if (socialContainer) {
                 socialContainer.innerHTML = data.socialLinks.map(link => `
                     <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" title="${link.name}">
-                        ${link.icon || '📱'}
+                        ${link.icon || '📱'} 
                     </a>
                 `).join('');
             }
@@ -307,13 +373,17 @@ function updatePublicSite(data) {
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 [DOM] Pronto, iniciando carregamento...');
+    
+    // Comunicação do Iframe (para o Admin)
+    window.addEventListener('message', (event) => {
+        // Adicionar verificação de origem por segurança
+        // if (event.origin !== 'https://admin.seusite.com') return;
 
-    // Remove loading screen
-    const pageLoading = document.getElementById('pageLoading');
-    if (pageLoading) {
-        pageLoading.classList.add('hidden');
-        setTimeout(() => pageLoading.remove(), 400);
-    }
+        if (event.data && event.data.type === 'updateConfig') {
+            console.log('🔄 [Preview] Configuração recebida do admin');
+            updatePublicSite(event.data.data);
+        }
+    });
 
     // Carregar dados
     try {

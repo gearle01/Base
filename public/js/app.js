@@ -1,5 +1,8 @@
 /**
  * ✅ CORRIGIDO FINAL: app.js com todas as funções definidas
+ *
+ * ✅ CORREÇÃO (handleImageUpload):
+ * - O nome do ficheiro no Storage agora usa a extensão original (ex: .svg, .png).
  */
 
 console.log("📝 [app.js] Script carregado");
@@ -548,15 +551,24 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
   const file = event.target.files[0];
   if (!file || !firebaseManager) return;
 
+  // ✅ CORREÇÃO: Obter a extensão original do arquivo
+  const fileExtension = file.name.split('.').pop();
+  if (!fileExtension) {
+      showToast("Nome de ficheiro inválido. Certifique-se que tem uma extensão (ex: .svg, .png).", "error");
+      return;
+  }
+
   try {
     showToast("Fazendo upload...", "info");
 
     let storagePath = "images/";
-    if (targetInputId === "logoImageUrl") storagePath += "logo.jpg";
-    else if (targetInputId === "faviconImageUrl") storagePath += "favicon.png";
-    else if (targetInputId === "bannerImagem") storagePath += "banner.jpg";
-    else if (targetInputId === "sobreImagem") storagePath += "sobre.jpg";
-    else storagePath += `${Date.now()}.jpg`;
+    
+    // ✅ CORREÇÃO: Usar a extensão original para o caminho
+    if (targetInputId === "logoImageUrl") storagePath += `logo.${fileExtension}`;
+    else if (targetInputId === "faviconImageUrl") storagePath += `favicon.${fileExtension}`;
+    else if (targetInputId === "bannerImagem") storagePath += `banner.${fileExtension}`;
+    else if (targetInputId === "sobreImagem") storagePath += `sobre.${fileExtension}`;
+    else storagePath += `${Date.now()}.${fileExtension}`;
 
     const downloadUrl = await firebaseManager.uploadImage(file, storagePath);
 
@@ -565,7 +577,14 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
     if (previewSelector) {
       const previewEl = document.querySelector(previewSelector);
       if (previewEl) {
-        previewEl.style.backgroundImage = `url(${downloadUrl})`;
+        // Para SVGs, é melhor usar <img> para preservar a proporção
+        if (file.type === 'image/svg+xml') {
+            previewEl.style.backgroundImage = 'none';
+            previewEl.innerHTML = `<img src="${downloadUrl}" style="width: 100%; height: 100%; object-fit: contain;">`;
+        } else {
+            previewEl.innerHTML = '';
+            previewEl.style.backgroundImage = `url(${downloadUrl})`;
+        }
       }
     }
 

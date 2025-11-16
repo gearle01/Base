@@ -2,6 +2,8 @@
  * ✅ OTIMIZADO: Sistema de sincronização em tempo real com Firebase
  * Usa Firestore subscribers para atualizações em tempo real
  * Usa Firebase Storage para uploads de imagens
+ *
+ * ✅ CORREÇÃO: Adicionada verificação para NÃO comprimir SVGs.
  */
 
 class FirebaseRealtimeManager {
@@ -136,14 +138,25 @@ class FirebaseRealtimeManager {
             // Validar arquivo
             await this.validateImageFile(file);
 
-            // Comprimir imagem
-            const compressedFile = await this.compressImage(file);
+            let fileToUpload = file;
+
+            // ✅ CORREÇÃO: Não comprimir SVGs
+            if (file.type !== 'image/svg+xml') {
+                // Comprimir imagem
+                fileToUpload = await this.compressImage(file);
+                console.log('🖼️ Imagem comprimida');
+            } else {
+                console.log('🖋️ Ficheiro SVG detetado, não comprimindo.');
+            }
+            
 
             // Criar referência no Storage
             const storageRef = this.storage.ref(`site/${this.clientId}/${path}`);
 
             // Upload com monitoramento de progresso
-            const uploadTask = storageRef.put(compressedFile);
+            const uploadTask = storageRef.put(fileToUpload, {
+                contentType: file.type // Garante que o SVG seja salvo com o mime type correto
+            });
 
             // Monitorar progresso
             uploadTask.on('state_changed',
@@ -435,49 +448,3 @@ const firebaseRealtimeManager = new FirebaseRealtimeManager();
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = firebaseRealtimeManager;
 }
-
-/**
- * EXEMPLO DE USO:
- * 
- * // Inicializar
- * await firebaseRealtimeManager.init();
- * 
- * // Carregamento inicial
- * const initialData = await firebaseRealtimeManager.loadInitialData();
- * 
- * // Subscribe para atualizações em tempo real do documento principal
- * firebaseRealtimeManager.subscribeToDocument('site', 'cliente-001', (data) => {
- *     console.log('Site atualizado:', data);
- *     updatePublicSite(data);
- *     updateAdminPreview(data);
- * });
- * 
- * // Subscribe para produtos
- * firebaseRealtimeManager.subscribeToSubcollection(
- *     'site',
- *     'cliente-001',
- *     'produtos',
- *     (produtos) => {
- *         console.log('Produtos atualizados:', produtos);
- *         renderProdutos(produtos);
- *     }
- * );
- * 
- * // Upload de imagem
- * const imageUrl = await firebaseRealtimeManager.uploadImage(
- *     file,
- *     'logos/banner.jpg',
- *     (progress) => console.log(`Upload: ${progress}%`)
- * );
- * 
- * // Salvar dados
- * await firebaseRealtimeManager.saveData({
- *     main: { empresaNome: 'Minha Empresa' },
- *     cores: { primaria: '#007bff' },
- *     produtos: [{ nome: 'Produto 1' }],
- *     // ... outros dados
- * });
- * 
- * // Limpar ao sair
- * firebaseRealtimeManager.unsubscribeAll();
- */

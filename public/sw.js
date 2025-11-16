@@ -1,6 +1,8 @@
 /**
- * ✅ CORRIGIDO: Service Worker com melhor tratamento de CORS
+ * Service Worker com melhor tratamento de CORS
  * Arquivo: public/sw.js
+ * * ✅ CORRIGIDO:
+ * 1. A ordem das linhas no 'fetch' listener foi corrigida para evitar o 'ReferenceError'.
  */
 
 const CACHE_NAME = 'gsm-cache-v1';
@@ -73,7 +75,16 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // --- CORREÇÃO DE ORDEM AQUI ---
+    // 1. Defina 'request' primeiro, a partir do 'event'
     const { request } = event;
+
+    // 2. Agora pode usar 'request' para verificar a URL
+    if (!request.url.startsWith('http')) {
+        return; // Ignora 'chrome-extension://' e outras
+    }
+    // --- FIM DA CORREÇÃO ---
+
     const url = new URL(request.url);
 
     // ✅ NÃO CACHEAR: Domínios externos com CORS

@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:*", "http://127.0.0.1:*", "https://gsm.dev.br", "https://www.gsm.dev.br"],
+    "method": ["GET", "HEAD", "DELETE", "PUT", "POST"],
+    "responseHeader": ["Content-Type", "Authorization", "x-goog-meta-*"],
+    "maxAgeSeconds": 3600
+  }
+]

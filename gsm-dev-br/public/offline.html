@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Você está Offline</title>
+    <style>
+        :root {
+            --primary-color: #005fcc;
+            --text-color: #333;
+            --bg-color: #f0f2f5;
+            --container-bg: #fff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 450px;
+            padding: 2.5rem;
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px var(--shadow-color);
+        }
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+        }
+        h1 {
+            font-size: 2.2rem;
+            color: #1c1e21;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .contact {
+            font-size: 0.95rem;
+            color: #606770;
+            margin-bottom: 2rem;
+        }
+        .contact a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .retry-button {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .retry-button:hover {
+            background-color: #004a9e;
+        }
+        .retry-button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAABn0lEQVQ4jZ2TvUscURSHn3t3dtZ1/YrRQhQUsbAgIkJAEIyVYmFhYWNhYWPnf2BnY2khNsYqkNLOD2wUG1ECEgQRxDXr7syOzr0W7q6ZdVYscrqB87vvOe95ZDAY8L/lAczMzBCGIbquo2ka09PTjI2NIYQgl8sxPT1NvV6n2WxydXVFEASPAwAYGxsjn8+TSqXI5XJMTk4iSRJxHHN3d0etVqPZbNJqtR4H6LqOruuYpkkymSSdTqNpGlEU0el06Ha7dDodOp3O4wBZlpFl+SFwbB6GIUEQPEyvVquPAyRJ4unpCcuysCwLwzAwDINms0m326XX6+F5HrIs/xswMTHB+Pg4iqLgui6yLGMYBkEQEMcxiqKgadq/AZqmoaoqiqLgeR7tdpvb21s8z8NxHOI4RgjB5eUlqqr+EhRCIITg4eGB8/Nzms0m+XyeVCrFxMQEiqJgWRbLy8tcX19zdnZGqVRifn5+BBABrdaAg4MDDg8POT4+xvM8ZFlGURQkSSKOY/r9PgBzc3OsrKywsbGB4ziIwWDwGbhvtVqWaZpfgS/AJ8ACukAF+A58E0KcCiF+APw0oy7COM7YAAAAAElFTkSuQmCC" alt="Logo da Empresa" class="logo">
+        <h1>Conexão Perdida</h1>
+        <p>Parece que você está offline. Verifique sua conexão com a internet para continuar navegando.</p>
+        <div class="contact">
+            Se o problema persistir, entre em contato: 
+            <a href="mailto:contato@exemplo.com">contato@exemplo.com</a>
+        </div>
+        <button class="retry-button" onclick="window.location.reload()">Tentar Novamente</button>
+    </div>
+</body>
+</html>

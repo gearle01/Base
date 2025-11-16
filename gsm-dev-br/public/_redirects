@@ -1,0 +1,38 @@
+# Regra de Rewrite para Single-Page Application (SPA)
+# Redireciona todas as rotas não encontradas (404) para /index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Forçar HTTPS (Embora o Firebase faça isso por padrão)
+# Esta regra é mais para referência ou outras plataformas
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# Headers de Cache
+# Cache de 1 ano para assets imutáveis (fontes, imagens, etc.)
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, immutable" # 1 dia para JS
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, immutable" # 1 dia para CSS
+
+# Evitar cache para o index.html para garantir que os usuários sempre obtenham a versão mais recente
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

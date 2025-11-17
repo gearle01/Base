@@ -1,194 +1,20 @@
 /**
- * ✅ CORRIGIDO: Script público com melhor tratamento de carregamento
+ * ✅ FICHEIRO PÚBLICO REATORADO
  *
- * ✅ CORREÇÃO:
- * - Lógica do Logo para renderizar imagem ou texto.
- * - Lógica do Título para usar o nome da empresa ou um fallback genérico (não "GSM").
+ * Esta versão foi simplificada para remover a lógica duplicada.
+ * Agora, este ficheiro confia em:
+ * 1. `firebase-manager.js` (para carregar dados)
+ * 2. `config-manager.js` (para aplicar cores e módulos)
+ *
+ * A função `updatePublicSite` foi mantida, mas apenas para
+ * aplicar o CONTEÚDO (texto, imagens, etc.).
  */
 
 console.log('🚀 [public.js] Iniciando...');
 
-// Tenta obter módulos, mas define fallbacks se não existirem
-const { debounce, cache, vdom, imageLoader, loading } = window.SiteModules || {
-    debounce: (fn, t) => fn,
-    cache: { get: () => null, set: () => {} },
-    vdom: {},
-    imageLoader: { init: () => {} },
-    loading: { show: () => {}, hide: () => {} }
-};
-
-
-let isLoading = false;
-let loadPromise = null;
-let firebaseManager = null;
-
-/**
- * Mostra skeleton loading
- */
-function showLoadingSkeleton() {
-    const sections = ['banner', 'sobre', 'produtos', 'contato'];
-    sections.forEach(section => {
-        const el = document.getElementById(section);
-        if (el) {
-            el.style.opacity = '0.5';
-            el.style.pointerEvents = 'none';
-        }
-    });
-}
-
-/**
- * Remove skeleton loading
- */
-function hideLoadingSkeleton() {
-    const sections = ['banner', 'sobre', 'produtos', 'contato'];
-    sections.forEach(section => {
-        const el = document.getElementById(section);
-        if (el) {
-            el.style.opacity = '1';
-            el.style.pointerEvents = 'auto';
-        }
-    });
-}
-
-/**
- * Inicializa Firebase
- */
-async function initializeFirebase() {
-    try {
-        console.log('🔥 [Firebase] Verificando disponibilidade...');
-
-        // Aguardar Firebase estar disponível
-        let retries = 0;
-        while (typeof firebase === 'undefined' && retries < 20) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            retries++;
-        }
-
-        if (typeof firebase === 'undefined') {
-            throw new Error('Firebase SDK não carregou');
-        }
-
-        console.log('✅ [Firebase] SDK disponível');
-
-        // Verificar se já foi inicializado
-        if (firebase.apps.length === 0) {
-            if (typeof firebaseConfig === 'undefined') {
-                throw new Error('firebaseConfig não definido');
-            }
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ [Firebase] App inicializado');
-        }
-        
-        // Ativar persistência
-        try {
-            const db = firebase.firestore();
-            await db.enablePersistence({ synchronizeTabs: true });
-            console.log('✅ [Firebase] Persistência offline ativada');
-        } catch (err) {
-            if (err.code == 'failed-precondition') {
-                console.warn('⚠️ [Firebase] Persistência falhou (múltiplas abas).');
-            } else if (err.code == 'unimplemented') {
-                console.warn('⚠️ [Firebase] Persistência não suportada.');
-            }
-        }
-
-
-        return firebase;
-
-    } catch (error) {
-        console.error('❌ [Firebase] Erro:', error.message);
-        throw error;
-    }
-}
-
-/**
- * Carrega dados do Firestore
- */
-async function loadDataFromFirestore() {
-    if (isLoading && loadPromise) {
-        console.log('📦 [Firestore] Já carregando, aguardando...');
-        return loadPromise;
-    }
-
-    try {
-        isLoading = true;
-        showLoadingSkeleton();
-
-        console.log('📡 [Firestore] Iniciando carregamento...');
-
-        const fb = await initializeFirebase();
-        const db = fb.firestore();
-        const clientId = 'cliente-001';
-
-        // Timeout para operação
-        loadPromise = Promise.race([
-            Promise.all([
-                db.collection('site').doc(clientId).get(),
-                db.collection('site').doc(clientId).collection('cores').doc('data').get(),
-                db.collection('site').doc(clientId).collection('contato').doc('data').get(),
-                db.collection('site').doc(clientId).collection('modules').doc('data').get(),
-                db.collection('site').doc(clientId).collection('sobre').doc('data').get(),
-                db.collection('site').doc(clientId).collection('global_settings').doc('data').get(),
-                db.collection('site').doc(clientId).collection('produtos').get(),
-                db.collection('site').doc(clientId).collection('social_links').doc('data').get()
-            ]),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout ao carregar dados')), 10000)
-            )
-        ]);
-
-        const [
-            clientDoc,
-            coresDoc,
-            contatoDoc,
-            modulesDoc,
-            sobreDoc,
-            globalDoc,
-            produtosSnap,
-            socialLinksDoc
-        ] = await loadPromise;
-
-        if (!clientDoc.exists) {
-            console.warn('⚠️ [Firestore] Documento principal não encontrado');
-            hideLoadingSkeleton();
-            showDefaultContent();
-            return;
-        }
-
-        console.log('✅ [Firestore] Dados carregados');
-
-        let config = clientDoc.data();
-
-        if (coresDoc.exists) config.cores = coresDoc.data();
-        if (contatoDoc.exists) config.contato = contatoDoc.data();
-        if (modulesDoc.exists) config.modules = modulesDoc.data();
-        if (sobreDoc.exists) config.sobre = sobreDoc.data();
-        if (globalDoc.exists) config.global_settings = globalDoc.data();
-        if (socialLinksDoc.exists) {
-            config.socialLinks = socialLinksDoc.data().links || [];
-        }
-
-        config.produtos = produtosSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
-        console.log('📥 [Firestore] Atualizando UI...');
-        updatePublicSite(config);
-        hideLoadingSkeleton();
-
-    } catch (error) {
-        console.error('❌ [Firestore] Erro:', error.message);
-        hideLoadingSkeleton();
-        showDefaultContent();
-    } finally {
-        isLoading = false;
-        loadPromise = null;
-    }
-}
-
 /**
  * Mostra conteúdo padrão se nenhum dado for carregado
+ * (Função movida para o topo para clareza)
  */
 function showDefaultContent() {
     console.log('📋 Mostrando conteúdo padrão');
@@ -204,91 +30,64 @@ function showDefaultContent() {
 }
 
 /**
- * Atualiza o site com os dados carregados
+ * Atualiza o CONTEÚDO do site com os dados carregados
+ * (A lógica de cores e módulos foi movida para config-manager.js)
  */
 function updatePublicSite(data) {
     console.log('🎨 [UI] Atualizando interface...');
 
     try {
-        // Lógica do Logo
+        // --- Aplica Cores, Fontes e Módulos ---
+        // Esta função vem do 'config-manager.js'
+        if (window.ConfigManager && typeof window.ConfigManager.applyConfig === 'function') {
+            window.ConfigManager.applyConfig(data);
+        } else {
+            console.warn('ConfigManager.applyConfig não encontrado. Carregando cores manualmente...');
+            if (data.cores) {
+                 const root = document.documentElement;
+                 if (data.cores.primaria) root.style.setProperty('--primary', data.cores.primaria);
+                 if (data.cores.secundaria) root.style.setProperty('--secondary', data.cores.secundaria);
+            }
+        }
+
+        // --- Aplica Conteúdo ---
+
+        // Título da Página e Logo
+        const siteTitle = (data.empresaNome && data.empresaNome.trim() !== '') ? data.empresaNome : "Site Profissional";
+        document.title = siteTitle;
+        
         const logoEl = document.getElementById('logo');
         if (logoEl) {
-            // Limpa o conteúdo antigo
             logoEl.innerHTML = '';
-            
             if (data.logoType === 'image' && data.logoImageUrl) {
-                // Se for imagem, cria uma tag <img>
                 const img = document.createElement('img');
                 img.src = data.logoImageUrl;
-                img.alt = data.empresaNome || 'Logo';
-                // Adiciona um estilo básico para o logo não ficar gigante
+                img.alt = siteTitle;
                 img.style.height = '40px'; 
                 img.style.width = 'auto';
                 img.style.borderRadius = '4px';
                 logoEl.appendChild(img);
-            } else if (data.empresaNome && data.empresaNome.trim() !== '') {
-                // Se for texto, define o textContent
-                logoEl.textContent = data.empresaNome;
             } else {
-                // Fallback
-                logoEl.textContent = 'Site Profissional';
+                logoEl.textContent = siteTitle;
             }
         }
-
+        
         // Footer
         const footerEl = document.getElementById('footerNome');
-        if (footerEl) {
-            if (data.empresaNome && data.empresaNome.trim() !== '') {
-                footerEl.textContent = data.empresaNome;
-            } else {
-                footerEl.textContent = 'Site Profissional';
-            }
-        }
-
-        // ✅✅✅ CORREÇÃO ADICIONADA AQUI ✅✅✅
-        // Atualiza o <title> da página
-        if (data.empresaNome && data.empresaNome.trim() !== '') {
-            document.title = data.empresaNome;
-        } else {
-            document.title = "Site Profissional"; // Fallback genérico
-        }
-        // ✅✅✅ FIM DA CORREÇÃO ✅✅✅
+        if (footerEl) footerEl.textContent = siteTitle;
 
         // Banner
-        if (data.bannerTitulo) {
-            document.getElementById('bannerH1').textContent = data.bannerTitulo;
-        }
-        if (data.bannerSubtitulo) {
-            document.getElementById('bannerP').textContent = data.bannerSubtitulo;
-        }
-        if (data.bannerImagem) {
-            const banner = document.querySelector('.banner');
-            banner.style.backgroundImage = `url(${data.bannerImagem})`;
-        }
-
-        // Cores
-        if (data.cores) {
-            const root = document.documentElement;
-            if (data.cores.primaria) {
-                root.style.setProperty('--primary', data.cores.primaria);
-            }
-            if (data.cores.secundaria) {
-                root.style.setProperty('--secondary', data.cores.secundaria);
-            }
-        }
+        if (data.bannerTitulo) document.getElementById('bannerH1').textContent = data.bannerTitulo;
+        if (data.bannerSubtitulo) document.getElementById('bannerP').textContent = data.bannerSubtitulo;
+        if (data.bannerImagem) document.querySelector('.banner').style.backgroundImage = `url(${data.bannerImagem})`;
 
         // Sobre
         if (data.sobre) {
-            if (data.sobre.texto) {
-                document.getElementById('sobreTextoPreview').textContent = data.sobre.texto;
-            }
-            if (data.sobre.imagem) {
-                const sobreImg = document.getElementById('sobreImagemPreview');
-                sobreImg.style.backgroundImage = `url(${data.sobre.imagem})`;
-            }
+            if (data.sobre.texto) document.getElementById('sobreTextoPreview').textContent = data.sobre.texto;
+            if (data.sobre.imagem) document.getElementById('sobreImagemPreview').style.backgroundImage = `url(${data.sobre.imagem})`;
         }
 
-        // Contato
+        // Contato e Mapa
         if (data.contato) {
             if (data.contato.telefone) {
                 document.getElementById('telPreview').textContent = data.contato.telefone;
@@ -309,31 +108,18 @@ function updatePublicSite(data) {
                 const encoded = encodeURIComponent(data.contato.endereco);
                 document.getElementById('enderecoLink').href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
             }
-
-            // Mapa
             if (data.contato.mostrarMapa && data.contato.latitude && data.contato.longitude) {
                 const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${data.contato.latitude},${data.contato.longitude}`;
-                document.getElementById('googleMapEmbed').innerHTML = `
-                    <iframe width="100%" height="100%" style="border:0;" loading="lazy" src="${mapUrl}"></iframe>
-                `;
+                document.getElementById('googleMapEmbed').innerHTML = `<iframe width="100%" height="100%" style="border:0;" loading="lazy" src="${mapUrl}"></iframe>`;
                 document.getElementById('mapContainer').classList.remove('hidden');
             } else {
                  document.getElementById('mapContainer').classList.add('hidden');
             }
-
-            // WhatsApp
             if (data.contato.telefone) {
                 const tel = data.contato.telefone.replace(/\D/g, '');
                 const whatsappNum = tel.startsWith('55') ? tel : `55${tel}`;
                 document.getElementById('whatsapp-fab').href = `https://wa.me/${whatsappNum}`;
             }
-        }
-
-        // Módulos
-        if (data.modules) {
-            if (!data.modules.sobre) document.getElementById('sobre').classList.add('hidden');
-            if (!data.modules.produtos) document.getElementById('produtos').classList.add('hidden');
-            if (!data.modules.contato) document.getElementById('contato').classList.add('hidden');
         }
 
         // Produtos
@@ -370,15 +156,13 @@ function updatePublicSite(data) {
     }
 }
 
+
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 [DOM] Pronto, iniciando carregamento...');
     
     // Comunicação do Iframe (para o Admin)
     window.addEventListener('message', (event) => {
-        // Adicionar verificação de origem por segurança
-        // if (event.origin !== 'https://admin.seusite.com') return;
-
         if (event.data && event.data.type === 'updateConfig') {
             console.log('🔄 [Preview] Configuração recebida do admin');
             updatePublicSite(event.data.data);
@@ -387,16 +171,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carregar dados
     try {
-        await loadDataFromFirestore();
+        // 1. Verificar se os managers globais existem
+        if (!window.firebaseManager || !window.ConfigManager) {
+             console.error('❌ Faltam managers essenciais (firebaseManager ou ConfigManager).');
+             // Tentar carregar o firebaseManager se não estiver presente
+             if (!window.firebaseManager && typeof FirebaseRealtimeManager !== 'undefined') {
+                 window.firebaseManager = new FirebaseRealtimeManager();
+                 await window.firebaseManager.init();
+             } else {
+                 throw new Error('Dependências não carregadas.');
+             }
+        }
+
+        // 2. Usar o manager para carregar dados (LÓGICA CENTRALIZADA)
+        console.log('📡 [public.js] Usando firebaseManager para carregar dados...');
+        const config = await window.firebaseManager.loadInitialData();
+
+        if (!config) {
+            throw new Error("Configuração não recebida do firebaseManager");
+        }
+
+        // 3. Atualizar a UI
+        console.log('📥 [public.js] Atualizando UI com dados...');
+        updatePublicSite(config);
+
     } catch (error) {
-        console.error('❌ Erro geral:', error);
+        console.error('❌ Erro geral no public.js:', error);
         showDefaultContent();
     }
 });
 
-// Evento do SW
-window.addEventListener('SW_READY', () => {
-    console.log('✅ Service Worker ready');
-});
-
-console.log('✅ [public.js] Carregado');
+console.log('✅ [public.js] Carregado e refatorado');

@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- ✅ CORREÇÃO: Título genérico durante o carregamento -->
     <title></title>
 
-    <!-- ✅ OTIMIZADO: Meta Tags Essenciais -->
     <meta name="description" content="Descrição concisa do seu site para SEO.">
     <meta name="author" content="Seu Nome ou Nome da Empresa">
-    <meta name="theme-color" content="#ffffff">
+    
+    <!-- ✅ CORREÇÃO: Cor do tema agora usa a variável primária -->
+    <meta name="theme-color" content="var(--primary, #007bff)">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -24,7 +27,7 @@
     <meta property="twitter:description" content="Descrição concisa do seu site para redes sociais.">
     <meta property="twitter:image" content="https://seusite.com/path/to/your/image.jpg">
 
-    <!-- ✅ OTIMIZADO: Preconnect e DNS-Prefetch -->
+    <!-- Preconnect e DNS-Prefetch -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com">
@@ -33,33 +36,81 @@
     <link rel="dns-prefetch" href="https://images.unsplash.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 
-    <!-- ✅ OTIMIZADO: Google Fonts com display=swap -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link id="faviconLink" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAABn0lEQVQ4jZ2TvUscURSHn3t3dtZ1/YrRQhQUsbAgIkJAEIyVYmFhYWNhYWPnf2BnY2khNsYqkNLOD2wUG1ECEgQRxDXr7syOzr0W7q6ZdVYscrqB87vvOe95ZDAY8L/lAczMzBCGIbquo2ka09PTjI2NIYQgl8sxPT1NvV6n2WxydXVFEASPAwAYGxsjn8+TSqXI5XJMTk4iSRJxHHN3d0etVqPZbNJqtR4H6LqOruuYpkkymSSdTqNpGlEU0el06Ha7dDodOp3O4wBZlpFl+SFwbB6GIUEQPEyvVquPAyRJ4unpCcuysCwLwzAwDINms0m326XX6+F5HrIs/xswMTHB+Pg4iqLgui6yLGMYBkEQEMcxiqKgadq/AZqmoaoqiqLgeR7tdpvb21s8z8NxHOI4RgjB5eUlqqr+EhRCIITg4eGB8/Nzms0m+XyeVCrFxMQEiqJgWRbLy8tcX19zdnZGqVRifn5+BBABrdaAg4MDDg8POT4+xvM8ZFlGURQkSSKOY/r9PgBzc3OsrKywsbGB4ziIwWDwGbhvtVqWaZpfgS/AJ8ACukAF+A58E0KcCiF+APw0oy7COM7YAAAAAElFTkSuQmCC">
 
-    <!-- ✅ OTIMIZADO: CSS Crítico Inline -->
+    <!-- ✅ CORREÇÃO: CSS Crítico Inline agora usa variáveis CSS -->
     <style>
-        /* CSS Crítico: Above-the-fold */
+        :root {
+            /* Fallbacks (serão substituídos pelo public.js) */
+            --primary: #007bff;
+            --secondary: #28a745;
+            --text-color: #333;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; overflow-x: clip; }
-        .skip-link { position: absolute; top: -40px; left: 0; background: #005fcc; color: white; padding: 8px; z-index: 9999; transition: top 0.3s ease; }
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            overflow-x: clip;
+            color: var(--text-color); /* ✅ CORRIGIDO */
+        }
+        .skip-link { 
+            position: absolute; top: -40px; left: 0; 
+            background: var(--primary); /* ✅ CORRIGIDO */
+            color: white; padding: 8px; z-index: 9999; 
+            transition: top 0.3s ease; 
+        }
         .skip-link:focus { top: 0; }
-        .site-nav { position: sticky; top: 0; background: white; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-        .site-logo { font-size: 1.5rem; font-weight: bold; }
+        .site-nav { 
+            position: sticky; top: 0; background: white; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+            padding: 1rem 2rem; display: flex; 
+            justify-content: space-between; align-items: center; z-index: 100; 
+        }
+        .site-logo { 
+            font-size: 1.5rem; font-weight: bold;
+            color: var(--primary); /* ✅ CORRIGIDO (era #333) */
+        }
         .nav-content { display: flex; align-items: center; gap: 2rem; }
         .site-nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-        .site-nav-links a { text-decoration: none; font-weight: 500; transition: opacity 0.2s; }
+        .site-nav-links a { 
+            text-decoration: none; font-weight: 500; 
+            transition: opacity 0.2s;
+            color: var(--text-color); /* ✅ CORRIGIDO (era #333) */
+        }
         .site-nav-links a:hover { opacity: 0.7; }
-        .banner { min-height: 500px; display: flex; align-items: center; justify-content: center; text-align: center; color: white; padding: 4rem 2rem; background-size: cover; background-position: center; position: relative; }
-        .banner::before { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); }
+        .banner { 
+            min-height: 500px; display: flex; align-items: center; 
+            justify-content: center; text-align: center; color: white; 
+            padding: 4rem 2rem; background-size: cover; 
+            background-position: center; position: relative; 
+        }
+        .banner::before { 
+            content: ""; position: absolute; inset: 0; 
+            background: rgba(0, 0, 0, 0.4); 
+        }
         .banner-content { position: relative; z-index: 1; }
         .banner h1 { font-size: 3rem; margin-bottom: 1rem; }
         .banner p { font-size: 1.3rem; margin-bottom: 2rem; }
-        .cta-btn { display: inline-block; padding: 1rem 2.5rem; background: white; color: #333; text-decoration: none; border-radius: 50px; font-weight: 600; transition: transform 0.2s; }
-        .cta-btn:hover { transform: translateY(-2px); }
+        .cta-btn { 
+            display: inline-block; padding: 1rem 2.5rem; 
+            background: var(--primary); /* ✅ CORRIGIDO (era #007bff) */
+            color: white;
+            text-decoration: none; border-radius: 50px; 
+            font-weight: 600; transition: all 0.2s;
+            border: 2px solid var(--primary); /* ✅ CORRIGIDO */
+        }
+        .cta-btn:hover { 
+            transform: translateY(-2px); 
+            background: white;
+            color: var(--primary); /* ✅ CORRIGIDO */
+        }
         .hamburger { display: none; cursor: pointer; }
-        .hamburger .line { width: 30px; height: 3px; background: #333; margin: 5px 0; transition: 0.4s; }
+        .hamburger .line { 
+            width: 30px; height: 3px; 
+            background: var(--text-color); /* ✅ CORRIGIDO (era #333) */
+            margin: 5px 0; transition: 0.4s; 
+        }
         @media (max-width: 768px) {
             .site-nav-links { position: fixed; right: 0; top: 0; height: 100vh; background: white; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 60px; width: 60%; transform: translateX(100%); transition: transform 0.5s ease-in-out; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 1000; }
             .site-nav.nav-active .site-nav-links { transform: translateX(0%); }
@@ -67,7 +118,7 @@
         }
     </style>
 
-    <!-- ✅ OTIMIZADO: Stylesheets não críticos carregados de forma assíncrona -->
+    <!-- Stylesheets não críticos -->
     <link rel="stylesheet" href="css/main.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="css/skeleton.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" media="print" onload="this.media='all'">
@@ -77,7 +128,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     </noscript>
 
-    <!-- ✅ OTIMIZADO: Schema.org JSON-LD -->
+    <!-- Schema.org JSON-LD -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -203,11 +254,10 @@
     </div>
 
     <a id="whatsapp-fab" href="#" target="_blank" rel="noopener noreferrer" class="admin-login-icon whatsapp-fab" title="Fale conosco no WhatsApp">
-        <!-- ✅ OTIMIZADO: Lazy loading e dimensões da imagem -->
         <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" loading="lazy" width="35" height="35">
     </a>
 
-    <!-- ✅ OTIMIZADO: Scripts com 'defer' -->
+    <!-- Scripts com 'defer' -->
     <script src="js/modules.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" defer></script>
@@ -218,11 +268,10 @@
     <script src="js/purify.min.js" defer></script>
     <script src="js/color-contrast.js" defer></script>
     
-    <script src="js/performance.js" type="module" defer></script>
-    <script src="js/image-loader.js" type="module" defer></script>
-    <script src="js/virtual-dom.js" type="module" defer></script>
-    <script src="js/smart-cache.js" type="module" defer></script>
-    <script src="js/leaflet-loader.js" type="module" defer></script>
+    <!-- Scripts Modulares -->
+    <script src="js/validation.js" defer></script>
+    <script src="js/config-manager.js" defer></script>
+    <script src="js/firebase-manager.js" defer></script>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js" defer></script>
     <script src="js/web-vitals.js" defer></script>

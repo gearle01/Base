@@ -1,9 +1,9 @@
 /**
  * ✅ OTIMIZADO: Sistema de sincronização em tempo real com Firebase
- * Usa Firestore subscribers para atualizações em tempo real
- * Usa Firebase Storage para uploads de imagens
  *
- * ✅ CORREÇÃO: Adicionada verificação para NÃO comprimir SVGs.
+ * ✅ MELHORIA:
+ * - Removida a função `validateImageFile` duplicada.
+ * - Agora usa a função `validateImageFile` global (carregada de validation.js).
  */
 
 class FirebaseRealtimeManager {
@@ -21,20 +21,43 @@ class FirebaseRealtimeManager {
      */
     async init() {
         try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
+            // Usa o 'firebase-loader.js' para garantir que o SDK esteja pronto
+            // (Assumindo que firebase-loader.js é carregado antes e expõe 'loadFirebase')
+            if (typeof loadFirebase === 'function') {
+                await loadFirebase();
+            } else if (typeof firebase === 'undefined') {
+                 throw new Error("Firebase SDK não encontrado e loader indisponível.");
             }
 
+            if (firebase.apps.length === 0) {
+                 if (typeof firebaseConfig === 'undefined') {
+                    throw new Error("firebaseConfig não está definida.");
+                 }
+                 firebase.initializeApp(firebaseConfig);
+            }
+            
             this.db = firebase.firestore();
             this.storage = firebase.storage();
 
             // Configurar persistência offline
-            await this.db.enablePersistence({ synchronizeTabs: true });
-            console.log('✅ Persistência offline ativada');
+            try {
+                 await this.db.enablePersistence({ synchronizeTabs: true });
+                 console.log('✅ Persistência offline ativada');
+            } catch (err) {
+                if (err.code == 'failed-precondition') console.warn('⚠️ Persistência falhou (múltiplas abas).');
+                else if (err.code == 'unimplemented') console.warn('⚠️ Persistência não suportada.');
+            }
 
             return { db: this.db, storage: this.storage };
         } catch (error) {
             console.error('❌ Erro ao inicializar Firebase:', error);
+            // Tenta inicializar sem persistência como fallback
+            if (!this.db && typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                 this.db = firebase.firestore();
+                 this.storage = firebase.storage();
+                 console.warn('⚠️ Firebase inicializado SEM persistência offline.');
+                 return { db: this.db, storage: this.storage };
+            }
             throw error;
         }
     }
@@ -47,7 +70,10 @@ class FirebaseRealtimeManager {
      * @returns {Function} Função para cancelar o subscriber
      */
     subscribeToDocument(collection, docId, onUpdate) {
-        if (!this.db) throw new Error('Firebase não inicializado');
+        if (!this.db) {
+            console.error('Firebase não inicializado ao tentar subscribeToDocument');
+            return () => {};
+        }
 
         const unsubscribe = this.db
             .collection(collection)
@@ -66,16 +92,14 @@ class FirebaseRealtimeManager {
                 },
                 (error) => {
                     console.error(`❌ Erro ao observar ${collection}/${docId}:`, error);
-                    // Tenta usar cache em caso de erro
                     const cached = this.cacheData.get(`${collection}:${docId}`);
                     if (cached) {
-                        console.log(`📦 Usando cache para ${collection}/${docId}`);
+                        console.log(`📦 Usando cache para ${collection}:${docId}`);
                         onUpdate(cached);
                     }
                 }
             );
 
-        // Guarda referência para limpeza futura
         this.unsubscribers.push(unsubscribe);
         return unsubscribe;
     }
@@ -89,7 +113,10 @@ class FirebaseRealtimeManager {
      * @returns {Function} Função para cancelar o subscriber
      */
     subscribeToSubcollection(parentCollection, parentDocId, subCollection, onUpdate) {
-        if (!this.db) throw new Error('Firebase não inicializado');
+        if (!this.db) {
+             console.error('Firebase não inicializado ao tentar subscribeToSubcollection');
+            return () => {};
+        }
 
         const unsubscribe = this.db
             .collection(parentCollection)
@@ -135,30 +162,29 @@ class FirebaseRealtimeManager {
      */
     async uploadImage(file, path, onProgress = null) {
         try {
-            // Validar arquivo
-            await this.validateImageFile(file);
+            // ✅ MELHORIA: Usa a função global 'validateImageFile' (de validation.js)
+            if (typeof validateImageFile !== 'function') {
+                throw new Error("Função 'validateImageFile' não encontrada. Verifique se validation.js está carregado.");
+            }
+            await validateImageFile(file);
+            // --- Fim da Melhoria ---
 
             let fileToUpload = file;
+            let uploadMimeType = file.type;
 
-            // ✅ CORREÇÃO: Não comprimir SVGs
             if (file.type !== 'image/svg+xml') {
-                // Comprimir imagem
+                console.log('🖼️ Imagem não-SVG, comprimindo...');
                 fileToUpload = await this.compressImage(file);
-                console.log('🖼️ Imagem comprimida');
+                uploadMimeType = fileToUpload.type;
             } else {
                 console.log('🖋️ Ficheiro SVG detetado, não comprimindo.');
             }
-            
 
-            // Criar referência no Storage
             const storageRef = this.storage.ref(`site/${this.clientId}/${path}`);
-
-            // Upload com monitoramento de progresso
             const uploadTask = storageRef.put(fileToUpload, {
-                contentType: file.type // Garante que o SVG seja salvo com o mime type correto
+                contentType: uploadMimeType 
             });
 
-            // Monitorar progresso
             uploadTask.on('state_changed',
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -171,10 +197,7 @@ class FirebaseRealtimeManager {
                 }
             );
 
-            // Aguardar conclusão
             const snapshot = await uploadTask;
-
-            // Obter URL de download
             const downloadUrl = await snapshot.ref.getDownloadURL();
             console.log(`✅ Upload concluído: ${downloadUrl}`);
 
@@ -184,28 +207,12 @@ class FirebaseRealtimeManager {
             throw error;
         }
     }
+    
+    // ✅ MELHORIA: Esta função foi removida pois estava duplicada.
+    // async validateImageFile(file) { ... }
 
     /**
-     * Valida arquivo de imagem
-     * @private
-     */
-    async validateImageFile(file) {
-        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-        if (!ALLOWED_TYPES.includes(file.type)) {
-            throw new Error('Tipo de arquivo não permitido');
-        }
-
-        if (file.size > MAX_SIZE) {
-            throw new Error('Arquivo muito grande (máx 5MB)');
-        }
-
-        return true;
-    }
-
-    /**
-     * Comprime imagem usando Canvas
+     * Comprime imagem usando Canvas (sempre para JPEG)
      * @private
      */
     async compressImage(file, quality = 0.8) {
@@ -219,7 +226,6 @@ class FirebaseRealtimeManager {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // Redimensionar se necessário
                     const MAX_WIDTH = 1200;
                     const MAX_HEIGHT = 1200;
                     let { width, height } = img;
@@ -240,15 +246,16 @@ class FirebaseRealtimeManager {
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
 
+                    const targetMimeType = 'image/jpeg';
                     canvas.toBlob(
                         (blob) => {
                             const compressedFile = new File([blob], file.name, {
-                                type: file.type,
+                                type: targetMimeType,
                                 lastModified: Date.now()
                             });
                             resolve(compressedFile);
                         },
-                        file.type,
+                        targetMimeType,
                         quality
                     );
                 };
@@ -271,71 +278,27 @@ class FirebaseRealtimeManager {
             const clientDocRef = this.db
                 .collection('site')
                 .doc(this.clientId);
+                
+            const userEmail = firebase.auth().currentUser ? firebase.auth().currentUser.email : 'system';
 
             // Documento principal
             batch.set(clientDocRef, {
                 ...data.main,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedBy: firebase.auth().currentUser?.email
+                updatedBy: userEmail
             }, { merge: true });
 
-            // Cores
-            if (data.cores) {
-                batch.set(
-                    clientDocRef.collection('cores').doc('data'),
-                    data.cores,
-                    { merge: true }
-                );
-            }
-
-            // Contato
-            if (data.contato) {
-                batch.set(
-                    clientDocRef.collection('contato').doc('data'),
-                    data.contato,
-                    { merge: true }
-                );
-            }
-
-            // Módulos
-            if (data.modules) {
-                batch.set(
-                    clientDocRef.collection('modules').doc('data'),
-                    data.modules,
-                    { merge: true }
-                );
-            }
-
-            // Sobre
-            if (data.sobre) {
-                batch.set(
-                    clientDocRef.collection('sobre').doc('data'),
-                    data.sobre,
-                    { merge: true }
-                );
-            }
-
-            // Configurações globais
-            if (data.globalSettings) {
-                batch.set(
-                    clientDocRef.collection('global_settings').doc('data'),
-                    data.globalSettings,
-                    { merge: true }
-                );
-            }
+            if (data.cores) batch.set(clientDocRef.collection('cores').doc('data'), data.cores, { merge: true });
+            if (data.contato) batch.set(clientDocRef.collection('contato').doc('data'), data.contato, { merge: true });
+            if (data.modules) batch.set(clientDocRef.collection('modules').doc('data'), data.modules, { merge: true });
+            if (data.sobre) batch.set(clientDocRef.collection('sobre').doc('data'), data.sobre, { merge: true });
+            if (data.globalSettings) batch.set(clientDocRef.collection('global_settings').doc('data'), data.globalSettings, { merge: true });
+            if (data.socialLinks) batch.set(clientDocRef.collection('social_links').doc('data'), { links: data.socialLinks }, { merge: true });
 
             // Produtos
             if (data.produtos) {
-                // Limpar produtos antigos
-                const produtosSnap = await clientDocRef
-                    .collection('produtos')
-                    .get();
-
-                produtosSnap.docs.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-
-                // Adicionar novos produtos
+                const produtosSnap = await clientDocRef.collection('produtos').get();
+                produtosSnap.docs.forEach(doc => batch.delete(doc.ref));
                 data.produtos.forEach(produto => {
                     const newRef = clientDocRef.collection('produtos').doc();
                     batch.set(newRef, {
@@ -343,15 +306,6 @@ class FirebaseRealtimeManager {
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
-            }
-
-            // Redes Sociais
-            if (data.socialLinks) {
-                batch.set(
-                    clientDocRef.collection('social_links').doc('data'),
-                    { links: data.socialLinks },
-                    { merge: true }
-                );
             }
 
             await batch.commit();
@@ -367,6 +321,15 @@ class FirebaseRealtimeManager {
      * @returns {Promise<Object>} Dados carregados
      */
     async loadInitialData() {
+        if (!this.db) {
+            console.warn('DB não inicializado, tentando inicializar agora...');
+            await this.init();
+            if (!this.db) {
+                 console.error('Falha crítica: DB não pôde ser inicializado.');
+                 return null;
+            }
+        }
+        
         try {
             const clientDocRef = this.db.collection('site').doc(this.clientId);
 
@@ -390,16 +353,14 @@ class FirebaseRealtimeManager {
                 clientDocRef.collection('social_links').doc('data').get()
             ]);
 
-            const config = clientDoc.data() || {};
+            const config = clientDoc.exists ? clientDoc.data() : {};
 
             if (coresDoc.exists) config.cores = coresDoc.data();
             if (contatoDoc.exists) config.contato = contatoDoc.data();
             if (modulesDoc.exists) config.modules = modulesDoc.data();
             if (sobreDoc.exists) config.sobre = sobreDoc.data();
             if (globalDoc.exists) config.globalSettings = globalDoc.data();
-            if (socialLinksDoc.exists) {
-                config.socialLinks = socialLinksDoc.data().links || [];
-            }
+            if (socialLinksDoc.exists) config.socialLinks = socialLinksDoc.data().links || [];
 
             config.produtos = produtosSnap.docs.map(doc => ({
                 id: doc.id,
@@ -422,29 +383,10 @@ class FirebaseRealtimeManager {
         this.unsubscribers = [];
         console.log('✅ Todos os subscribers foram cancelados');
     }
-
-    /**
-     * Obtém dados do cache
-     * @param {string} key - Chave do cache
-     * @returns {any} Dados em cache ou undefined
-     */
-    getFromCache(key) {
-        return this.cacheData.get(key);
-    }
-
-    /**
-     * Limpa cache
-     */
-    clearCache() {
-        this.cacheData.clear();
-        console.log('✅ Cache limpo');
-    }
 }
 
 // Instância global
-const firebaseRealtimeManager = new FirebaseRealtimeManager();
+const firebaseManager = new FirebaseRealtimeManager();
 
-// Exportar para uso
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = firebaseRealtimeManager;
-}
+// Exportar para uso (se necessário, mas é principalmente global)
+window.firebaseManager = firebaseManager;

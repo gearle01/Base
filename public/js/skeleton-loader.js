@@ -257,7 +257,7 @@ class SkeletonLoader {
     hide(sectionId) {
         const section = document.getElementById(sectionId);
         const state = this.loadingStates.get(sectionId);
-        
+
         if (!section || !state) return;
 
         // Restaura conteúdo com fade
@@ -290,4 +290,5 @@ class SkeletonLoader {
 
 // Instância global
 export const skeletonLoader = new SkeletonLoader();
+window.skeletonLoader = skeletonLoader;
 export default SkeletonLoader;

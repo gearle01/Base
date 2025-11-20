@@ -5,13 +5,16 @@
  * 1. A ordem das linhas no 'fetch' listener foi corrigida para evitar o 'ReferenceError'.
  */
 
-const CACHE_NAME = 'gsm-cache-v1';
+const CACHE_NAME = 'site-cache-v3';
 const URLS_TO_CACHE = [
     '/',
     '/index.html',
     '/css/main.css',
     '/js/modules.js',
     '/js/public.js',
+    '/js/config-manager.js',
+    '/js/helpers.js',
+    '/js/smart-cache.js',
     '/js/firebase-config.js',
     '/js/purify.min.js',
 ];
@@ -29,14 +32,14 @@ const EXTERNAL_DOMAINS = [
 // ===== INSTALL =====
 self.addEventListener('install', (event) => {
     console.log('[SW] Install iniciado...');
-    
+
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[SW] Cache aberto');
-                
+
                 return Promise.allSettled(
-                    URLS_TO_CACHE.map(url => 
+                    URLS_TO_CACHE.map(url =>
                         cache.add(url).catch(() => {
                             console.warn(`[SW] ⚠️ Falha ao cachear: ${url}`);
                         })
@@ -53,7 +56,7 @@ self.addEventListener('install', (event) => {
 // ===== ACTIVATE =====
 self.addEventListener('activate', (event) => {
     console.log('[SW] Activate iniciado...');
-    
+
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
@@ -88,7 +91,7 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(request.url);
 
     // ✅ NÃO CACHEAR: Domínios externos com CORS
-    const isExternalDomain = EXTERNAL_DOMAINS.some(domain => 
+    const isExternalDomain = EXTERNAL_DOMAINS.some(domain =>
         url.hostname.includes(domain)
     );
 

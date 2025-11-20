@@ -1,23 +1,3 @@
-/**
- * ✅ OTIMIZADO: Configuração do Firebase com suporte offline
- */
-
-// Em public/js/firebase-config.local.js
-const firebaseConfig = {
-  apiKey: "AIzaSyB9KwQm9eZqqkOh8S4hSBiy3RLlNFyQ4fk",
-  authDomain: "base-5488a.firebaseapp.com",
-  projectId: "base-5488a",
-  storageBucket: "base-5488a.firebasestorage.app", // ✅ CORRIJA ESTA LINHA
-  messagingSenderId: "399469780607",
-  appId: "1:399469780607:web:97197cbff389eea80a694a",
-  measurementId: "G-PWDJ88CNKX"
-};
-
-// Constantes de retry e cache
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000;
-const CACHE_DURATION = 5 * 60 * 1000;
-
 // Função para checar conexão
 async function checkOnlineStatus() {
   if (!navigator.onLine) return false;
@@ -33,7 +13,7 @@ async function checkOnlineStatus() {
 }
 
 // Inicialização do Firebase com suporte a modo offline
-window.initializeFirebase = async function(retryCount = 0) {
+window.initializeFirebase = async function (retryCount = 0) {
   try {
     // Verifica se o SDK foi carregado
     if (typeof firebase === 'undefined') {
@@ -56,7 +36,7 @@ window.initializeFirebase = async function(retryCount = 0) {
     // Inicializa o app
     firebase.initializeApp(window.firebaseConfig);
     const db = firebase.firestore();
-    
+
     // Configurações otimizadas para modo offline
     db.settings({
       cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,

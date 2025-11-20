@@ -3,6 +3,24 @@
  */
 
 /**
+ * Função auxiliar para escapar HTML
+ */
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return unsafe;
+
+    const escapeChars = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '`': '&#x60;'
+    };
+
+    return unsafe.replace(/[&<>"'`]/g, (char) => escapeChars[char]);
+}
+
+/**
  * Objeto global para armazenar helpers
  * @namespace App.Helpers
  */
@@ -23,16 +41,19 @@ const Helpers = {
         }
 
         const finalValue = value ?? defaultValue;
-        
+
         if (property === 'html' || property === 'innerHTML') {
-            // Usar DOMPurify para sanitizar HTML
-            element.innerHTML = typeof DOMPurify !== 'undefined' 
-                ? DOMPurify.sanitize(finalValue)
-                : escapeHtml(finalValue);
+            // Usar DOMPurify para sanitizar HTML se disponível
+            if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+                element.innerHTML = DOMPurify.sanitize(finalValue);
+            } else {
+                // Fallback para escapeHtml se DOMPurify não estiver disponível
+                element.innerHTML = escapeHtml(finalValue);
+            }
         } else {
             element[property] = finalValue;
         }
-        
+
         return true;
     },
 
@@ -104,7 +125,7 @@ const Helpers = {
      */
     createElement(tag, attributes = {}, content) {
         const element = document.createElement(tag);
-        
+
         Object.entries(attributes).forEach(([attr, value]) => {
             if (attr === 'className') {
                 element.className = value;

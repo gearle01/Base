@@ -21,43 +21,12 @@ class FirebaseRealtimeManager {
      */
     async init() {
         try {
-            // Usa o 'firebase-loader.js' para garantir que o SDK esteja pronto
-            // (Assumindo que firebase-loader.js é carregado antes e expõe 'loadFirebase')
-            if (typeof loadFirebase === 'function') {
-                await loadFirebase();
-            } else if (typeof firebase === 'undefined') {
-                 throw new Error("Firebase SDK não encontrado e loader indisponível.");
-            }
-
-            if (firebase.apps.length === 0) {
-                 if (typeof firebaseConfig === 'undefined') {
-                    throw new Error("firebaseConfig não está definida.");
-                 }
-                 firebase.initializeApp(firebaseConfig);
-            }
-            
-            this.db = firebase.firestore();
-            this.storage = firebase.storage();
-
-            // Configurar persistência offline
-            try {
-                 await this.db.enablePersistence({ synchronizeTabs: true });
-                 console.log('✅ Persistência offline ativada');
-            } catch (err) {
-                if (err.code == 'failed-precondition') console.warn('⚠️ Persistência falhou (múltiplas abas).');
-                else if (err.code == 'unimplemented') console.warn('⚠️ Persistência não suportada.');
-            }
-
-            return { db: this.db, storage: this.storage };
+            const firebaseServices = await window.initializeFirebase();
+            this.db = firebaseServices.db;
+            this.storage = firebaseServices.storage;
+            return firebaseServices;
         } catch (error) {
-            console.error('❌ Erro ao inicializar Firebase:', error);
-            // Tenta inicializar sem persistência como fallback
-            if (!this.db && typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                 this.db = firebase.firestore();
-                 this.storage = firebase.storage();
-                 console.warn('⚠️ Firebase inicializado SEM persistência offline.');
-                 return { db: this.db, storage: this.storage };
-            }
+            console.error('❌ Erro ao inicializar Firebase no manager:', error);
             throw error;
         }
     }
@@ -72,7 +41,7 @@ class FirebaseRealtimeManager {
     subscribeToDocument(collection, docId, onUpdate) {
         if (!this.db) {
             console.error('Firebase não inicializado ao tentar subscribeToDocument');
-            return () => {};
+            return () => { };
         }
 
         const unsubscribe = this.db
@@ -83,7 +52,7 @@ class FirebaseRealtimeManager {
                     if (docSnapshot.exists) {
                         const data = docSnapshot.data();
                         this.cacheData.set(`${collection}:${docId}`, data);
-                        
+
                         console.log(`📡 [${collection}/${docId}] Atualizado em tempo real`);
                         onUpdate(data);
                     } else {
@@ -114,8 +83,8 @@ class FirebaseRealtimeManager {
      */
     subscribeToSubcollection(parentCollection, parentDocId, subCollection, onUpdate) {
         if (!this.db) {
-             console.error('Firebase não inicializado ao tentar subscribeToSubcollection');
-            return () => {};
+            console.error('Firebase não inicializado ao tentar subscribeToSubcollection');
+            return () => { };
         }
 
         const unsubscribe = this.db
@@ -182,7 +151,7 @@ class FirebaseRealtimeManager {
 
             const storageRef = this.storage.ref(`site/${this.clientId}/${path}`);
             const uploadTask = storageRef.put(fileToUpload, {
-                contentType: uploadMimeType 
+                contentType: uploadMimeType
             });
 
             uploadTask.on('state_changed',
@@ -207,7 +176,7 @@ class FirebaseRealtimeManager {
             throw error;
         }
     }
-    
+
     // ✅ MELHORIA: Esta função foi removida pois estava duplicada.
     // async validateImageFile(file) { ... }
 
@@ -278,7 +247,7 @@ class FirebaseRealtimeManager {
             const clientDocRef = this.db
                 .collection('site')
                 .doc(this.clientId);
-                
+
             const userEmail = firebase.auth().currentUser ? firebase.auth().currentUser.email : 'system';
 
             // Documento principal
@@ -325,11 +294,11 @@ class FirebaseRealtimeManager {
             console.warn('DB não inicializado, tentando inicializar agora...');
             await this.init();
             if (!this.db) {
-                 console.error('Falha crítica: DB não pôde ser inicializado.');
-                 return null;
+                console.error('Falha crítica: DB não pôde ser inicializado.');
+                return null;
             }
         }
-        
+
         try {
             const clientDocRef = this.db.collection('site').doc(this.clientId);
 
@@ -390,3 +359,125 @@ const firebaseManager = new FirebaseRealtimeManager();
 
 // Exportar para uso (se necessário, mas é principalmente global)
 window.firebaseManager = firebaseManager;
+
+// Constantes de retry e cache
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
+// Função para checar conexão
+async function checkOnlineStatus() {
+    if (!navigator.onLine) return false;
+    try {
+        const response = await fetch('//google.com/favicon.ico', {
+            mode: 'no-cors',
+        });
+        return true;
+    } catch (error) {
+        console.warn('⚠️ Sem conexão:', error);
+        return false;
+    }
+}
+
+// Inicialização do Firebase com suporte a modo offline
+window.initializeFirebase = async function (retryCount = 0) {
+    try {
+        // Verifica se o SDK foi carregado
+        if (typeof firebase === 'undefined') {
+            throw new Error('Firebase SDK não carregado');
+        }
+
+        // Se já inicializado, retorna a instância
+        if (firebase.apps.length > 0) {
+            return {
+                db: firebase.firestore(),
+                auth: firebase.auth(),
+                storage: firebase.storage()
+            };
+        }
+
+        // Verifica conexão antes de inicializar
+        const isOnline = await checkOnlineStatus();
+        console.log(isOnline ? '✅ Online' : '⚠️ Offline');
+
+        // Inicializa o app
+        firebase.initializeApp(window.firebaseConfig);
+        const db = firebase.firestore();
+
+        // Configurações otimizadas para modo offline
+        db.settings({
+            cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+            ignoreUndefinedProperties: true,
+            // experimentalForceLongPolling: true, // Melhor suporte offline
+            // experimentalAutoDetectLongPolling: true // Adaptação automática
+        });
+
+        // Tenta habilitar persistência
+        try {
+            await db.enablePersistence({
+                synchronizeTabs: true
+            });
+            console.log('✅ Persistência offline ativada');
+        } catch (err) {
+            if (err.code === 'failed-precondition') {
+                console.warn('⚠️ Múltiplas abas abertas - modo offline limitado');
+            } else if (err.code === 'unimplemented') {
+                console.warn('⚠️ Browser não suporta persistência offline');
+            }
+        }
+
+        // Gerencia estado da rede
+        if (isOnline) {
+            await db.enableNetwork();
+        } else {
+            await db.disableNetwork();
+        }
+
+        // Monitora mudanças de conexão
+        window.addEventListener('online', async () => {
+            console.log('🌐 Conexão recuperada');
+            const db = firebase.firestore();
+            await db.enableNetwork();
+        });
+
+        window.addEventListener('offline', async () => {
+            console.log('⚠️ Conexão perdida');
+            const db = firebase.firestore();
+            await db.disableNetwork();
+        });
+
+        // Retorna as instâncias
+        return {
+            db: firebase.firestore(),
+            auth: firebase.auth(),
+            storage: firebase.storage()
+        };
+    } catch (error) {
+        console.error('❌ Erro ao inicializar Firebase:', error);
+
+        // Sistema de retry
+        if (retryCount < MAX_RETRIES) {
+            console.log(`🔄 Tentando novamente (${retryCount + 1}/${MAX_RETRIES})...`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return initializeFirebase(retryCount + 1);
+        }
+
+        // Notifica o usuário
+        if (window.SiteModules && window.SiteModules.error) {
+            window.SiteModules.error.show(
+                'Tentando usar dados offline. Algumas funcionalidades podem estar limitadas.',
+                'warning'
+            );
+        }
+
+        // Se já temos uma instância, usa ela mesmo com erro
+        if (firebase.apps.length) {
+            return {
+                db: firebase.firestore(),
+                auth: firebase.auth(),
+                storage: firebase.storage()
+            };
+        }
+
+        throw error;
+    }
+};

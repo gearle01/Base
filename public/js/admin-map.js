@@ -3,19 +3,19 @@
  * @module AdminMap
  */
 
-import { LeafletLoader } from './leaflet-loader.js';
+import LeafletLoader from './leaflet-loader.js';
 
 class AdminMap {
     constructor() {
         /** @type {Object} */
         this.map = null;
-        
+
         /** @type {Object} */
         this.marker = null;
-        
+
         /** @type {HTMLElement} */
         this.container = null;
-        
+
         /** @type {boolean} */
         this.isInitialized = false;
 
@@ -46,7 +46,7 @@ class AdminMap {
                         this.initMap().then(resolve);
                     }
                 });
-                
+
                 observer.observe(document.body, {
                     childList: true,
                     subtree: true
@@ -78,7 +78,7 @@ class AdminMap {
 
             // Configura eventos
             this.map.on('click', this.onMapClick);
-            
+
             // Marca como inicializado
             this.isInitialized = true;
 
@@ -99,7 +99,7 @@ class AdminMap {
     onMapClick(e) {
         const latlng = e.latlng;
         this.updateMarker(latlng.lat, latlng.lng);
-        
+
         // Dispara evento personalizado
         const event = new CustomEvent('map:coordsChanged', {
             detail: { lat: latlng.lat, lng: latlng.lng }

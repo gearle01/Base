@@ -10,6 +10,8 @@
  * aplicar o CONTEÚDO (texto, imagens, etc.).
  */
 
+import { globalCache } from './smart-cache.js';
+
 console.log('🚀 [public.js] Iniciando...');
 
 /**
@@ -18,7 +20,7 @@ console.log('🚀 [public.js] Iniciando...');
  */
 function showDefaultContent() {
     console.log('📋 Mostrando conteúdo padrão');
-    
+
     document.title = "Site Profissional"; // Título padrão
     document.getElementById('bannerH1').textContent = 'Bem-vindo ao GSM';
     document.getElementById('bannerP').textContent = 'Seu site profissional está pronto';
@@ -33,8 +35,56 @@ function showDefaultContent() {
  * Atualiza o CONTEÚDO do site com os dados carregados
  * (A lógica de cores e módulos foi movida para config-manager.js)
  */
+/**
+ * Funções Auxiliares de Segurança (Null Checks)
+ */
+function safeText(id, text) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = text || '';
+    }
+}
+
+function safeImage(id, src) {
+    const el = document.getElementById(id);
+    if (el) {
+        if (src) {
+            el.style.backgroundImage = `url(${src})`;
+        } else {
+            el.style.backgroundImage = '';
+        }
+    }
+}
+
+function safeHref(id, url) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.href = url || '#';
+    }
+}
+
+function safeShow(id, shouldShow) {
+    const el = document.getElementById(id);
+    if (el) {
+        if (shouldShow) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+}
+
+/**
+ * Atualiza o CONTEÚDO do site com os dados carregados
+ * (A lógica de cores e módulos foi movida para config-manager.js)
+ */
 function updatePublicSite(data) {
-    console.log('🎨 [UI] Atualizando interface...');
+    console.log('🎨 [UI] Atualizando interface...', data);
+
+    if (!data) {
+        console.warn('⚠️ [UI] Dados vazios recebidos em updatePublicSite');
+        return;
+    }
 
     try {
         // --- Aplica Cores, Fontes e Módulos ---
@@ -44,9 +94,9 @@ function updatePublicSite(data) {
         } else {
             console.warn('ConfigManager.applyConfig não encontrado. Carregando cores manualmente...');
             if (data.cores) {
-                 const root = document.documentElement;
-                 if (data.cores.primaria) root.style.setProperty('--primary', data.cores.primaria);
-                 if (data.cores.secundaria) root.style.setProperty('--secondary', data.cores.secundaria);
+                const root = document.documentElement;
+                if (data.cores.primaria) root.style.setProperty('--primary', data.cores.primaria);
+                if (data.cores.secundaria) root.style.setProperty('--secondary', data.cores.secundaria);
             }
         }
 
@@ -55,7 +105,7 @@ function updatePublicSite(data) {
         // Título da Página e Logo
         const siteTitle = (data.empresaNome && data.empresaNome.trim() !== '') ? data.empresaNome : "Site Profissional";
         document.title = siteTitle;
-        
+
         const logoEl = document.getElementById('logo');
         if (logoEl) {
             logoEl.innerHTML = '';
@@ -63,7 +113,7 @@ function updatePublicSite(data) {
                 const img = document.createElement('img');
                 img.src = data.logoImageUrl;
                 img.alt = siteTitle;
-                img.style.height = '40px'; 
+                img.style.height = '40px';
                 img.style.width = 'auto';
                 img.style.borderRadius = '4px';
                 logoEl.appendChild(img);
@@ -71,81 +121,106 @@ function updatePublicSite(data) {
                 logoEl.textContent = siteTitle;
             }
         }
-        
+
         // Footer
-        const footerEl = document.getElementById('footerNome');
-        if (footerEl) footerEl.textContent = siteTitle;
+        safeText('footerNome', siteTitle);
 
         // Banner
-        if (data.bannerTitulo) document.getElementById('bannerH1').textContent = data.bannerTitulo;
-        if (data.bannerSubtitulo) document.getElementById('bannerP').textContent = data.bannerSubtitulo;
-        if (data.bannerImagem) document.querySelector('.banner').style.backgroundImage = `url(${data.bannerImagem})`;
+        safeText('bannerH1', data.bannerTitulo);
+        safeText('bannerP', data.bannerSubtitulo);
+        safeImage('banner', data.bannerImagem); // Assumindo que o ID da div do banner seja 'banner' ou ajustando se for classe
+        // Se o banner for selecionado por classe no código original:
+        const bannerEl = document.querySelector('.banner');
+        if (bannerEl && data.bannerImagem) {
+            bannerEl.style.backgroundImage = `url(${data.bannerImagem})`;
+        }
 
         // Sobre
         if (data.sobre) {
-            if (data.sobre.texto) document.getElementById('sobreTextoPreview').textContent = data.sobre.texto;
-            if (data.sobre.imagem) document.getElementById('sobreImagemPreview').style.backgroundImage = `url(${data.sobre.imagem})`;
+            safeText('sobreTextoPreview', data.sobre.texto);
+            safeImage('sobreImagemPreview', data.sobre.imagem);
         }
 
         // Contato e Mapa
         if (data.contato) {
+            // Telefone 1
             if (data.contato.telefone) {
-                document.getElementById('telPreview').textContent = data.contato.telefone;
-                document.getElementById('telLink1').href = `tel:${data.contato.telefone.replace(/\D/g, '')}`;
+                safeText('telPreview', data.contato.telefone);
+                safeHref('telLink1', `tel:${data.contato.telefone.replace(/\D/g, '')}`);
             }
+
+            // Telefone 2 (Gerido pelo ConfigManager, mas garantindo texto aqui se necessário)
+            // O ConfigManager cuida da visibilidade, aqui apenas atualizamos o texto se o elemento existir
             if (data.contato.telefone2) {
-                document.getElementById('telPreview2').textContent = data.contato.telefone2;
-                document.getElementById('contact-tel2').classList.remove('hidden');
-            } else {
-                 document.getElementById('contact-tel2').classList.add('hidden');
+                safeText('telPreview2', data.contato.telefone2);
+                safeHref('telLink2', `tel:${data.contato.telefone2.replace(/\D/g, '')}`);
             }
+
+            // Email
             if (data.contato.email) {
-                document.getElementById('emailPreview').textContent = data.contato.email;
-                document.getElementById('emailLink').href = `mailto:${data.contato.email}`;
+                safeText('emailPreview', data.contato.email);
+                safeHref('emailLink', `mailto:${data.contato.email}`);
             }
+
+            // Endereço
             if (data.contato.endereco) {
-                document.getElementById('enderecoPreview').textContent = data.contato.endereco;
+                safeText('enderecoPreview', data.contato.endereco);
                 const encoded = encodeURIComponent(data.contato.endereco);
-                document.getElementById('enderecoLink').href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+                safeHref('enderecoLink', `https://www.google.com/maps/search/?api=1&query=${encoded}`);
             }
+
+            // Mapa
+            const mapContainer = document.getElementById('mapContainer');
+            const googleMapEmbed = document.getElementById('googleMapEmbed');
+
             if (data.contato.mostrarMapa && data.contato.latitude && data.contato.longitude) {
                 const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${data.contato.latitude},${data.contato.longitude}`;
-                document.getElementById('googleMapEmbed').innerHTML = `<iframe width="100%" height="100%" style="border:0;" loading="lazy" src="${mapUrl}"></iframe>`;
-                document.getElementById('mapContainer').classList.remove('hidden');
+                if (googleMapEmbed) {
+                    googleMapEmbed.innerHTML = `<iframe width="100%" height="100%" style="border:0;" loading="lazy" src="${mapUrl}"></iframe>`;
+                }
+                if (mapContainer) mapContainer.classList.remove('hidden');
             } else {
-                 document.getElementById('mapContainer').classList.add('hidden');
+                if (mapContainer) mapContainer.classList.add('hidden');
             }
+
+            // WhatsApp FAB
             if (data.contato.telefone) {
                 const tel = data.contato.telefone.replace(/\D/g, '');
                 const whatsappNum = tel.startsWith('55') ? tel : `55${tel}`;
-                document.getElementById('whatsapp-fab').href = `https://wa.me/${whatsappNum}`;
+                safeHref('whatsapp-fab', `https://wa.me/${whatsappNum}`);
             }
         }
 
         // Produtos
-        if (data.produtos && data.produtos.length > 0) {
-            const grid = document.getElementById('produtosGrid');
-            grid.innerHTML = data.produtos.map(p => `
-                <div class="product-card">
-                    <div class="product-image" style="background-image: url('${p.imagem || 'https://via.placeholder.com/400'}'); background-position: ${p.foco || 'center'};"></div>
-                    <div class="product-info">
-                        <h3>${p.nome}</h3>
-                        <div class="product-price">${p.preco}</div>
-                        <p>${p.descricao || ''}</p>
+        const grid = document.getElementById('produtosGrid');
+        if (grid) {
+            if (data.produtos && data.produtos.length > 0) {
+                grid.innerHTML = data.produtos.map(p => `
+                    <div class="product-card">
+                        <div class="product-image" style="background-image: url('${p.imagem || 'https://via.placeholder.com/400'}'); background-position: ${p.foco || 'center'};"></div>
+                        <div class="product-info">
+                            <h3>${p.nome}</h3>
+                            <div class="product-price">${p.preco}</div>
+                            <p>${p.descricao || ''}</p>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } else {
+                grid.innerHTML = ''; // Limpa se não houver produtos
+            }
         }
 
         // Redes Sociais
-        if (data.socialLinks && data.socialLinks.length > 0) {
-            const socialContainer = document.querySelector('.social-icons-footer');
-            if (socialContainer) {
+        const socialContainer = document.querySelector('.social-icons-footer');
+        if (socialContainer) {
+            if (data.socialLinks && data.socialLinks.length > 0) {
                 socialContainer.innerHTML = data.socialLinks.map(link => `
                     <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" title="${link.name}">
                         ${link.icon || '📱'} 
                     </a>
                 `).join('');
+            } else {
+                socialContainer.innerHTML = '';
             }
         }
 
@@ -160,12 +235,30 @@ function updatePublicSite(data) {
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📄 [DOM] Pronto, iniciando carregamento...');
-    
+
+    // 0. Feedback Visual Imediato
+    if (window.skeletonLoader) {
+        window.skeletonLoader.showAll();
+    }
+
     // Comunicação do Iframe (para o Admin)
     window.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'updateConfig') {
             console.log('🔄 [Preview] Configuração recebida do admin');
-            updatePublicSite(event.data.data);
+            console.log('📦 [Preview] ConfigManager disponível?', typeof window.ConfigManager);
+            console.log('📦 [Preview] Helpers disponível?', typeof window.Helpers);
+            console.log('📦 [Preview] Dados recebidos:', event.data.data);
+
+            // Garantir que o DOM está pronto antes de aplicar
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    updatePublicSite(event.data.data);
+                    if (window.skeletonLoader) window.skeletonLoader.hideAll();
+                });
+            } else {
+                updatePublicSite(event.data.data);
+                if (window.skeletonLoader) window.skeletonLoader.hideAll();
+            }
         }
     });
 
@@ -173,31 +266,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // 1. Verificar se os managers globais existem
         if (!window.firebaseManager || !window.ConfigManager) {
-             console.error('❌ Faltam managers essenciais (firebaseManager ou ConfigManager).');
-             // Tentar carregar o firebaseManager se não estiver presente
-             if (!window.firebaseManager && typeof FirebaseRealtimeManager !== 'undefined') {
-                 window.firebaseManager = new FirebaseRealtimeManager();
-                 await window.firebaseManager.init();
-             } else {
-                 throw new Error('Dependências não carregadas.');
-             }
+            console.error('❌ Faltam managers essenciais (firebaseManager ou ConfigManager).');
+            // Tentar carregar o firebaseManager se não estiver presente
+            if (!window.firebaseManager && typeof FirebaseRealtimeManager !== 'undefined') {
+                window.firebaseManager = new FirebaseRealtimeManager();
+                await window.firebaseManager.init();
+            } else {
+                throw new Error('Dependências não carregadas.');
+            }
         }
 
-        // 2. Usar o manager para carregar dados (LÓGICA CENTRALIZADA)
-        console.log('📡 [public.js] Usando firebaseManager para carregar dados...');
+        // 2. Estratégia Stale-While-Revalidate
+
+        // A) Tentar Cache Primeiro
+        const cached = globalCache.get('config', 'full');
+        if (cached && cached.data) {
+            console.log('⚡ [Cache] Usando dados em cache para renderização imediata');
+            updatePublicSite(cached.data);
+            if (window.skeletonLoader) window.skeletonLoader.hideAll();
+        }
+
+        // B) Buscar Dados Atualizados (Background)
+        console.log('📡 [public.js] Buscando dados atualizados do Firebase...');
         const config = await window.firebaseManager.loadInitialData();
 
         if (!config) {
-            throw new Error("Configuração não recebida do firebaseManager");
-        }
+            // Se não temos config e não tínhamos cache, é um erro crítico
+            if (!cached) throw new Error("Configuração não recebida do firebaseManager");
+            console.warn('⚠️ [public.js] Falha ao buscar dados novos, mantendo cache.');
+        } else {
+            // C) Atualizar UI com dados novos
+            console.log('📥 [public.js] Dados atualizados recebidos. Atualizando UI...');
 
-        // 3. Atualizar a UI
-        console.log('📥 [public.js] Atualizando UI com dados...');
-        updatePublicSite(config);
+            // Salvar no cache para a próxima vez
+            const configHash = JSON.stringify(config);
+            // Só atualiza se mudou algo (opcional, mas o ConfigManager já faz check de hash, 
+            // aqui garantimos que o cache global seja atualizado com os dados brutos)
+            globalCache.set('config', 'full', { hash: configHash, data: config, timestamp: Date.now() });
+
+            if (window.skeletonLoader) window.skeletonLoader.hideAll();
+            updatePublicSite(config);
+        }
 
     } catch (error) {
         console.error('❌ Erro geral no public.js:', error);
-        showDefaultContent();
+        // Só mostra default se não conseguiu renderizar NADA (nem cache)
+        // Verificamos se o título ainda é o default ou se algo falhou drasticamente
+        if (document.title === "Site Profissional" && !document.getElementById('bannerH1').textContent) {
+            showDefaultContent();
+        }
+        if (window.skeletonLoader) window.skeletonLoader.hideAll();
     }
 });
 

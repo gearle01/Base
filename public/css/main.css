@@ -1,1 +1,268 @@
-.admin-login-icon{position:fixed;bottom:15px;right:15px;width:60px;height:60px;background:#212529;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;text-decoration:none;box-shadow:0 4px 8px rgba(0,0,0,.2);transition:transform .2s;z-index:998 !important}.admin-login-icon:hover{transform:scale(1.1)}.social-links{display:flex;gap:15px;align-items:center}.social-icon{display:flex;align-items:center;justify-content:center;padding:10px;color:#fff !important;text-decoration:none;transition:all .3s ease}.social-icon:hover{transform:translateY(-2px);color:#ccc !important}.social-icon i,.social-icon span{font-size:20px;color:#fff !important}.social-icons-nav{display:none !important}.site-footer .social-links{justify-content:center;margin:1.5rem 0;gap:20px}.social-icons-footer .social-icon i,.social-icons-footer .social-icon span{color:#fff !important;font-size:32px}.social-icons-footer .social-icon:hover i,.social-icons-footer .social-icon:hover span{color:#ccc !important}.site-section{padding:4rem 2rem}.site-section.alt{background:#f8f9fa}.section-content{max-width:1200px;margin:0 auto}.section-title{font-size:2.5rem;text-align:center;margin-bottom:3rem}.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}.about-text{font-size:1.1rem;line-height:1.8;text-align:justify;-webkit-hyphens:auto;hyphens:auto}.about-image{height:400px;background-size:cover;background-position:center;border-radius:8px}.products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}.product-card{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:transform .2s}.product-card:hover{transform:translateY(-5px)}.product-image{height:200px;background-size:cover;background-position:center}.product-image img{width:100%;height:100%;object-fit:cover}.product-info{padding:1.5rem}.product-price{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem}.contact-item{display:flex;gap:1rem;margin-bottom:1.5rem}.contact-icon{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;flex-shrink:0}#mapContainer{display:flex;align-items:center;justify-content:center}#googleMapEmbed{width:100%;height:100%;min-height:350px;border-radius:8px;overflow:hidden}.site-footer{background:#212529;color:#fff;text-align:center;padding:2rem}.footer-text{margin-top:1rem}.footer-link{color:#aaa;text-decoration:none}.whatsapp-fab{position:fixed;right:20px;bottom:90px;z-index:999 !important;width:60px;height:60px;background-color:#1f201f;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:transform .3s ease,box-shadow .2s ease}.whatsapp-fab:hover{transform:scale(1.1)}.whatsapp-fab img{width:35px;height:35px}.social-icons{display:flex;justify-content:center;gap:1rem;margin-top:1rem}.social-icon img{width:24px;height:24px;transition:opacity .2s}.social-icon:hover img{opacity:.7}.admin-panel{overflow:visible !important}.modal{z-index:1002 !important}@media (max-width:768px){.about-text{text-align:left}.about-grid,.contact-grid{grid-template-columns:1fr}.site-section{padding:2rem 1rem}.section-title{font-size:2rem}.social-icon{min-height:48px;min-width:48px}.social-icons-nav{margin-top:1rem}.whatsapp-fab{bottom:80px;right:15px}.admin-login-icon{bottom:15px;right:15px}}
+/* =========================================
+   MAIN.CSS - Estilos do Site Público
+   ========================================= */
+
+/* 1. Variáveis e Reset */
+:root {
+    /* Cores Padrão (serão sobrescritas pelo JS do Admin) */
+    --primary: #007bff;
+    --secondary: #28a745;
+    --text-color: #333;
+    --bg-light: #f8f9fa;
+    --bg-dark: #212529;
+    --white: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow-x: hidden; /* Evita rolagem lateral */
+}
+
+/* 2. Componentes de UI */
+
+/* Botão de Login do Admin (Flutuante) */
+.admin-login-icon {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
+    background: var(--bg-dark);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+    z-index: 998;
+}
+
+.admin-login-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Botão do WhatsApp */
+.whatsapp-fab {
+    position: fixed;
+    bottom: 90px; /* Acima do ícone de admin */
+    right: 15px;
+    width: 60px;
+    height: 60px;
+    background-color: #25D366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 999;
+    transition: transform 0.3s ease;
+}
+
+.whatsapp-fab:hover {
+    transform: scale(1.1);
+}
+
+/* 3. Layout e Seções */
+
+.site-section {
+    padding: 4rem 2rem;
+}
+
+.site-section.alt {
+    background: var(--bg-light);
+}
+
+.section-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--text-color);
+}
+
+/* 4. Módulos Específicos */
+
+/* Sobre */
+.about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+}
+
+.about-text {
+    font-size: 1.1rem;
+    text-align: justify;
+}
+
+.about-image {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Produtos */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.product-card {
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, border-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+}
+
+.product-image {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+}
+
+.product-info {
+    padding: 1.5rem;
+}
+
+.product-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 0.5rem;
+}
+
+/* Contato */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+}
+
+.contact-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.contact-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.contact-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* Mapa */
+#mapContainer {
+    height: 100%;
+    min-height: 350px;
+}
+
+#googleMapEmbed {
+    width: 100%;
+    height: 100%;
+    min-height: 350px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 5. Footer e Social */
+
+.site-footer {
+    background: var(--bg-dark);
+    color: var(--white);
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.social-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: var(--white) !important;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.social-icon:hover {
+    background: var(--primary);
+}
+
+.footer-link {
+    color: #aaa;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.footer-link:hover {
+    color: var(--white);
+}
+
+/* 6. Responsividade */
+@media (max-width: 768px) {
+    .about-grid, .contact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .about-text {
+        text-align: left;
+    }
+    
+    .whatsapp-fab {
+        bottom: 80px;
+        right: 15px;
+    }
+    
+    .admin-login-icon {
+        bottom: 15px;
+        right: 15px;
+    }
+}

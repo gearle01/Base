@@ -45,10 +45,10 @@ export class ConfigManager {
      */
     static applyTrackingCode(settings) {
         if (!settings?.trackingCode) return;
-        
+
         const code = settings.trackingCode;
-        const isGoogleAnalytics = code.includes('googletagmanager.com') || 
-                                 code.includes('analytics.google.com');
+        const isGoogleAnalytics = code.includes('googletagmanager.com') ||
+            code.includes('analytics.google.com');
         const isFacebookPixel = code.includes('facebook.net/en_US/fbevents.js');
         const isHotjar = code.includes('static.hotjar.com');
 
@@ -116,7 +116,7 @@ export class ConfigManager {
 
         const contactFields = {
             'telPreview': contato.telefone1,
-            'tel2Preview': contato.telefone2,
+            'telPreview2': contato.telefone2,
             'emailPreview': contato.email,
             'enderecoPreview': contato.endereco
         };
@@ -130,11 +130,25 @@ export class ConfigManager {
             });
         }
 
+        // Atualiza link do telefone 2 se existir
         if (contato.telefone2) {
-            const tel2Container = document.getElementById('contact-tel2');
-            if (tel2Container) {
-                tel2Container.classList.toggle('hidden', !contato.telefone2);
-            }
+            Helpers.setAttributes('telLink2', {
+                'href': `tel:${contato.telefone2.replace(/\D/g, '')}`
+            });
+        }
+
+        // Lógica corrigida para Telefone 2
+        const tel2Container = document.getElementById('contact-tel2');
+        if (tel2Container) {
+            // Verifica se existe, não é vazio e não é "undefined" (string)
+            const val = contato.telefone2;
+            const hasTel2 = val &&
+                typeof val === 'string' &&
+                val.trim() !== '' &&
+                val.toLowerCase() !== 'undefined' &&
+                val.toLowerCase() !== 'null';
+
+            tel2Container.classList.toggle('hidden', !hasTel2);
         }
     }
 
@@ -195,5 +209,8 @@ export class ConfigManager {
         globalCache.set('config', 'full', { hash: configHash, timestamp: Date.now() });
     }
 }
+
+// Expor para o escopo global para compatibilidade com public.js
+window.ConfigManager = ConfigManager;
 
 export default ConfigManager;

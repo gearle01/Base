@@ -20,7 +20,7 @@ if (typeof window.state === "undefined") {
 }
 
 let db, storage;
-let firebaseManager = null;
+// let firebaseManager = null; // Removed to avoid conflict with global firebaseManager
 const clientId = "cliente-001";
 
 // ===== RATE LIMITERS =====
@@ -170,55 +170,104 @@ function renderSocialLinks() {
  * Carrega configurações nos inputs
  */
 function loadConfig(config) {
-  console.log("📥 [loadConfig] Carregando...");
+  console.log("📥 [loadConfig] Carregando...", config);
 
   try {
     // Informações básicas
-    if (config.empresaNome)
-      document.getElementById("empresaNome").value = config.empresaNome;
-    if (config.bannerTitulo)
-      document.getElementById("bannerTitulo").value = config.bannerTitulo;
-    if (config.bannerSubtitulo)
-      document.getElementById("bannerSubtitulo").value = config.bannerSubtitulo;
-    if (config.bannerImagem)
-      document.getElementById("bannerImagem").value = config.bannerImagem;
-    if (config.logoType)
-      document.getElementById("logoType").value = config.logoType;
-    if (config.logoImageUrl)
-      document.getElementById("logoImageUrl").value = config.logoImageUrl;
-    if (config.faviconImageUrl)
-      document.getElementById("faviconImageUrl").value = config.faviconImageUrl;
+    const empresaNomeEl = document.getElementById("empresaNome");
+    if (empresaNomeEl && config.empresaNome) {
+      empresaNomeEl.value = config.empresaNome;
+      console.log("✅ empresaNome definido:", config.empresaNome);
+    } else {
+      console.warn("⚠️ empresaNome não encontrado ou sem valor");
+    }
+
+    if (config.bannerTitulo) {
+      const el = document.getElementById("bannerTitulo");
+      if (el) {
+        el.value = config.bannerTitulo;
+        console.log("✅ bannerTitulo definido:", config.bannerTitulo);
+      }
+    }
+
+    if (config.bannerSubtitulo) {
+      const el = document.getElementById("bannerSubtitulo");
+      if (el) el.value = config.bannerSubtitulo;
+    }
+
+    if (config.bannerImagem) {
+      const el = document.getElementById("bannerImagem");
+      if (el) el.value = config.bannerImagem;
+    }
+
+    if (config.logoType) {
+      const el = document.getElementById("logoType");
+      if (el) {
+        el.value = config.logoType;
+        console.log("✅ logoType definido:", config.logoType);
+      }
+    }
+
+    if (config.logoImageUrl) {
+      const el = document.getElementById("logoImageUrl");
+      if (el) el.value = config.logoImageUrl;
+    }
+
+    if (config.faviconImageUrl) {
+      const el = document.getElementById("faviconImageUrl");
+      if (el) el.value = config.faviconImageUrl;
+    }
 
     // Cores
     if (config.cores) {
-      if (config.cores.primaria)
-        document.getElementById("corPrimaria").value = config.cores.primaria;
-      if (config.cores.secundaria)
-        document.getElementById("corSecundaria").value = config.cores.secundaria;
+      if (config.cores.primaria) {
+        const el = document.getElementById("corPrimaria");
+        if (el) el.value = config.cores.primaria;
+      }
+      if (config.cores.secundaria) {
+        const el = document.getElementById("corSecundaria");
+        if (el) el.value = config.cores.secundaria;
+      }
     }
 
     // Sobre
     if (config.sobre) {
-      if (config.sobre.texto)
-        document.getElementById("sobreTexto").value = config.sobre.texto;
-      if (config.sobre.imagem)
-        document.getElementById("sobreImagem").value = config.sobre.imagem;
+      if (config.sobre.texto) {
+        const el = document.getElementById("sobreTexto");
+        if (el) el.value = config.sobre.texto;
+      }
+      if (config.sobre.imagem) {
+        const el = document.getElementById("sobreImagem");
+        if (el) el.value = config.sobre.imagem;
+      }
     }
 
     // Contato
     if (config.contato) {
-      if (config.contato.telefone)
-        document.getElementById("telefone").value = config.contato.telefone;
-      if (config.contato.telefone2)
-        document.getElementById("telefone2").value = config.contato.telefone2;
-      if (config.contato.email)
-        document.getElementById("email").value = config.contato.email;
-      if (config.contato.endereco)
-        document.getElementById("endereco").value = config.contato.endereco;
-      if (config.contato.latitude)
-        document.getElementById("latitude").value = config.contato.latitude;
-      if (config.contato.longitude)
-        document.getElementById("longitude").value = config.contato.longitude;
+      if (config.contato.telefone) {
+        const el = document.getElementById("telefone");
+        if (el) el.value = config.contato.telefone;
+      }
+      if (config.contato.telefone2) {
+        const el = document.getElementById("telefone2");
+        if (el) el.value = config.contato.telefone2;
+      }
+      if (config.contato.email) {
+        const el = document.getElementById("email");
+        if (el) el.value = config.contato.email;
+      }
+      if (config.contato.endereco) {
+        const el = document.getElementById("endereco");
+        if (el) el.value = config.contato.endereco;
+      }
+      if (config.contato.latitude) {
+        const el = document.getElementById("latitude");
+        if (el) el.value = config.contato.latitude;
+      }
+      if (config.contato.longitude) {
+        const el = document.getElementById("longitude");
+        if (el) el.value = config.contato.longitude;
+      }
     }
 
     // Módulos
@@ -299,23 +348,27 @@ async function initializeFirebaseWithRealtimeUpdates() {
   try {
     console.log("🔄 [initializeFirebase] Iniciando Firebase Realtime...");
 
-    if (typeof firebase === "undefined") {
-      throw new Error("Firebase SDK não carregou");
+    if (!window.firebaseManager) {
+      window.firebaseManager = new FirebaseRealtimeManager();
     }
 
-    if (!firebaseManager) {
-      firebaseManager = new FirebaseRealtimeManager();
-      await firebaseManager.init();
-      console.log("✅ Firebase Realtime Manager inicializado");
-    }
+    await window.firebaseManager.init();
+    console.log("✅ Firebase Realtime Manager inicializado");
 
-    const initialData = await firebaseManager.loadInitialData();
-    loadConfig(initialData);
+    const initialData = await window.firebaseManager.loadInitialData();
+
+    console.log("📦 [initializeFirebase] Dados iniciais recebidos:", initialData);
+
+    if (initialData) {
+      loadConfig(initialData);
+    } else {
+      console.error("❌ Não foi possível carregar os dados iniciais.");
+      showToast("Erro ao carregar dados", "error");
+      return;
+    }
 
     // ===== SUBSCRIBERS =====
-
-    // Documento principal
-    firebaseManager.subscribeToDocument("site", "cliente-001", (data) => {
+    window.firebaseManager.subscribeToDocument("site", "cliente-001", (data) => {
       console.log("📡 Site atualizado em tempo real");
       if (data.empresaNome) {
         document.getElementById("empresaNome").value = data.empresaNome;
@@ -326,8 +379,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       update();
     });
 
-    // Cores
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "cores",
@@ -347,8 +399,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       }
     );
 
-    // Contato
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "contato",
@@ -367,8 +418,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       }
     );
 
-    // Módulos
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "modules",
@@ -390,8 +440,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       }
     );
 
-    // Sobre
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "sobre",
@@ -410,8 +459,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       }
     );
 
-    // Produtos
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "produtos",
@@ -423,8 +471,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
       }
     );
 
-    // Redes Sociais
-    firebaseManager.subscribeToSubcollection(
+    window.firebaseManager.subscribeToSubcollection(
       "site",
       "cliente-001",
       "social_links",
@@ -439,6 +486,7 @@ async function initializeFirebaseWithRealtimeUpdates() {
     );
 
     console.log("✅ Todos os subscribers configurados com sucesso!");
+
   } catch (error) {
     console.error("❌ Erro ao inicializar Firebase realtime:", error);
     showToast("Erro ao conectar em tempo real", "error");
@@ -456,7 +504,7 @@ async function saveConfig() {
       return;
     }
 
-    if (!firebaseManager) {
+    if (!window.firebaseManager) {
       showToast("Firebase não inicializado", "error");
       return;
     }
@@ -483,7 +531,7 @@ async function saveConfig() {
       socialLinks: state.socialLinks,
     };
 
-    await firebaseManager.saveData(dataToSave);
+    await window.firebaseManager.saveData(dataToSave);
 
     state.hasUnsavedChanges = false;
     updateSaveStatus();
@@ -549,20 +597,20 @@ function validateForm() {
 
 async function handleImageUpload(event, targetInputId, previewSelector) {
   const file = event.target.files[0];
-  if (!file || !firebaseManager) return;
+  if (!file || !window.firebaseManager) return;
 
   // ✅ CORREÇÃO: Obter a extensão original do arquivo
   const fileExtension = file.name.split('.').pop();
   if (!fileExtension) {
-      showToast("Nome de ficheiro inválido. Certifique-se que tem uma extensão (ex: .svg, .png).", "error");
-      return;
+    showToast("Nome de ficheiro inválido. Certifique-se que tem uma extensão (ex: .svg, .png).", "error");
+    return;
   }
 
   try {
     showToast("Fazendo upload...", "info");
 
     let storagePath = "images/";
-    
+
     // ✅ CORREÇÃO: Usar a extensão original para o caminho
     if (targetInputId === "logoImageUrl") storagePath += `logo.${fileExtension}`;
     else if (targetInputId === "faviconImageUrl") storagePath += `favicon.${fileExtension}`;
@@ -570,7 +618,7 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
     else if (targetInputId === "sobreImagem") storagePath += `sobre.${fileExtension}`;
     else storagePath += `${Date.now()}.${fileExtension}`;
 
-    const downloadUrl = await firebaseManager.uploadImage(file, storagePath);
+    const downloadUrl = await window.firebaseManager.uploadImage(file, storagePath);
 
     document.getElementById(targetInputId).value = downloadUrl;
 
@@ -579,11 +627,11 @@ async function handleImageUpload(event, targetInputId, previewSelector) {
       if (previewEl) {
         // Para SVGs, é melhor usar <img> para preservar a proporção
         if (file.type === 'image/svg+xml') {
-            previewEl.style.backgroundImage = 'none';
-            previewEl.innerHTML = `<img src="${downloadUrl}" style="width: 100%; height: 100%; object-fit: contain;">`;
+          previewEl.style.backgroundImage = 'none';
+          previewEl.innerHTML = `<img src="${downloadUrl}" style="width: 100%; height: 100%; object-fit: contain;">`;
         } else {
-            previewEl.innerHTML = '';
-            previewEl.style.backgroundImage = `url(${downloadUrl})`;
+          previewEl.innerHTML = '';
+          previewEl.style.backgroundImage = `url(${downloadUrl})`;
         }
       }
     }
@@ -733,30 +781,61 @@ function removeSocialLink(index) {
 
 // ===== INICIALIZAÇÃO =====
 
+// ===== INICIALIZAÇÃO =====
+
 if (window.self !== window.top) {
   window.top.location = window.self.location;
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
-  console.log("📄 DOM carregado");
+  console.log("📄 [app.js] DOM carregado - Iniciando setup...");
 
-  if (!window.authManager) {
-    showToast("Erro: Auth Manager não carregado", "error");
-    return;
-  }
-
-  const user = await window.authManager.waitUntilReady();
-
-  if (user) {
-    console.log("✅ Usuário autenticado:", user.email);
-    try {
-      await initializeFirebaseWithRealtimeUpdates();
-    } catch (error) {
-      console.error("❌ Erro Firebase:", error);
-      showToast("Erro ao conectar", "error");
+  try {
+    // 1. Inicializar o Firebase e o AuthManager
+    if (typeof window.initializeFirebase !== 'function') {
+      throw new Error("Função initializeFirebase não encontrada.");
     }
-  } else {
-    showToast("Não autenticado", "warning");
+    const { auth } = await window.initializeFirebase();
+
+    if (typeof AuthManager === 'undefined') {
+      throw new Error("AuthManager script não carregado.");
+    }
+    window.authManager = new AuthManager('admin', auth, showToast);
+    await window.authManager.init();
+    console.log("🔐 AuthManager pronto.");
+
+    // 2. Inicializar Mapa (Leaflet) - será inicializado pelo admin-map.js quando carregar
+    const mapContainer = document.getElementById('adminMap');
+    if (mapContainer) {
+      console.log('📍 Container do mapa encontrado, aguardando admin-map.js...');
+    }
+
+    // 3. Listeners para Switches
+    document.querySelectorAll('.switch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        sw.classList.toggle('active');
+        const module = sw.dataset.module;
+        if (window.state && window.state.modules) {
+          window.state.modules[module] = sw.classList.contains('active');
+          markAsUnsaved();
+          update();
+        }
+      });
+    });
+
+    // 4. Verificar Autenticação e Carregar Dados
+    const user = await window.authManager.waitUntilReady();
+    if (user) {
+      console.log("✅ Usuário autenticado:", user.email);
+      await initializeFirebaseWithRealtimeUpdates();
+    } else {
+      console.warn("🚫 Usuário não autenticado. Redirecionando ou aguardando login...");
+      showToast("Sessão não iniciada", "warning");
+    }
+
+  } catch (error) {
+    console.error("❌ Erro fatal na inicialização:", error);
+    showToast(`Erro de Inicialização: ${error.message}`, "error");
   }
 });
 

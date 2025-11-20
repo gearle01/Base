@@ -4,281 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <meta name="theme-color" content="#007bff">
 
-    <!-- ✅ CORREÇÃO: Título genérico durante o carregamento -->
-    <title></title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/skeleton.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
-    <meta name="description" content="Descrição concisa do seu site para SEO.">
-    <meta name="author" content="Seu Nome ou Nome da Empresa">
-
-    <!-- ✅ CORREÇÃO: Cor do tema agora usa a variável primária -->
-    <meta name="theme-color" content="var(--primary, #007bff)">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://seusite.com/">
-    <meta property="og:title" content="GSM - Título Atraente">
-    <meta property="og:description" content="Descrição concisa do seu site para redes sociais.">
-    <meta property="og:image" content="https://seusite.com/path/to/your/image.jpg">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://seusite.com/">
-    <meta property="twitter:title" content="GSM - Título Atraente">
-    <meta property="twitter:description" content="Descrição concisa do seu site para redes sociais.">
-    <meta property="twitter:image" content="https://seusite.com/path/to/your/image.jpg">
-
-    <!-- Preconnect e DNS-Prefetch -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://www.gstatic.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="dns-prefetch" href="https://images.unsplash.com">
-    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <link id="faviconLink" rel="icon" type="image/png"
-        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAABn0lEQVQ4jZ2TvUscURSHn3t3dtZ1/YrRQhQUsbAgIkJAEIyVYmFhYWNhYWPnf2BnY2khNsYqkNLOD2wUG1ECEgQRxDXr7syOzr0W7q6ZdVYscrqB87vvOe95ZDAY8L/lAczMzBCGIbquo2ka09PTjI2NIYQgl8sxPT1NvV6n2WxydXVFEASPAwAYGxsjn8+TSqXI5XJMTk4iSRJxHHN3d0etVqPZbNJqtR4H6LqOruuYpkkymSSdTqNpGlEU0el06Ha7dDodOp3O4wBZlpFl+SFwbB6GIUEQPEyvVquPAyRJ4unpCcuysCwLwzAwDINms0m326XX6+F5HrIs/xswMTHB+Pg4iqLgui6yLGMYBkEQEMcxiqKgadq/AZqmoaoqiqLgeR7tdpvb21s8z8NxHOI4RgjB5eUlqqr+EhRCIITg4eGB8/Nzms0m+XyeVCrFxMQEiqJgWRbLy8tcX19zdnZGqVRifn5+BBABrdaAg4MDDg8POT4+xvM8ZFlGURQkSSKOY/r9PgBzc3OsrKywsbGB4ziIwWDwGbhvtVqWaZpfgS/AJ8ACukAF+A58E0KcCiF+APw0oy7COM7YAAAAAElFTkSuQmCC">
-
-    <!-- ✅ CORREÇÃO: CSS Crítico Inline agora usa variáveis CSS -->
-    <style>
-        :root {
-            /* Fallbacks (serão substituídos pelo public.js) */
-            --primary: #007bff;
-            --secondary: #28a745;
-            --text-color: #333;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            overflow-x: clip;
-            color: var(--text-color);
-            /* ✅ CORRIGIDO */
-        }
-
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: var(--primary);
-            /* ✅ CORRIGIDO */
-            color: white;
-            padding: 8px;
-            z-index: 9999;
-            transition: top 0.3s ease;
-        }
-
-        .skip-link:focus {
-            top: 0;
-        }
-
-        .site-nav {
-            position: sticky;
-            top: 0;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .site-logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
-            /* ✅ CORRIGIDO (era #333) */
-        }
-
-        .nav-content {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .site-nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-            align-items: center;
-        }
-
-        .site-nav-links a {
-            text-decoration: none;
-            font-weight: 500;
-            transition: opacity 0.2s;
-            color: var(--text-color);
-            /* ✅ CORRIGIDO (era #333) */
-        }
-
-        .site-nav-links a:hover {
-            opacity: 0.7;
-        }
-
-        .banner {
-            min-height: 500px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            padding: 4rem 2rem;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-
-        .banner::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        .banner-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .banner h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .banner p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-        }
-
-        .cta-btn {
-            display: inline-block;
-            padding: 1rem 2.5rem;
-            background: var(--primary);
-            /* ✅ CORRIGIDO (era #007bff) */
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.2s;
-            border: 2px solid var(--primary);
-            /* ✅ CORRIGIDO */
-        }
-
-        .cta-btn:hover {
-            transform: translateY(-2px);
-            background: white;
-            color: var(--primary);
-            /* ✅ CORRIGIDO */
-        }
-
-        .hamburger {
-            display: none;
-            cursor: pointer;
-        }
-
-        .hamburger .line {
-            width: 30px;
-            height: 3px;
-            background: var(--text-color);
-            /* ✅ CORRIGIDO (era #333) */
-            margin: 5px 0;
-            transition: 0.4s;
-        }
-
-        @media (max-width: 768px) {
-            .site-nav-links {
-                position: fixed;
-                right: 0;
-                top: 0;
-                height: 100vh;
-                background: white;
-                flex-direction: column;
-                align-items: center;
-                justify-content: flex-start;
-                padding-top: 60px;
-                width: 60%;
-                transform: translateX(100%);
-                transition: transform 0.5s ease-in-out;
-                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-            }
-
-            .site-nav.nav-active .site-nav-links {
-                transform: translateX(0%);
-            }
-
-            .hamburger {
-                display: block;
-                z-index: 1002;
-            }
-
-            .hamburger {
-                display: block;
-                z-index: 1002;
-            }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-    </style>
-
-    <!-- Stylesheets não críticos -->
-    <link rel="stylesheet" href="css/main.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="css/skeleton.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-        media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet" href="css/main.css">
-        <link rel="stylesheet" href="css/skeleton.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    </noscript>
-
-    <!-- Schema.org JSON-LD -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "GSM",
-      "url": "https://seusite.com/",
-      "logo": "https://seusite.com/path/to/your/logo.png",
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+55-XX-XXXXX-XXXX",
-        "contactType": "customer service"
-      }
-    }
-    </script>
 </head>
 
 <body>
-    <script>
-        // Injetando a configuração do Firebase diretamente para garantir a disponibilidade
-        window.firebaseConfig = {
-            apiKey: "AIzaSyB9KwQm9eZqqkOh8S4hSBiy3RLlNFyQ4fk",
-            authDomain: "base-5488a.firebaseapp.com",
-            projectId: "base-5488a",
-            storageBucket: "base-5488a.firebasestorage.app",
-            messagingSenderId: "399469780607",
-            appId: "1:399469780607:web:39690561538a9e9a0a694a",
-            measurementId: "G-JJ259S5NTX"
-        };
-        // Manter compatibilidade com scripts que usam a variável direta
-        const firebaseConfig = window.firebaseConfig;
-    </script>
-    <a href="#site" class="skip-link">Pular para o conteúdo</a>
+
+
     <div class="site" id="site">
         <nav class="site-nav">
-            <div class="site-logo" id="logo"></div>
+            <div class="site-logo" id="logo">Logo</div>
             <div class="nav-content">
                 <ul class="site-nav-links">
                     <li><a href="#home">Home</a></li>
@@ -296,96 +39,62 @@
 
         <section class="banner" id="home">
             <div class="banner-content">
-                <h1 id="bannerH1"></h1>
-                <p id="bannerP"></p>
-                <a href="#contato" class="cta-btn">Entre em Contato</a>
+                <h1 id="bannerH1">Bem-vindo</h1>
+                <p id="bannerP">Subtítulo aqui</p>
+                <a href="#contato" class="cta-btn">Contato</a>
             </div>
         </section>
 
         <section class="site-section alt sobre-section" id="sobre">
             <div class="section-content">
-                <h2 class="section-title">Sobre Nós</h2>
+                <h2 class="section-title">Sobre</h2>
                 <div class="about-grid">
-                    <div class="about-text" id="sobreTextoPreview">
-                        <!-- Conteúdo dinâmico -->
-                    </div>
-                    <div class="about-image" id="sobreImagemPreview">
-                        <!-- Imagem com loading="lazy" será inserida via JS -->
-                    </div>
+                    <div class="about-text" id="sobreTextoPreview"></div>
+                    <div class="about-image" id="sobreImagemPreview"></div>
                 </div>
             </div>
         </section>
 
         <section class="site-section produtos-section" id="produtos">
             <div class="section-content">
-                <h2 class="section-title">Nossos Produtos</h2>
-                <div class="products-grid" id="produtosGrid">
-                    <!-- Produtos com loading="lazy" serão inseridos via JS -->
-                </div>
+                <h2 class="section-title">Produtos</h2>
+                <div class="products-grid" id="produtosGrid"></div>
             </div>
         </section>
 
         <section class="site-section alt contato-section" id="contato">
             <div class="section-content">
-                <h2 class="section-title">Entre em Contato</h2>
+                <h2 class="section-title">Contato</h2>
                 <div class="contact-grid">
                     <div>
                         <div class="contact-item" id="contact-tel1">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path
-                                        d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z" />
-                                </svg>
-                            </div>
+                            <div class="contact-icon"><i class="fas fa-phone"></i></div>
                             <div>
-                                <h4>Telefone</h4>
-                                <a href="#" id="telLink1" class="address-link" aria-label="Telefone">
+                                <h4>Telefone</h4><a href="#" id="telLink1">
                                     <p id="telPreview"></p>
                                 </a>
                             </div>
                         </div>
                         <div class="contact-item hidden" id="contact-tel2">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path
-                                        d="M16.5562 12.9062L16.1007 13.359C16.1007 13.359 15.0181 14.4355 12.0631 11.4972C9.10812 8.55901 10.1907 7.48257 10.1907 7.48257L10.4775 7.19738C11.1841 6.49484 11.2507 5.36691 10.6342 4.54348L9.37326 2.85908C8.61028 1.83992 7.13596 1.70529 6.26145 2.57483L4.69185 4.13552C4.25823 4.56668 3.96765 5.12559 4.00289 5.74561C4.09304 7.33182 4.81071 10.7447 8.81536 14.7266C13.0621 18.9492 17.0468 19.117 18.6763 18.9651C19.1917 18.9171 19.6399 18.6546 20.0011 18.2954L21.4217 16.883C22.3806 15.9295 22.1102 14.2949 20.8833 13.628L18.9728 12.5894C18.1672 12.1515 17.1858 12.2801 16.5562 12.9062Z" />
-                                </svg>
-                            </div>
+                            <div class="contact-icon"><i class="fas fa-phone"></i></div>
                             <div>
-                                <h4>Telefone 2</h4>
-                                <a href="#" id="telLink2" class="address-link" aria-label="Telefone 2">
+                                <h4>Tel 2</h4><a href="#" id="telLink2">
                                     <p id="telPreview2"></p>
                                 </a>
                             </div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" clip-rule="evenodd"
-                                        d="M20 4C21.6569 4 23 5.34315 23 7V17C23 18.6569 21.6569 20 20 20H4C2.34315 20 1 18.6569 1 17V7C1 5.34315 2.34315 4 4 4H20ZM19.2529 6H4.74718L11.3804 11.2367C11.7437 11.5236 12.2563 11.5236 12.6197 11.2367L19.2529 6ZM3 7.1688V17C3 17.5523 3.44772 18 4 18H20C20.5523 18 21 17.5523 21 17V7.16882L13.8589 12.8065C12.769 13.667 11.231 13.667 10.1411 12.8065L3 7.1688Z" />
-                                </svg>
-                            </div>
+                            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                             <div>
-                                <h4>E-mail</h4>
-                                <a href="mailto:" id="emailLink" class="address-link" aria-label="E-mail">
+                                <h4>E-mail</h4><a href="#" id="emailLink">
                                     <p id="emailPreview"></p>
                                 </a>
                             </div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                                    <path
-                                        d="M309.2 584.776h105.5l-49 153.2H225.8c-7.3 0-13.3-6-13.3-13.3 0-2.6 0.8-5.1 2.2-7.3l83.4-126.7c2.5-3.6 6.7-5.9 11.1-5.9z" />
-                                    <path
-                                        d="M534.1 639.7C652.5 537.4 711.7 445.8 711.7 365c0-127-102.7-212.1-195-212.1s-195 85.1-195 212.1c0 80.8 59.2 172.3 177.7 274.7 9.9 8.6 24.7 8.6 34.7 0z" />
-                                    <circle cx="516.7" cy="348" r="97.5" />
-                                </svg>
-                            </div>
+                            <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                             <div>
-                                <h4>Endereço</h4>
-                                <a href="#" id="enderecoLink" class="address-link" target="_blank"
-                                    rel="noopener noreferrer" aria-label="Endereço">
+                                <h4>Endereço</h4><a href="#" id="enderecoLink">
                                     <p id="enderecoPreview"></p>
                                 </a>
                             </div>
@@ -400,55 +109,33 @@
 
         <footer class="site-footer">
             <div class="social-icons-footer social-links"></div>
-            <p>© 2025 <span id="footerNome"></span>. Todos os direitos reservados.</p>
-            <div id="whatsApp"></div>
-            <div id="address"></div>
-            <p class="footer-text"><a href="login.html" class="footer-link">Acesso Restrito</a></p>
+            <p>© 2025 <span id="footerNome"></span>.</p>
+            <p><a href="login.html" class="footer-link">Acesso Restrito</a></p>
         </footer>
     </div>
 
-    <a id="whatsapp-fab" href="#" target="_blank" rel="noopener noreferrer" class="admin-login-icon whatsapp-fab"
-        title="Fale conosco no WhatsApp">
-        <img src="https://img.icons8.com/?size=100&id=16713&format=png&color=FFFFFF" alt="WhatsApp" loading="lazy"
-            width="35" height="35">
-    </a>
+    <a id="whatsapp-fab" href="#" target="_blank" class="whatsapp-fab"><i class="fab fa-whatsapp"
+            style="color:white;font-size:30px;"></i></a>
 
-    <!-- Scripts com 'defer' -->
+
     <script src="js/modules.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js" defer></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <script src="js/firebase-config.local.js" defer></script>
+    <script src="js/firebase-config.js" defer></script>
 
     <script src="js/purify.min.js" defer></script>
-    <script src="js/color-contrast.js" defer></script>
-
-    <!-- Scripts Modulares -->
-    <script src="js/validation.js" defer></script>
-    <script src="js/skeleton-loader.js" type="module" defer></script>
     <script src="js/helpers.js" type="module" defer></script>
     <script src="js/smart-cache.js" type="module" defer></script>
-    <script src="js/config-manager.js" type="module" defer"></script>
+    <script src="js/config-manager.js" type="module" defer></script>
     <script src="js/firebase-manager.js" defer></script>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js" defer></script>
-    <script src="js/web-vitals.js" defer></script>
+    <script src="js/responsive.js" defer></script>
 
     <script src="js/public.js" type="module" defer></script>
-    <script src="js/responsive.js" type="module" defer></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registrado com sucesso:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Falha ao registrar o Service Worker:', error);
-                    });
-            });
-        }
-    </script>
 </body>
 
 </html>

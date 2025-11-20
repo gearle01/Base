@@ -2,42 +2,26 @@
 <html lang="pt-BR" class="admin-panel">
 
 <head>
-    <meta charset="UTF-C">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ✅ MELHORIA: Título mais descritivo -->
     <title>Painel de Administração</title>
-
-    <!-- Meta tags de segurança e PWA -->
     <meta name="robots" content="noindex, nofollow">
 
-    <!-- ✅ MELHORIA: Carrega o CSS crítico primeiro -->
     <link rel="stylesheet" href="css/critical.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/modal.css">
 
-    <!-- Leaflet (para o mapa) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
-        xintegrity="sha512-Zcn6rR11GGFinPdNaPdbaXGEpDNBJp/ZsdXQZ+BYE8QIW6BI8naZfQGIIvtYYzF/r9/eSgcJVEFn6SZiXlTwMA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <!-- ✅ MELHORIA: Carrega outros CSS de forma assíncrona -->
-    <link rel="stylesheet" href="css/admin.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="css/modal.css" media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet" href="css/admin.css">
-        <link rel="stylesheet" href="css/modal.css">
-    </noscript>
-
-    <!-- Fontes (Preconnect) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <!-- Header Fixo -->
     <header class="admin-header">
         <h2>Painel de Controle</h2>
         <div class="header-actions">
-            <!-- ✅ MELHORIA: 'saveStatus' movido para cá para melhor visibilidade -->
             <div id="saveStatus" class="save-status saved">
                 <span id="saveText">✓ Salvo</span>
             </div>
@@ -47,25 +31,17 @@
     </header>
 
     <div class="admin-container">
-        <!-- Conteúdo Principal -->
         <main class="admin-content">
             <div class="content-preview-grid">
 
-                <!-- Coluna de Configurações (Esquerda) -->
                 <div class="config-column">
-
-                    <!-- Seção Geral -->
                     <section id="geral" class="config-section">
                         <h3>Geral</h3>
-
-                        <!-- Nome da Empresa -->
                         <div class="form-group">
                             <label for="empresaNome">Nome da Empresa</label>
                             <input type="text" id="empresaNome" class="form-control"
                                 placeholder="Nome que aparece no site" oninput="markAsUnsaved(); update();">
                         </div>
-
-                        <!-- Tipo de Logo -->
                         <div class="form-group">
                             <label>Tipo de Logo</label>
                             <input type="hidden" id="logoType" value="text">
@@ -74,10 +50,8 @@
                                 <button class="btn btn-secondary" onclick="setLogoType('image')">Imagem</button>
                             </div>
                         </div>
-
-                        <!-- Logo Imagem (Oculto por padrão) -->
                         <div class="form-group hidden" id="logoImageInputGroup">
-                            <label for="logoUpload">Upload do Logo (Recomendado .svg)</label>
+                            <label for="logoUpload">Upload do Logo</label>
                             <div class="image-upload-box">
                                 <div class="image-preview" id="logoPreview" style="background-image: url('');"></div>
                                 <input type="file" id="logoUpload" class="form-control"
@@ -87,8 +61,6 @@
                             <input type="text" id="logoImageUrl" class="form-control"
                                 placeholder="URL do logo (automático)" readonly oninput="markAsUnsaved(); update();">
                         </div>
-
-                        <!-- Favicon -->
                         <div class="form-group">
                             <label for="faviconUpload">Favicon (Ícone da Aba)</label>
                             <div class="image-upload-box small">
@@ -100,8 +72,6 @@
                             <input type="text" id="faviconImageUrl" class="form-control"
                                 placeholder="URL do favicon (automático)" readonly oninput="markAsUnsaved(); update();">
                         </div>
-
-                        <!-- Banner -->
                         <div class="form-group">
                             <label for="bannerTitulo">Título do Banner</label>
                             <input type="text" id="bannerTitulo" class="form-control" placeholder="Título principal"
@@ -125,7 +95,6 @@
                         </div>
                     </section>
 
-                    <!-- Seção Cores e Fontes -->
                     <section id="cores" class="config-section">
                         <h3>Cores e Fontes</h3>
                         <div class="form-group">
@@ -134,11 +103,10 @@
                                 oninput="markAsUnsaved(); update();">
                         </div>
                         <div class="form-group">
-                            <label for="corSecundaria">Cor Secundária (Ex: WhatsApp)</label>
+                            <label for="corSecundaria">Cor Secundária</label>
                             <input type="color" id="corSecundaria" class="form-control color-input" value="#28a745"
                                 oninput="markAsUnsaved(); update();">
                         </div>
-                        <!-- Fontes (Exemplo) -->
                         <div class="form-group">
                             <label for="fontUrl">URL da Fonte (Google Fonts)</label>
                             <input type="text" id="fontUrl" class="form-control"
@@ -152,7 +120,6 @@
                         </div>
                     </section>
 
-                    <!-- Seção Sobre -->
                     <section id="sobre" class="config-section">
                         <h3>Sobre</h3>
                         <div class="form-group">
@@ -173,17 +140,12 @@
                         </div>
                     </section>
 
-                    <!-- Seção Produtos -->
                     <section id="produtos" class="config-section">
                         <h3>Produtos/Serviços</h3>
-                        <div id="produtosList">
-                            <!-- Lista renderizada pelo app.js -->
-                        </div>
-                        <!-- ✅ MELHORIA: Onclick chama 'openProdutoModal' do app.js -->
+                        <div id="produtosList"></div>
                         <button class="btn btn-secondary" onclick="openProdutoModal(-1)">Adicionar Produto</button>
                     </section>
 
-                    <!-- Seção Contato -->
                     <section id="contato" class="config-section">
                         <h3>Contato e Mapa</h3>
                         <div class="form-group">
@@ -215,25 +177,20 @@
                                 <input type="number" id="longitude" class="form-control"
                                     oninput="markAsUnsaved(); update();">
                             </div>
-                            <small>Use o mapa abaixo para encontrar as coordenadas.</small>
+                            <small>Clique no mapa para definir.</small>
                         </div>
                         <div id="adminMap" style="height: 300px; border-radius: 8px; margin-top: 1rem;"></div>
                     </section>
 
-                    <!-- Seção Redes Sociais -->
                     <section id="social" class="config-section">
                         <h3>Redes Sociais</h3>
-                        <div id="socialLinksList" class="social-links-admin-list">
-                            <!-- Lista de links renderizada pelo app.js -->
-                        </div>
+                        <div id="socialLinksList" class="social-links-admin-list"></div>
                         <div id="socialEmptyState" class="empty-state">
                             <p>Nenhuma rede social adicionada.</p>
                         </div>
-                        <!-- ✅ MELHORIA: Onclick chama 'addSocialLink' do app.js -->
                         <button class="btn btn-secondary" onclick="addSocialLink()">Adicionar Rede Social</button>
                     </section>
 
-                    <!-- Seção Módulos -->
                     <section id="modulos" class="config-section">
                         <h3>Módulos Visíveis</h3>
                         <div class="module-toggle-list">
@@ -251,10 +208,8 @@
                             </div>
                         </div>
                     </section>
-
                 </div>
 
-                <!-- Coluna de Preview (Direita) -->
                 <div class="preview-column">
                     <div class="preview-sticky-container">
                         <iframe id="preview-iframe" src="index.html" title="Preview do Site"></iframe>
@@ -264,168 +219,72 @@
         </main>
     </div>
 
-    <!-- MODAIS -->
-
-    <!-- Modal: Produtos -->
     <div id="produtoModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeProdutoModal()">&times;</span>
-            <h4 id="produtoModalTitle">Adicionar Produto</h4>
+            <h4 id="produtoModalTitle">Produto</h4>
             <input type="hidden" id="produtoId">
             <div class="form-group">
-                <label for="produtoNome">Nome</label>
-                <input type="text" id="produtoNome" class="form-control" required>
+                <label>Imagem</label>
+                <div class="image-upload-box">
+                    <div class="image-preview" id="produtoPreview"
+                        style="background-image: url(''); min-height: 150px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #f8f9fa;">
+                    </div>
+                    <input type="file" id="produtoUpload" class="form-control" accept="image/*"
+                        onchange="handleImageUpload(event, 'produtoImageUrl', '#produtoPreview')">
+                </div>
+                <input type="hidden" id="produtoImageUrl">
             </div>
-            <div class="form-group">
-                <label for="produtoPreco">Preço</label>
-                <input type="text" id="produtoPreco" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="produtoDescricao">Descrição (Opcional)</label>
-                <textarea id="produtoDescricao" class="form-control" rows="4"></textarea>
-            </div>
-            <!-- ✅ MELHORIA: Onclick chama 'saveProduto' do app.js -->
-            <button class="btn btn-primary" onclick="saveProduto()">Salvar Produto</button>
+            <div class="form-group"><label>Nome</label><input type="text" id="produtoNome" class="form-control"></div>
+            <div class="form-group"><label>Preço</label><input type="text" id="produtoPreco" class="form-control"></div>
+            <div class="form-group"><label>Descrição</label><textarea id="produtoDescricao"
+                    class="form-control"></textarea></div>
+            <button class="btn btn-primary" onclick="saveProduto()">Salvar</button>
         </div>
     </div>
 
-    <!-- Modal: Redes Sociais -->
     <div id="socialLinkModal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeSocialModal()">&times;</span>
-            <h4>Configurar Rede Social</h4>
+            <h4>Rede Social</h4>
             <input type="hidden" id="currentSocialLinkIndex">
-            <div class="form-group">
-                <label for="socialLinkName">Nome (Ex: Instagram)</label>
-                <input type="text" id="socialLinkName" class="form-control" required>
+            <div class="form-group"><label>Nome</label><input type="text" id="socialLinkName" class="form-control">
             </div>
-            <div class="form-group">
-                <label for="socialLinkUrl">URL (link completo)</label>
-                <input type="url" id="socialLinkUrl" class="form-control" placeholder="https://www.instagram.com/..."
-                    required>
-            </div>
-            <!-- ✅ MELHORIA: Onclick chama 'saveSocialLinkChanges' do app.js -->
-            <button class="btn btn-primary" onclick="saveSocialLinkChanges()">Salvar Link</button>
+            <div class="form-group"><label>URL</label><input type="url" id="socialLinkUrl" class="form-control"></div>
+            <button class="btn btn-primary" onclick="saveSocialLinkChanges()">Salvar</button>
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
     <div id="toastContainer"></div>
 
-
-    <!-- ✅ MELHORIA: Scripts movidos para o final do body -->
-    <!-- ✅ MELHORIA: Removido 'firebase-config.local.js' e unificado com 'firebase-config.js' -->
-
-    <!-- Carregadores Modulares (Carregados primeiro) -->
-    <script src="js/firebase-loader.js" defer></script>
-    <script src="js/leaflet-loader.js" defer></script>
-    <script src="js/toast.js" defer></script>
-    <script src="js/validation.js" defer></script>
-    <script src="js/config-manager.js" defer></script>
-
-    <!-- SDKs do Firebase (Carregados via loader ou diretamente) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="js/firebase-config.local.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/validation.js"></script>
 
-    <!-- Configuração e Managers Principais -->
-    <script src="js/firebase-config.js"></script> <!-- Unificado -->
+    <script src="js/leaflet-loader.js" type="module"></script>
+    <script src="js/config-manager.js" type="module"></script>
+    <script src="js/admin-map.js" type="module"></script>
+    <script src="js/smart-cache.js" type="module"></script>
+
     <script src="js/auth-manager.js"></script>
-    <script src="js/firebase-manager.js"></script> <!-- Depende de validation.js -->
+    <script src="js/firebase-manager.js"></script>
+    <script src="js/app.js"></script>
 
-    <!-- Lógica da Aplicação Admin -->
-    <script src="js/admin-map.js"></script>
-    <script src="js/app.js"></script> <!-- Contém a lógica principal do admin -->
-
-
-    <!-- ✅ MELHORIA: Bloco de script inline removido -->
-    <!-- Todo o código de toast, social link e produto foi removido daqui -->
-    <!-- e agora é carregado exclusivamente de 'app.js' e 'toast.js' -->
-    <script>
-        // Script inline mínimo para inicialização
-
-        // Inicializa o Auth Manager
-        let authManager;
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🔥 [admin.html] Inicializando Firebase...');
-            try {
-                // Garante que o SDK do Firebase foi carregado
-                if (typeof firebase === 'undefined') {
-                    console.error('Firebase SDK não carregou a tempo.');
-                    showToast('Erro crítico: Falha ao carregar Firebase.', 'error');
-                    return;
-                }
-
-                if (typeof firebaseConfig === 'undefined') {
-                    console.error('firebaseConfig não foi carregado.');
-                    showToast('Erro crítico: Falha ao carregar configuração.', 'error');
-                    return;
-                }
-
-                firebase.initializeApp(firebaseConfig);
-                console.log('✅ [admin.html] Firebase inicializado com sucesso.');
-
-                // Inicializa o AuthManager (agora com 'showToast' global)
-                if (typeof AuthManager !== 'undefined') {
-                    window.authManager = new AuthManager('admin', firebase.auth(), showToast);
-                    console.log('🔐 [admin.html] Verificando acesso com Auth Manager...');
-                    await window.authManager.init();
-                } else {
-                    console.error('AuthManager não está definido.');
-                }
-
-            } catch (error) {
-                console.error('❌ Erro na inicialização do admin.html:', error);
-                if (typeof showToast === 'function') {
-                    showToast('Erro ao inicializar: ' + error.message, 'error');
-                }
-            }
-        });
-
-        // Inicializa o mapa
+    <script type="module">
+        import { adminMap } from './js/admin-map.js';
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof LeafletLoader !== 'undefined') {
-                LeafletLoader.load({
-                    mapId: 'adminMap',
-                    latId: 'latitude',
-                    lngId: 'longitude',
-                    isDraggable: true,
-                    onInit: (map) => {
-                        console.log('📍 Inicializando mapa do admin...');
-                        map.on('click', function (e) {
-                            const { lat, lng } = e.latlng;
-                            document.getElementById('latitude').value = lat.toFixed(6);
-                            document.getElementById('longitude').value = lng.toFixed(6);
-                            LeafletLoader.updateMarker(lat, lng);
-                            markAsUnsaved();
-                            update();
-                        });
-                    }
-                }).then(() => {
-                    console.log('✅ Mapa carregado com sucesso!');
-                }).catch(err => {
-                    console.error('❌ Erro ao carregar mapa:', err);
-                });
-            }
-        });
-
-        // Listener para os switches de Módulos
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.switch').forEach(sw => {
-                sw.addEventListener('click', () => {
-                    sw.classList.toggle('active');
-                    const module = sw.dataset.module;
-                    if (window.state && window.state.modules) {
-                        window.state.modules[module] = sw.classList.contains('active');
-                        markAsUnsaved();
-                        update();
-                    }
-                });
-            });
+            setTimeout(() => {
+                if (document.getElementById('adminMap') && adminMap) {
+                    adminMap.init('adminMap').catch(console.error);
+                }
+            }, 1500);
         });
     </script>
-
 </body>
 
 </html>

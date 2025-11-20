@@ -86,3 +86,31 @@ body {
     background: #007bff;
     color: white;
 }
+
+.btn-secondary {
+    width: 100%;
+    background: #f8f9fa !important;
+    color: #495057 !important;
+    border: 2px solid #dee2e6 !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-top: 1rem;
+    display: block;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef !important;
+    color: #212529 !important;
+    border-color: #adb5bd !important;
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}

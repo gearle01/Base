@@ -1,5 +1,5 @@
 /* =========================================
-   ADMIN.CSS - VERSÃO FINAL (PREVIEW TELA CHEIA)
+   ADMIN.CSS - VERSÃO FINAL (PREVIEW TELA CHEIA + CORREÇÕES)
    ========================================= */
 
 :root {
@@ -13,7 +13,6 @@
     --border: #dee2e6;
 }
 
-/* Reset Básico */
 html, body {
     height: 100%;
     margin: 0;
@@ -38,17 +37,9 @@ html, body {
     flex-shrink: 0;
 }
 
-.admin-header h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-}
+.admin-header h2 { margin: 0; font-size: 1.2rem; font-weight: 600; }
 
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+.header-actions { display: flex; align-items: center; gap: 1rem; }
 
 /* 2. LAYOUT PRINCIPAL */
 .admin-container {
@@ -66,15 +57,14 @@ html, body {
     position: relative;
 }
 
-/* GRID DO LAYOUT */
 .content-preview-grid {
     display: grid;
-    grid-template-columns: 400px 1fr; /* Coluna Config | Preview (Resto) */
+    grid-template-columns: 400px 1fr;
     height: 100%;
     width: 100%;
 }
 
-/* 3. COLUNA DE CONFIGURAÇÃO (ESQUERDA) */
+/* 3. COLUNA DE CONFIGURAÇÃO */
 .config-column {
     background: #fff;
     border-right: 1px solid var(--border);
@@ -85,38 +75,29 @@ html, body {
     z-index: 10;
 }
 
-/* 4. COLUNA DE PREVIEW (DIREITA) */
+/* 4. COLUNA DE PREVIEW */
 .preview-column {
     background: #e9ecef;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Padding pequeno para criar uma moldura ao redor do preview */
     padding: 15px; 
     height: 100%;
     overflow: hidden;
     position: relative;
 }
 
-/* CONTAINER DO PREVIEW (TELA CHEIA/MONITOR) */
 .preview-sticky-container {
-    /* Aqui está a mágica para ocupar 100% do espaço restante */
     width: 100%;
     height: 100%;
-    max-height: none; /* Remove limite de altura */
-    
     background: white;
-    /* Borda cinza solicitada (reduzida um pouco para desktop) */
     border: 1px solid #333; 
-    border-radius: 12px; /* Cantos levemente arredondados como um monitor */
-    
+    border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     position: relative;
-    transition: all 0.3s ease;
 }
 
-/* Iframe ocupa 100% do container */
 #preview-iframe {
     width: 100%;
     height: 100%;
@@ -125,7 +106,7 @@ html, body {
     background: white;
 }
 
-/* 5. COMPONENTES VISUAIS DO FORMULÁRIO (Mantidos iguais) */
+/* 5. COMPONENTES */
 .config-section {
     background: white;
     border-radius: 8px;
@@ -159,12 +140,6 @@ html, body {
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 0.95rem;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
 /* Botões */
@@ -202,7 +177,7 @@ html, body {
     border: 1px solid #eee;
 }
 
-/* Status e Switches */
+/* Status */
 .save-status {
     padding: 5px 12px;
     border-radius: 20px;
@@ -215,6 +190,7 @@ html, body {
 .save-status.saved { background: var(--success); }
 .save-status.unsaved { background: var(--warning); color: #333; }
 
+/* Switches */
 .switch {
     position: relative;
     display: inline-block;
@@ -247,6 +223,52 @@ html, body {
     border: 1px solid #e9ecef;
     border-radius: 6px;
     margin-bottom: 8px;
+}
+
+/* ✅ CORREÇÃO REDES SOCIAIS (Links não vazam) */
+.social-link-item {
+    display: flex;
+    flex-direction: column; /* Coluna para link ter espaço */
+    align-items: flex-start;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.social-preview {
+    width: 100%;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.social-url {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.social-url a {
+    display: block;
+    width: 100%;
+    word-break: break-all; /* Força quebra */
+    overflow-wrap: anywhere;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--primary);
+}
+
+.social-actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.social-actions .btn {
+    flex: 1;
 }
 
 /* Responsividade */

@@ -147,4 +147,10 @@ class AdminMap {
 
 // Instância global
 export const adminMap = new AdminMap();
+
+// Expõe globalmente para compatibilidade
+if (typeof window !== 'undefined') {
+    window.adminMap = adminMap;
+}
+
 export default AdminMap;

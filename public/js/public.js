@@ -149,11 +149,20 @@ function updatePublicSite(data) {
                 safeHref('telLink1', `tel:${data.contato.telefone.replace(/\D/g, '')}`);
             }
 
-            // Telefone 2 (Gerido pelo ConfigManager, mas garantindo texto aqui se necessário)
-            // O ConfigManager cuida da visibilidade, aqui apenas atualizamos o texto se o elemento existir
-            if (data.contato.telefone2) {
+            // Telefone 2
+            const tel2Container = document.getElementById('contact-tel2');
+            if (data.contato.telefone2 && data.contato.telefone2.trim() !== '') {
                 safeText('telPreview2', data.contato.telefone2);
                 safeHref('telLink2', `tel:${data.contato.telefone2.replace(/\D/g, '')}`);
+                if (tel2Container) {
+                    tel2Container.classList.remove('hidden');
+                    tel2Container.style.display = 'flex';
+                }
+            } else {
+                if (tel2Container) {
+                    tel2Container.classList.add('hidden');
+                    tel2Container.style.display = 'none';
+                }
             }
 
             // Email
@@ -289,6 +298,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // B) Buscar Dados Atualizados (Background)
         console.log('📡 [public.js] Buscando dados atualizados do Firebase...');
         const config = await window.firebaseManager.loadInitialData();
+
+        console.log('🔍 [DEBUG] Config recebido do Firebase:', config);
+        console.log('🔍 [DEBUG] Produtos no config:', config?.produtos);
 
         if (!config) {
             // Se não temos config e não tínhamos cache, é um erro crítico

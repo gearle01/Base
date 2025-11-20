@@ -1,3 +1,5 @@
+// public/js/firebase-config.js
+
 // Função para checar conexão
 async function checkOnlineStatus() {
   if (!navigator.onLine) return false;
@@ -12,16 +14,11 @@ async function checkOnlineStatus() {
   }
 }
 
-// Inicialização do Firebase com suporte a modo offline
+// Inicialização do Firebase (Singleton)
 window.initializeFirebase = async function (retryCount = 0) {
   try {
-    // Verifica se o SDK foi carregado
-    if (typeof firebase === 'undefined') {
-      throw new Error('Firebase SDK não carregado');
-    }
-
-    // Se já inicializado, retorna a instância
-    if (firebase.apps.length > 0) {
+    // 1. Se já inicializado, reutiliza
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
       return {
         db: firebase.firestore(),
         auth: firebase.auth(),
@@ -29,89 +26,46 @@ window.initializeFirebase = async function (retryCount = 0) {
       };
     }
 
-    // Verifica conexão antes de inicializar
-    const isOnline = await checkOnlineStatus();
-    console.log(isOnline ? '✅ Online' : '⚠️ Offline');
+    // 2. Verifica se config existe
+    if (typeof window.firebaseConfig === 'undefined') {
+      throw new Error('firebaseConfig não encontrado.');
+    }
 
-    // Inicializa o app
+    // 3. Inicializa
     firebase.initializeApp(window.firebaseConfig);
     const db = firebase.firestore();
 
-    // Configurações otimizadas para modo offline
-    db.settings({
-      cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-      ignoreUndefinedProperties: true,
-      // experimentalForceLongPolling: true, // Melhor suporte offline
-      // experimentalAutoDetectLongPolling: true // Adaptação automática
-    });
-
-    // Tenta habilitar persistência
+    // 4. Configurações do Firestore (com try/catch para evitar erro de reconfiguração)
     try {
-      await db.enablePersistence({
-        synchronizeTabs: true
+      db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+        ignoreUndefinedProperties: true,
+        merge: true
       });
+    } catch (e) {
+      console.log('Firestore settings já aplicadas ou erro ignorável:', e.message);
+    }
+
+    // 5. Persistência Offline
+    try {
+      await db.enablePersistence({ synchronizeTabs: true });
       console.log('✅ Persistência offline ativada');
     } catch (err) {
-      if (err.code === 'failed-precondition') {
-        console.warn('⚠️ Múltiplas abas abertas - modo offline limitado');
-      } else if (err.code === 'unimplemented') {
-        console.warn('⚠️ Browser não suporta persistência offline');
-      }
+      // Ignora erros comuns de persistência
     }
 
-    // Gerencia estado da rede
-    if (isOnline) {
-      await db.enableNetwork();
-    } else {
-      await db.disableNetwork();
-    }
-
-    // Monitora mudanças de conexão
-    window.addEventListener('online', async () => {
-      console.log('🌐 Conexão recuperada');
-      const db = firebase.firestore();
-      await db.enableNetwork();
-    });
-
-    window.addEventListener('offline', async () => {
-      console.log('⚠️ Conexão perdida');
-      const db = firebase.firestore();
-      await db.disableNetwork();
-    });
-
-    // Retorna as instâncias
     return {
-      db: firebase.firestore(),
+      db: db,
       auth: firebase.auth(),
       storage: firebase.storage()
     };
+
   } catch (error) {
-    console.error('❌ Erro ao inicializar Firebase:', error);
-
-    // Sistema de retry
-    if (retryCount < MAX_RETRIES) {
-      console.log(`🔄 Tentando novamente (${retryCount + 1}/${MAX_RETRIES})...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return initializeFirebase(retryCount + 1);
+    console.error('❌ Erro inicializar Firebase:', error);
+    if (retryCount < 3) {
+      await new Promise(r => setTimeout(r, 2000));
+      return window.initializeFirebase(retryCount + 1);
     }
-
-    // Notifica o usuário
-    if (window.SiteModules && window.SiteModules.error) {
-      window.SiteModules.error.show(
-        'Tentando usar dados offline. Algumas funcionalidades podem estar limitadas.',
-        'warning'
-      );
-    }
-
-    // Se já temos uma instância, usa ela mesmo com erro
-    if (firebase.apps.length) {
-      return {
-        db: firebase.firestore(),
-        auth: firebase.auth(),
-        storage: firebase.storage()
-      };
-    }
-
     throw error;
   }
 };

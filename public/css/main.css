@@ -1,10 +1,6 @@
-/* =========================================
-   MAIN.CSS - Estilos do Site Público
-   ========================================= */
+/* MAIN.CSS - Site Público */
 
-/* 1. Variáveis e Reset */
 :root {
-    /* Cores Padrão (serão sobrescritas pelo JS do Admin) */
     --primary: #007bff;
     --secondary: #28a745;
     --text-color: #333;
@@ -23,39 +19,115 @@ body {
     font-family: 'Roboto', sans-serif;
     color: var(--text-color);
     line-height: 1.6;
-    overflow-x: hidden; /* Evita rolagem lateral */
+    overflow-x: hidden;
 }
 
-/* 2. Componentes de UI */
+.hidden {
+    display: none !important;
+}
 
-/* Botão de Login do Admin (Flutuante) */
-.admin-login-icon {
-    position: fixed;
-    bottom: 15px;
-    right: 15px;
-    width: 60px;
-    height: 60px;
-    background: var(--bg-dark);
-    color: var(--white);
-    border-radius: 50%;
+/* Navbar */
+.site-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: var(--white);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.site-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.site-nav-links {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+    margin: 0;
+}
+
+.site-nav-links li a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.site-nav-links li a:hover {
+    color: var(--primary);
+}
+
+.hamburger {
+    display: none;
+}
+
+/* Banner */
+.banner {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    text-align: center;
+    color: var(--white);
+    position: relative;
+}
+
+.banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+}
+
+.banner-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.banner h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.banner p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: rgba(255,255,255,0.9);
+}
+
+.cta-btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: var(--secondary);
+    color: var(--white);
     text-decoration: none;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: transform 0.2s ease;
-    z-index: 998;
+    border-radius: 20px;
+    font-weight: 600;
+    transition: all 0.2s;
 }
 
-.admin-login-icon:hover {
-    transform: scale(1.1);
+.cta-btn:hover {
+    transform: translateY(-2px);
+    background: var(--primary);
 }
 
-/* Botão do WhatsApp */
 .whatsapp-fab {
     position: fixed;
-    bottom: 90px; /* Acima do ícone de admin */
+    bottom: 15px;
     right: 15px;
     width: 60px;
     height: 60px;
@@ -66,15 +138,15 @@ body {
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     z-index: 999;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s;
+    text-decoration: none;
 }
 
 .whatsapp-fab:hover {
     transform: scale(1.1);
 }
 
-/* 3. Layout e Seções */
-
+/* Seções */
 .site-section {
     padding: 4rem 2rem;
 }
@@ -92,12 +164,8 @@ body {
     font-size: 2.5rem;
     text-align: center;
     margin-bottom: 3rem;
-    color: var(--text-color);
 }
 
-/* 4. Módulos Específicos */
-
-/* Sobre */
 .about-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -118,7 +186,6 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* Produtos */
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -156,7 +223,6 @@ body {
     margin-bottom: 0.5rem;
 }
 
-/* Contato */
 .contact-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -188,7 +254,6 @@ body {
     fill: currentColor;
 }
 
-/* Mapa */
 #mapContainer {
     height: 100%;
     min-height: 350px;
@@ -202,13 +267,15 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* 5. Footer e Social */
-
 .site-footer {
     background: var(--bg-dark);
     color: var(--white);
     text-align: center;
     padding: 3rem 2rem;
+}
+
+.site-footer p {
+    margin: 0.8rem 0;
 }
 
 .social-links {
@@ -217,6 +284,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
+    margin-bottom: 1rem;
 }
 
 .social-icon {
@@ -229,7 +297,7 @@ body {
     background: rgba(255,255,255,0.1);
     color: var(--white) !important;
     text-decoration: none;
-    transition: background 0.3s ease;
+    transition: background 0.3s;
 }
 
 .social-icon:hover {
@@ -246,8 +314,76 @@ body {
     color: var(--white);
 }
 
-/* 6. Responsividade */
+/* Mobile */
 @media (max-width: 768px) {
+    .site-nav {
+        justify-content: center;
+    }
+
+    .site-logo {
+        text-align: center;
+    }
+
+    .site-nav-links {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 60%;
+        max-width: 300px;
+        flex-direction: column;
+        gap: 0;
+        margin: 0;
+        display: none;
+        background: var(--white);
+        box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+        padding: 4rem 0 2rem;
+        z-index: 1002;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .site-nav-links.active {
+        display: flex;
+        transform: translateX(0);
+    }
+
+    .site-nav-links li {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid var(--bg-light);
+        text-align: center;
+    }
+
+    .site-nav-links li a {
+        font-size: 1.1rem;
+        display: block;
+    }
+
+    .site-nav-links li:last-child {
+        border-bottom: none;
+    }
+
+    .hamburger {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1003;
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+
+    .line {
+        width: 25px;
+        height: 3px;
+        background: var(--text-color);
+        margin: 3px 0;
+        border-radius: 2px;
+        transition: all 0.3s;
+    }
+
     .about-grid, .contact-grid {
         grid-template-columns: 1fr;
     }
@@ -256,13 +392,16 @@ body {
         text-align: left;
     }
     
-    .whatsapp-fab {
-        bottom: 80px;
-        right: 15px;
+    .banner h1 {
+        font-size: 2rem;
+    }
+
+    .banner p {
+        font-size: 1rem;
     }
     
-    .admin-login-icon {
-        bottom: 15px;
-        right: 15px;
+    .whatsapp-fab {
+        width: 50px;
+        height: 50px;
     }
 }

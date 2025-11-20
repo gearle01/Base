@@ -1,172 +1,110 @@
-
 class AuthManager {
     constructor() {
         this.user = null;
         this.isReady = false;
-        this.isListening = false;
         this.redirecting = false;
         this.pageType = this.detectPageType();
-        console.log(`🔄 [AuthManager] Instanciado na página tipo: ${this.pageType}`);
+        console.log(`🔄 [AuthManager] Página atual: ${this.pageType}`);
     }
 
     detectPageType() {
-        const pathname = window.location.pathname;
-        if (pathname.includes('login.html')) {
-            return 'login';
-        }
-        if (pathname.includes('admin.html')) {
-            return 'admin';
-        }
+        const path = window.location.pathname;
+        if (path.includes('login.html')) return 'login';
+        if (path.includes('admin.html')) return 'admin';
         return 'public';
     }
 
-    async waitForFirebase() {
-        console.log('🔄 [AuthManager] Aguardando Firebase...');
-        return new Promise((resolve) => {
-            const timeout = 10000;
-            const interval = 50;
-            let elapsedTime = 0;
-
-            const checkFirebase = () => {
-                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-                    console.log('✅ [AuthManager] Firebase está pronto.');
-                    resolve();
-                } else if (elapsedTime >= timeout) {
-                    console.warn('⚠️ [AuthManager] Timeout esperando pelo Firebase. Resolvendo mesmo assim.');
-                    resolve();
-                } else {
-                    elapsedTime += interval;
-                    setTimeout(checkFirebase, interval);
-                }
-            };
-            checkFirebase();
-        });
-    }
-
     async init() {
-        console.log('🔄 [AuthManager] Método init chamado');
+        // Aguarda o Firebase estar disponível globalmente
         await this.waitForFirebase();
-        if (!this.isListening) {
-            this.setupAuthListener();
-        } else {
-            console.log('✅ [AuthManager] Listener de autenticação já configurado.');
-        }
-    }
 
-    setupAuthListener() {
-        if (this.isListening) {
-            console.warn('⚠️ [AuthManager] Tentativa de configurar múltiplos listeners de autenticação. Ignorando.');
-            return;
+        // Força a persistência para LOCAL (sobrevive ao refresh)
+        try {
+            await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        } catch (e) {
+            console.warn('Aviso de persistência:', e);
         }
-        console.log('🔄 [AuthManager] Configurando listener de autenticação...');
-        this.isListening = true;
 
-        firebase.auth().onAuthStateChanged(user => {
-            console.log('🔄 [AuthManager] onAuthStateChanged disparado.');
+        // Ouve mudanças de estado
+        firebase.auth().onAuthStateChanged((user) => {
+            console.log('👤 [Auth] Estado mudou:', user ? user.email : 'Deslogado');
             this.user = user;
             this.isReady = true;
-
-            if (this.redirecting) {
-                console.log('🟡 [AuthManager] Redirecionamento em progresso, ignorando onAuthStateChanged.');
-                return;
-            }
-            
-            document.dispatchEvent(new CustomEvent('authReady', { detail: { user } }));
-            this.handleAuthState();
+            this.decideRedirect();
         });
     }
 
-    handleAuthState() {
-        console.log('🔄 [AuthManager] Lidando com o estado de autenticação...');
-        const isAuthenticated = !!this.user;
+    waitForFirebase() {
+        return new Promise(resolve => {
+            if (typeof firebase !== 'undefined' && firebase.apps.length) return resolve();
+            const i = setInterval(() => {
+                if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    clearInterval(i);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
 
-        if (isAuthenticated) {
-            console.log(`✅ [AuthManager] Usuário autenticado: ${this.user.email}`);
+    decideRedirect() {
+        if (this.redirecting) return;
+
+        // Lógica centralizada de redirecionamento
+        if (this.user) {
+            // USUÁRIO LOGADO
             if (this.pageType === 'login') {
-                this.redirect('admin.html');
+                console.log('✅ Logado. Indo para Admin.');
+                this.doRedirect('admin.html');
             }
         } else {
-            console.log('❌ [AuthManager] Usuário não autenticado.');
+            // USUÁRIO DESLOGADO
             if (this.pageType === 'admin') {
-                this.redirect('login.html');
+                console.warn('⛔ Não logado. Indo para Login.');
+                // Pequeno delay para garantir que não é apenas lentidão do Firebase
+                setTimeout(() => {
+                    if (!this.user) this.doRedirect('login.html');
+                }, 500);
             }
         }
     }
 
-    redirect(url) {
-        if (this.redirecting) {
-            console.warn(`⚠️ [AuthManager] Tentativa de redirecionamento duplo para ${url} ignorada.`);
-            return;
-        }
-        console.log(`📍 [AuthManager] Redirecionando para ${url}...`);
+    doRedirect(url) {
         this.redirecting = true;
-        
-        // Adiciona um pequeno delay para garantir que o estado seja propagado
-        setTimeout(() => {
-            window.location.href = url;
-        }, 500);
+        window.location.replace(url);
     }
 
+    // Métodos públicos
     async login(email, password) {
-        console.log(`🔄 [AuthManager] Tentando login para ${email}`);
-        try {
-            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-            console.log(`✅ [AuthManager] Login bem-sucedido para ${email}`);
-            return userCredential;
-        } catch (error) {
-            console.error('❌ [AuthManager] Erro no login:', error);
-            throw error;
-        }
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        return firebase.auth().signInWithEmailAndPassword(email, password);
     }
 
     async logout() {
-        console.log('🔄 [AuthManager] Tentando logout...');
-        try {
-            await firebase.auth().signOut();
-            console.log('✅ [AuthManager] Logout bem-sucedido.');
-        } catch (error) {
-            console.error('❌ [AuthManager] Erro no logout:', error);
-            throw error;
-        }
+        await firebase.auth().signOut();
+        this.doRedirect('login.html');
     }
 
     getCurrentUser() {
         return this.user;
     }
 
-    isAuthenticated() {
-        return this.user !== null;
-    }
-
-    async waitUntilReady() {
-        console.log('🔄 [AuthManager] Aguardando autenticação estar pronta...');
-        return new Promise((resolve) => {
-            const timeout = 10000;
-            const interval = 100;
-            let elapsedTime = 0;
-
-            const checkReady = () => {
+    // Promessa que resolve apenas quando o estado de auth for confirmado (não nulo por loading)
+    waitUntilReady() {
+        if (this.isReady) return Promise.resolve(this.user);
+        return new Promise(resolve => {
+            const i = setInterval(() => {
                 if (this.isReady) {
-                    console.log('✅ [AuthManager] Autenticação pronta.');
+                    clearInterval(i);
                     resolve(this.user);
-                } else if (elapsedTime >= timeout) {
-                    console.warn('⚠️ [AuthManager] Timeout esperando pela autenticação. Resolvendo com estado atual.');
-                    resolve(this.user);
-                } else {
-                    elapsedTime += interval;
-                    setTimeout(checkReady, interval);
                 }
-            };
-            checkReady();
+            }, 100);
+            // Timeout de segurança de 5s
+            setTimeout(() => { clearInterval(i); resolve(null); }, 5000);
         });
     }
 }
 
-console.log('✅ [AuthManager] Classe AuthManager definida.');
-
-if (window.authManager) {
-    console.warn('⚠️ [AuthManager] Instância global de authManager já existe. Sobrescrevendo...');
+// Singleton
+if (!window.authManager) {
+    window.authManager = new AuthManager();
 }
-
-window.authManager = new AuthManager();
-console.log('✅ [AuthManager] Instância global window.authManager criada com sucesso.');

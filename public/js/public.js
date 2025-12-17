@@ -117,24 +117,35 @@ function updatePublicSite(data) {
         const siteTitle = (data.empresaNome && data.empresaNome.trim() !== '') ? data.empresaNome : "Site Profissional";
         document.title = siteTitle;
 
-        const logoElements = document.querySelectorAll('.logo-element');
+        // Logo Handling (Supports .logo-element class and legacy #logo id)
+        let logoElements = Array.from(document.querySelectorAll('.logo-element'));
+        if (logoElements.length === 0) {
+            const legacyLogo = document.getElementById('logo');
+            if (legacyLogo) logoElements.push(legacyLogo);
+        }
+
         logoElements.forEach(logoEl => {
             logoEl.innerHTML = '';
-            if (data.logoType === 'image' && data.logoImageUrl) {
+            // Check for logoImageUrl in root (flat) or main (nested)
+            const logoUrl = data.logoImageUrl || (data.main && data.main.logoImageUrl);
+            // Check for logoType
+            const logoType = data.logoType || (data.main && data.main.logoType);
+
+            if (logoType === 'image' && logoUrl) {
                 const img = document.createElement('img');
-                img.src = data.logoImageUrl;
+                img.src = logoUrl;
                 img.alt = siteTitle;
                 img.style.height = '40px';
                 img.style.width = 'auto';
                 img.style.borderRadius = '4px';
                 logoEl.appendChild(img);
                 // Remove gradient text class if image
-                logoEl.classList.remove('bg-gradient-to-r', 'from-primary', 'to-indigo-600', 'bg-clip-text', 'text-transparent');
-                logoEl.classList.add('text-gray-900'); // Fail-safe color
+                logoEl.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary', 'from-primary', 'to-indigo-600', 'bg-clip-text', 'text-transparent');
+                logoEl.classList.add('text-gray-900');
             } else {
                 logoEl.textContent = siteTitle;
                 // Re-add gradient text classes
-                logoEl.classList.add('bg-gradient-to-r', 'from-primary', 'to-indigo-600', 'bg-clip-text', 'text-transparent');
+                logoEl.classList.add('bg-gradient-to-r', 'from-primary', 'to-secondary', 'bg-clip-text', 'text-transparent');
                 logoEl.classList.remove('text-gray-900');
             }
         });

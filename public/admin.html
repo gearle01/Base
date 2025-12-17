@@ -112,6 +112,7 @@
                                         accept="image/png, image/jpeg, image/svg+xml, image/webp"
                                         onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
                                 </div>
+                                <p class="text-xs text-gray-500 mt-1">Recomendado: 250x100px (PNG ou SVG)</p>
                                 <input type="text" id="logoImageUrl"
                                     class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
                                     placeholder="URL do logo (automático)" readonly
@@ -129,9 +130,12 @@
                                             accept="image/png, image/ico, image/svg+xml"
                                             onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')">
                                     </div>
-                                    <input type="text" id="faviconImageUrl"
-                                        class="flex-1 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
-                                        placeholder="URL do favicon" readonly oninput="markAsUnsaved(); update();">
+                                    <div class="flex-1">
+                                        <input type="text" id="faviconImageUrl"
+                                            class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all mb-1"
+                                            placeholder="URL do favicon" readonly oninput="markAsUnsaved(); update();">
+                                        <p class="text-xs text-gray-500">Recomendado: 512x512px (PNG ou ICO)</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -165,6 +169,7 @@
                                         accept="image/png, image/jpeg, image/webp"
                                         onchange="handleImageUpload(event, 'bannerImagem', '#bannerPreview')">
                                 </div>
+                                <p class="text-xs text-gray-500">Recomendado: 1920x1080px (Alta Resolução)</p>
                                 <input type="text" id="bannerImagem"
                                     class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
                                     placeholder="URL da imagem" readonly oninput="markAsUnsaved(); update();">
@@ -249,6 +254,7 @@
                                     accept="image/png, image/jpeg, image/webp"
                                     onchange="handleImageUpload(event, 'sobreImagem', '#sobrePreview')">
                             </div>
+                            <p class="text-xs text-gray-500">Recomendado: 800x800px ou Vertical (Alta Qualidade)</p>
                             <input type="text" id="sobreImagem"
                                 class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
                                 placeholder="URL" readonly oninput="markAsUnsaved(); update();">

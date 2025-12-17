@@ -215,10 +215,10 @@ export class ConfigManager {
         const cached = globalCache.get('config', 'full');
         const configHash = JSON.stringify(config);
 
-        if (cached && cached.hash === configHash) {
-            console.log('📦 Usando configurações em cache');
-            return;
-        }
+        // if (cached && cached.hash === configHash) {
+        //     console.log('📦 Usando configurações em cache (Disabled for consistency)');
+        //     // return; // Force apply to ensure code updates (like toggles) run
+        // }
 
         this.applyFontSettings(config.global_settings);
         this.applyTrackingCode(config.global_settings);

@@ -7,251 +7,505 @@
     <title>Painel de Administração</title>
     <meta name="robots" content="noindex, nofollow">
 
-    <link rel="stylesheet" href="css/critical.css">
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="css/tailwind.css">
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/modal.css">
 
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body>
-    <header class="admin-header">
-        <h2>Painel de Controle</h2>
-        <div class="header-actions">
-            <div id="saveStatus" class="save-status saved">
-                <span id="saveText">✓ Salvo</span>
+<body class="bg-gray-50 font-sans text-gray-700 antialiased overflow-hidden h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm z-30 flex-none h-16">
+        <div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-blue-600/20">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight">Painel de Controle</h2>
             </div>
-            <button id="saveButton" class="btn btn-primary" onclick="saveConfig()">Salvar Alterações</button>
-            <button class="btn btn-secondary" onclick="logout()">Sair</button>
+
+            <div class="flex items-center gap-4">
+                <div class="bg-gray-100 rounded-lg p-1 flex items-center gap-1 border border-gray-200">
+                    <button onclick="setPreviewMode('desktop')" id="btn-desktop"
+                        class="p-1.5 rounded bg-white shadow-sm text-gray-700 hover:text-blue-600 transition-all active-mode">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                    <button onclick="setPreviewMode('mobile')" id="btn-mobile"
+                        class="p-1.5 rounded text-gray-400 hover:text-blue-600 transition-all">
+                        <i class="fas fa-mobile-alt"></i>
+                    </button>
+                </div>
+                <div id="saveStatus"
+                    class="save-status saved flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors bg-green-50 text-green-700 border border-green-200">
+                    <span id="saveText">✓ Salvo</span>
+                </div>
+                <button onclick="saveConfig()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 text-sm flex items-center gap-2">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+                <button onclick="logout()"
+                    class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium border border-gray-300 shadow-sm transition-all text-sm flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
         </div>
     </header>
 
-    <div class="admin-container">
-        <main class="admin-content">
-            <div class="content-preview-grid">
+    <div class="flex flex-1 overflow-hidden">
+        <main class="flex-1 flex max-w-[1920px] mx-auto w-full">
 
-                <div class="config-column">
-                    <section id="geral" class="config-section">
-                        <h3>Geral</h3>
-                        <div class="form-group">
-                            <label for="empresaNome">Nome da Empresa</label>
-                            <input type="text" id="empresaNome" class="form-control"
-                                placeholder="Nome que aparece no site" oninput="markAsUnsaved(); update();">
+            <!-- Config Column (Left) -->
+            <div
+                class="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-r border-gray-200 bg-white h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20">
+                <div class="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-8 pb-24">
+
+                    <!-- Geral Section -->
+                    <section id="geral" class="space-y-4">
+                        <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                            <i class="fas fa-sliders-h text-blue-600"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Geral</h3>
                         </div>
-                        <div class="form-group">
-                            <label>Tipo de Logo</label>
-                            <input type="hidden" id="logoType" value="text">
-                            <div class="btn-group">
-                                <button class="btn btn-secondary" onclick="setLogoType('text')">Texto</button>
-                                <button class="btn btn-secondary" onclick="setLogoType('image')">Imagem</button>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="empresaNome" class="block text-sm font-medium text-gray-700 mb-1">Nome da
+                                    Empresa</label>
+                                <input type="text" id="empresaNome"
+                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm placeholder-gray-400 font-medium"
+                                    placeholder="Nome que aparece no site" oninput="markAsUnsaved(); update();">
                             </div>
-                        </div>
-                        <div class="form-group hidden" id="logoImageInputGroup">
-                            <label for="logoUpload">Upload do Logo</label>
-                            <div class="image-upload-box">
-                                <div class="image-preview" id="logoPreview" style="background-image: url('');"></div>
-                                <input type="file" id="logoUpload" class="form-control"
-                                    accept="image/png, image/jpeg, image/svg+xml, image/webp"
-                                    onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Logo</label>
+                                <input type="hidden" id="logoType" value="text">
+                                <div class="flex p-1 bg-gray-100 rounded-lg">
+                                    <button
+                                        class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all text-gray-600 hover:text-gray-900 focus:outline-none focus:bg-white focus:shadow-sm focus:text-blue-600"
+                                        onclick="setLogoType('text')">Texto</button>
+                                    <button
+                                        class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all text-gray-600 hover:text-gray-900 focus:outline-none focus:bg-white focus:shadow-sm focus:text-blue-600"
+                                        onclick="setLogoType('image')">Imagem</button>
+                                </div>
                             </div>
-                            <input type="text" id="logoImageUrl" class="form-control"
-                                placeholder="URL do logo (automático)" readonly oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="faviconUpload">Favicon (Ícone da Aba)</label>
-                            <div class="image-upload-box small">
-                                <div class="image-preview" id="faviconPreview" style="background-image: url('');"></div>
-                                <input type="file" id="faviconUpload" class="form-control"
-                                    accept="image/png, image/ico, image/svg+xml"
-                                    onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')">
+
+                            <div class="hidden space-y-3" id="logoImageInputGroup">
+                                <label class="block text-sm font-medium text-gray-700">Upload do Logo</label>
+                                <div class="relative group">
+                                    <div class="image-preview w-full h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-contain bg-center bg-no-repeat transition-all group-hover:border-blue-400 group-hover:bg-blue-50/30"
+                                        id="logoPreview">
+                                        <div class="text-center text-gray-400 group-hover:text-blue-500">
+                                            <i class="fas fa-cloud-upload-alt text-2xl mb-1"></i>
+                                            <p class="text-xs">Arraste ou clique</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="logoUpload"
+                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                                        onchange="handleImageUpload(event, 'logoImageUrl', '#logoPreview')">
+                                </div>
+                                <input type="text" id="logoImageUrl"
+                                    class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
+                                    placeholder="URL do logo (automático)" readonly
+                                    oninput="markAsUnsaved(); update();">
                             </div>
-                            <input type="text" id="faviconImageUrl" class="form-control"
-                                placeholder="URL do favicon (automático)" readonly oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="bannerTitulo">Título do Banner</label>
-                            <input type="text" id="bannerTitulo" class="form-control" placeholder="Título principal"
-                                oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="bannerSubtitulo">Subtítulo do Banner</label>
-                            <input type="text" id="bannerSubtitulo" class="form-control" placeholder="Texto de apoio"
-                                oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="bannerUpload">Imagem de Fundo do Banner</label>
-                            <div class="image-upload-box">
-                                <div class="image-preview" id="bannerPreview" style="background-image: url('');"></div>
-                                <input type="file" id="bannerUpload" class="form-control"
-                                    accept="image/png, image/jpeg, image/webp"
-                                    onchange="handleImageUpload(event, 'bannerImagem', '#bannerPreview')">
+
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-gray-700">Favicon</label>
+                                <div class="flex gap-4 items-center">
+                                    <div class="relative w-16 h-16 flex-shrink-0 group">
+                                        <div class="w-full h-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-contain bg-center bg-no-repeat"
+                                            id="faviconPreview"></div>
+                                        <input type="file" id="faviconUpload"
+                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            accept="image/png, image/ico, image/svg+xml"
+                                            onchange="handleImageUpload(event, 'faviconImageUrl', '#faviconPreview')">
+                                    </div>
+                                    <input type="text" id="faviconImageUrl"
+                                        class="flex-1 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
+                                        placeholder="URL do favicon" readonly oninput="markAsUnsaved(); update();">
+                                </div>
                             </div>
-                            <input type="text" id="bannerImagem" class="form-control"
-                                placeholder="URL da imagem (automático)" readonly oninput="markAsUnsaved(); update();">
+
+                            <div>
+                                <label for="bannerTitulo" class="block text-sm font-medium text-gray-700 mb-1">Título do
+                                    Banner</label>
+                                <input type="text" id="bannerTitulo"
+                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+                                    placeholder="Título principal" oninput="markAsUnsaved(); update();">
+                            </div>
+                            <div>
+                                <label for="bannerSubtitulo"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Subtítulo do Banner</label>
+                                <input type="text" id="bannerSubtitulo"
+                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    placeholder="Texto de apoio" oninput="markAsUnsaved(); update();">
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="block text-sm font-medium text-gray-700">Imagem de Fundo do Banner</label>
+                                <div class="relative group">
+                                    <div class="image-preview w-full h-40 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-cover bg-center transition-all group-hover:border-blue-400 group-hover:bg-blue-50/30"
+                                        id="bannerPreview">
+                                        <div class="text-center text-gray-400 group-hover:text-blue-500 drop-shadow-sm">
+                                            <i class="fas fa-image text-3xl mb-2"></i>
+                                            <p class="text-xs font-medium">Trocar Background</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="bannerUpload"
+                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        accept="image/png, image/jpeg, image/webp"
+                                        onchange="handleImageUpload(event, 'bannerImagem', '#bannerPreview')">
+                                </div>
+                                <input type="text" id="bannerImagem"
+                                    class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
+                                    placeholder="URL da imagem" readonly oninput="markAsUnsaved(); update();">
+                            </div>
                         </div>
                     </section>
 
-                    <section id="cores" class="config-section">
-                        <h3>Cores e Fontes</h3>
-                        <div class="form-group">
-                            <label for="corPrimaria">Cor Primária</label>
-                            <input type="color" id="corPrimaria" class="form-control color-input" value="#007bff"
-                                oninput="markAsUnsaved(); update();">
+                    <!-- Cores e Fontes Section -->
+                    <section id="cores" class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                            <i class="fas fa-palette text-purple-600"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Aparência</h3>
                         </div>
-                        <div class="form-group">
-                            <label for="corSecundaria">Cor Secundária</label>
-                            <input type="color" id="corSecundaria" class="form-control color-input" value="#28a745"
-                                oninput="markAsUnsaved(); update();">
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="corPrimaria" class="block text-sm font-medium text-gray-700 mb-2">Cor
+                                    Primária</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="corPrimaria"
+                                        class="h-10 w-10 p-1 bg-white border border-gray-200 rounded cursor-pointer"
+                                        value="#007bff" oninput="markAsUnsaved(); update();">
+                                    <span class="text-xs text-gray-500 font-mono">Principal</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="corSecundaria" class="block text-sm font-medium text-gray-700 mb-2">Cor
+                                    Secundária</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="corSecundaria"
+                                        class="h-10 w-10 p-1 bg-white border border-gray-200 rounded cursor-pointer"
+                                        value="#28a745" oninput="markAsUnsaved(); update();">
+                                    <span class="text-xs text-gray-500 font-mono">Destaque</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="fontUrl">URL da Fonte (Google Fonts)</label>
-                            <input type="text" id="fontUrl" class="form-control"
-                                placeholder="Ex: https://fonts.googleapis.com/css2?family=Roboto..."
-                                oninput="markAsUnsaved(); update();">
+
+                        <div>
+                            <label for="fontUrl" class="block text-sm font-medium text-gray-700 mb-1">URL da Fonte
+                                (Google Fonts)</label>
+                            <input type="text" id="fontUrl"
+                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm font-mono text-gray-600"
+                                placeholder="https://..." oninput="markAsUnsaved(); update();">
                         </div>
-                        <div class="form-group">
-                            <label for="fontFamily">Nome da Fonte (CSS)</label>
-                            <input type="text" id="fontFamily" class="form-control"
-                                placeholder="Ex: 'Roboto', sans-serif" oninput="markAsUnsaved(); update();">
+                        <div>
+                            <label for="fontFamily" class="block text-sm font-medium text-gray-700 mb-1">Nome da Fonte
+                                (CSS)</label>
+                            <input type="text" id="fontFamily"
+                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm font-mono text-gray-600"
+                                placeholder="'Roboto', sans-serif" oninput="markAsUnsaved(); update();">
                         </div>
                     </section>
 
-                    <section id="sobre" class="config-section">
-                        <h3>Sobre</h3>
-                        <div class="form-group">
-                            <label for="sobreTexto">Texto</label>
-                            <textarea id="sobreTexto" class="form-control" rows="8"
+                    <!-- Sobre Section -->
+                    <section id="sobre" class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                            <i class="fas fa-info-circle text-teal-600"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Sobre</h3>
+                        </div>
+
+                        <div>
+                            <label for="sobreTexto" class="block text-sm font-medium text-gray-700 mb-1">Texto
+                                Institucional</label>
+                            <textarea id="sobreTexto"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm leading-relaxed custom-scrollbar"
+                                rows="6" placeholder="Escreva sobre sua empresa..."
                                 oninput="markAsUnsaved(); update();"></textarea>
                         </div>
-                        <div class="form-group">
-                            <label for="sobreUpload">Imagem da Seção Sobre</label>
-                            <div class="image-upload-box">
-                                <div class="image-preview" id="sobrePreview" style="background-image: url('');"></div>
-                                <input type="file" id="sobreUpload" class="form-control"
+
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-gray-700">Imagem da Seção Sobre</label>
+                            <div class="relative group">
+                                <div class="image-preview w-full h-40 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-cover bg-center transition-all group-hover:border-teal-400 group-hover:bg-teal-50/30"
+                                    id="sobrePreview">
+                                    <div class="text-center text-gray-400 group-hover:text-teal-500">
+                                        <i class="fas fa-camera text-3xl mb-2"></i>
+                                        <p class="text-xs">Alterar Imagem</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="sobreUpload"
+                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     accept="image/png, image/jpeg, image/webp"
                                     onchange="handleImageUpload(event, 'sobreImagem', '#sobrePreview')">
                             </div>
-                            <input type="text" id="sobreImagem" class="form-control"
-                                placeholder="URL da imagem (automático)" readonly oninput="markAsUnsaved(); update();">
+                            <input type="text" id="sobreImagem"
+                                class="w-full text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1 select-all"
+                                placeholder="URL" readonly oninput="markAsUnsaved(); update();">
                         </div>
                     </section>
 
-                    <section id="produtos" class="config-section">
-                        <h3>Produtos/Serviços</h3>
-                        <div id="produtosList"></div>
-                        <button class="btn btn-secondary" onclick="openProdutoModal(-1)">Adicionar Produto</button>
-                    </section>
-
-                    <section id="contato" class="config-section">
-                        <h3>Contato e Mapa</h3>
-                        <div class="form-group">
-                            <label for="telefone">Telefone (WhatsApp)</label>
-                            <input type="tel" id="telefone" class="form-control" oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="telefone2">Telefone 2 (Opcional)</label>
-                            <input type="tel" id="telefone2" class="form-control" oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="email">E-mail</label>
-                            <input type="email" id="email" class="form-control" oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group">
-                            <label for="endereco">Endereço</label>
-                            <input type="text" id="endereco" class="form-control" oninput="markAsUnsaved(); update();">
-                        </div>
-                        <div class="form-group form-check">
-                            <input type="checkbox" id="mostrarMapa" class="form-check-input"
-                                onchange="markAsUnsaved(); update();">
-                            <label for="mostrarMapa" class="form-check-label">Mostrar Mapa</label>
-                        </div>
-                        <div class="form-group">
-                            <label>Latitude / Longitude</label>
-                            <div class="input-group">
-                                <input type="number" id="latitude" class="form-control"
-                                    oninput="markAsUnsaved(); update();">
-                                <input type="number" id="longitude" class="form-control"
-                                    oninput="markAsUnsaved(); update();">
+                    <!-- Produtos Section -->
+                    <section id="produtos" class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-box-open text-orange-500"></i>
+                                <h3 class="text-lg font-bold text-gray-900">Produtos</h3>
                             </div>
-                            <small>Clique no mapa para definir.</small>
+                            <button
+                                class="px-3 py-1.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-lg hover:bg-orange-100 transition-colors"
+                                onclick="openProdutoModal(-1)">
+                                <i class="fas fa-plus mr-1"></i> Adicionar
+                            </button>
                         </div>
-                        <div id="adminMap" style="height: 300px; border-radius: 8px; margin-top: 1rem;"></div>
+                        <div id="produtosList" class="space-y-3"></div>
                     </section>
 
-                    <section id="social" class="config-section">
-                        <h3>Redes Sociais</h3>
-                        <div id="socialLinksList" class="social-links-admin-list"></div>
-                        <div id="socialEmptyState" class="empty-state">
-                            <p>Nenhuma rede social adicionada.</p>
+                    <!-- Contact Section -->
+                    <section id="contato" class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                            <i class="fas fa-address-card text-red-500"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Contato</h3>
                         </div>
-                        <button class="btn btn-secondary" onclick="addSocialLink()">Adicionar Rede Social</button>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="telefone"
+                                    class="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </div>
+                                    <input type="tel" id="telefone"
+                                        class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                                        placeholder="(11) 99999-9999" oninput="markAsUnsaved(); update();">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="telefone2" class="block text-sm font-medium text-gray-700 mb-1">Telefone
+                                    2</label>
+                                <div class="relative">
+                                    <div
+                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <input type="tel" id="telefone2"
+                                        class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                                        placeholder="Opcional" oninput="markAsUnsaved(); update();">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                            <input type="email" id="email"
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                                oninput="markAsUnsaved(); update();">
+                        </div>
+                        <div>
+                            <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                            <input type="text" id="endereco"
+                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                                oninput="markAsUnsaved(); update();">
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <div
+                                    class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" id="mostrarMapa"
+                                        class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0.5 top-0.5 checked:right-0.5 checked:left-auto checked:border-green-500 focus:outline-none transition-all"
+                                        onchange="markAsUnsaved(); update();">
+                                    <label for="mostrarMapa"
+                                        class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">Mostrar Mapa no Site</span>
+                            </label>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="number" id="latitude"
+                                    class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs"
+                                    placeholder="Lat" oninput="markAsUnsaved(); update();">
+                                <input type="number" id="longitude"
+                                    class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs"
+                                    placeholder="Lng" oninput="markAsUnsaved(); update();">
+                            </div>
+                            <small class="text-xs text-gray-500 block">Clique no mapa abaixo para marcar a localização
+                                exata.</small>
+                            <div id="adminMap" class="w-full h-48 rounded-lg border border-gray-300 shadow-inner"></div>
+                        </div>
                     </section>
 
-                    <section id="modulos" class="config-section">
-                        <h3>Módulos Visíveis</h3>
-                        <div class="module-toggle-list">
-                            <div class="module-toggle">
-                                <span>Sobre</span>
-                                <div class="switch" data-module="sobre"></div>
+                    <!-- Social Section -->
+                    <section id="social" class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-share-alt text-blue-500"></i>
+                                <h3 class="text-lg font-bold text-gray-900">Redes Sociais</h3>
                             </div>
-                            <div class="module-toggle">
-                                <span>Produtos</span>
-                                <div class="switch" data-module="produtos"></div>
+                            <button
+                                class="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors"
+                                onclick="addSocialLink()">
+                                <i class="fas fa-plus mr-1"></i> Adicionar
+                            </button>
+                        </div>
+                        <div id="socialLinksList" class="space-y-2"></div>
+                        <div id="socialEmptyState"
+                            class="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                            <p class="text-sm text-gray-500">Nenhuma rede social adicionada.</p>
+                        </div>
+                    </section>
+
+                    <!-- Modulos Section -->
+                    <section id="modulos" class="space-y-4 pt-6 border-t border-gray-100 pb-8">
+                        <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                            <i class="fas fa-layer-group text-gray-600"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Visibilidade</h3>
+                        </div>
+
+                        <div class="module-toggle-list space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Seção Sobre</span>
+                                <button
+                                    class="module-switch w-12 h-6 rounded-full bg-gray-300 transition-colors relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    data-module="sobre" onclick="toggleModule('sobre')">
+                                    <span
+                                        class="switch-thumb absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 transform translate-x-0"></span>
+                                </button>
                             </div>
-                            <div class="module-toggle">
-                                <span>Contato</span>
-                                <div class="switch" data-module="contato"></div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Seção Produtos</span>
+                                <button
+                                    class="module-switch w-12 h-6 rounded-full bg-gray-300 transition-colors relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    data-module="produtos" onclick="toggleModule('produtos')">
+                                    <span
+                                        class="switch-thumb absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 transform translate-x-0"></span>
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Seção Contato</span>
+                                <button
+                                    class="module-switch w-12 h-6 rounded-full bg-gray-300 transition-colors relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    data-module="contato" onclick="toggleModule('contato')">
+                                    <span
+                                        class="switch-thumb absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 transform translate-x-0"></span>
+                                </button>
                             </div>
                         </div>
                     </section>
                 </div>
+            </div>
 
-                <div class="preview-column">
-                    <div class="preview-sticky-container">
-                        <iframe id="preview-iframe" src="index.html" title="Preview do Site"></iframe>
+            <!-- Preview Column (Right) -->
+            <div class="flex-1 bg-gray-100 relative hidden lg:block overflow-hidden">
+                <div id="preview-card"
+                    class="absolute inset-8 rounded-2xl shadow-2xl border border-gray-200 bg-white overflow-hidden flex flex-col transition-all duration-500 ease-in-out mx-auto">
+                    <div class="bg-gray-100 border-b border-gray-200 p-2 flex gap-1.5 pl-4">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-400"></div>
                     </div>
+                    <iframe id="preview-iframe" src="index.html" class="w-full h-full bg-white"
+                        title="Preview do Site"></iframe>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="produtoModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeProdutoModal()">&times;</span>
-            <h4 id="produtoModalTitle">Produto</h4>
+    <!-- Modals -->
+    <!-- Produto Modal -->
+    <div id="produtoModal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 transform scale-95 transition-transform duration-300 p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h4 id="produtoModalTitle" class="text-xl font-bold text-gray-900">Editar Produto</h4>
+                <button onclick="closeProdutoModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
             <input type="hidden" id="produtoId">
-            <div class="form-group">
-                <label>Imagem</label>
-                <div class="image-upload-box">
-                    <div class="image-preview" id="produtoPreview"
-                        style="background-image: url(''); min-height: 150px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #f8f9fa;">
+
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700">Imagem</label>
+                <div
+                    class="relative group h-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl overflow-hidden hover:border-blue-400 transition-colors">
+                    <div class="image-preview absolute inset-0 bg-contain bg-center bg-no-repeat" id="produtoPreview"
+                        style="background-image: url('');"></div>
+                    <div
+                        class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/10 transition-opacity pointer-events-none">
+                        <span class="bg-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Alterar</span>
                     </div>
-                    <input type="file" id="produtoUpload" class="form-control" accept="image/*"
+                    <input type="file" id="produtoUpload"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*"
                         onchange="handleImageUpload(event, 'produtoImageUrl', '#produtoPreview')">
                 </div>
                 <input type="hidden" id="produtoImageUrl">
             </div>
-            <div class="form-group"><label>Nome</label><input type="text" id="produtoNome" class="form-control"></div>
-            <div class="form-group"><label>Preço</label><input type="text" id="produtoPreco" class="form-control"></div>
-            <div class="form-group"><label>Descrição</label><textarea id="produtoDescricao"
-                    class="form-control"></textarea></div>
-            <button class="btn btn-primary" onclick="saveProduto()">Salvar</button>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Produto</label>
+                <input type="text" id="produtoNome"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Preço / Valor</label>
+                <input type="text" id="produtoPreco"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Descrição Curta</label>
+                <textarea id="produtoDescricao" rows="3"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar"></textarea>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="saveProduto()"
+                    class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02]">Salvar
+                    Produto</button>
+            </div>
         </div>
     </div>
 
-    <div id="socialLinkModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeSocialModal()">&times;</span>
-            <h4>Rede Social</h4>
-            <input type="hidden" id="currentSocialLinkIndex">
-            <div class="form-group"><label>Nome</label><input type="text" id="socialLinkName" class="form-control">
+    <!-- Social Modal -->
+    <div id="socialLinkModal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h4 class="text-xl font-bold text-gray-900">Rede Social</h4>
+                <button onclick="closeSocialModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
-            <div class="form-group"><label>URL</label><input type="url" id="socialLinkUrl" class="form-control"></div>
-            <button class="btn btn-primary" onclick="saveSocialLinkChanges()">Salvar</button>
+            <input type="hidden" id="currentSocialLinkIndex">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome (ex: Instagram)</label>
+                <input type="text" id="socialLinkName"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL (Link)</label>
+                <input type="url" id="socialLinkUrl"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+
+            <div class="pt-2">
+                <button onclick="saveSocialLinkChanges()"
+                    class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02]">Salvar</button>
+            </div>
         </div>
     </div>
 

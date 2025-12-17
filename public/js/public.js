@@ -48,10 +48,21 @@ function safeText(id, text) {
 function safeImage(id, src) {
     const el = document.getElementById(id);
     if (el) {
-        if (src) {
-            el.style.backgroundImage = `url(${src})`;
+        if (el.tagName === 'IMG') {
+            if (src) {
+                el.src = src;
+                el.classList.remove('hidden');
+            } else {
+                el.src = '';
+                el.classList.add('hidden');
+            }
         } else {
-            el.style.backgroundImage = '';
+            // Fallback for divs (background image)
+            if (src) {
+                el.style.backgroundImage = `url(${src})`;
+            } else {
+                el.style.backgroundImage = '';
+            }
         }
     }
 }
@@ -106,8 +117,8 @@ function updatePublicSite(data) {
         const siteTitle = (data.empresaNome && data.empresaNome.trim() !== '') ? data.empresaNome : "Site Profissional";
         document.title = siteTitle;
 
-        const logoEl = document.getElementById('logo');
-        if (logoEl) {
+        const logoElements = document.querySelectorAll('.logo-element');
+        logoElements.forEach(logoEl => {
             logoEl.innerHTML = '';
             if (data.logoType === 'image' && data.logoImageUrl) {
                 const img = document.createElement('img');
@@ -117,10 +128,16 @@ function updatePublicSite(data) {
                 img.style.width = 'auto';
                 img.style.borderRadius = '4px';
                 logoEl.appendChild(img);
+                // Remove gradient text class if image
+                logoEl.classList.remove('bg-gradient-to-r', 'from-primary', 'to-indigo-600', 'bg-clip-text', 'text-transparent');
+                logoEl.classList.add('text-gray-900'); // Fail-safe color
             } else {
                 logoEl.textContent = siteTitle;
+                // Re-add gradient text classes
+                logoEl.classList.add('bg-gradient-to-r', 'from-primary', 'to-indigo-600', 'bg-clip-text', 'text-transparent');
+                logoEl.classList.remove('text-gray-900');
             }
-        }
+        });
 
         // Footer
         safeText('footerNome', siteTitle);
@@ -128,11 +145,34 @@ function updatePublicSite(data) {
         // Banner
         safeText('bannerH1', data.bannerTitulo);
         safeText('bannerP', data.bannerSubtitulo);
-        safeImage('banner', data.bannerImagem); // Assumindo que o ID da div do banner seja 'banner' ou ajustando se for classe
-        // Se o banner for selecionado por classe no código original:
-        const bannerEl = document.querySelector('.banner');
-        if (bannerEl && data.bannerImagem) {
-            bannerEl.style.backgroundImage = `url(${data.bannerImagem})`;
+
+        // Banner Background Handling
+        const bannerBg = document.getElementById('banner-bg-image');
+        const bannerGradient = document.getElementById('banner-gradient');
+
+        if (bannerBg) {
+            if (data.bannerImagem && data.bannerImagem.trim() !== '') {
+                // Se tem imagem customizada
+                bannerBg.style.backgroundImage = `url(${data.bannerImagem})`;
+
+                // Remove efeitos de overlay para mostrar a imagem pura
+                bannerBg.classList.remove('opacity-60', 'mix-blend-overlay');
+                bannerBg.classList.add('opacity-100');
+
+                // Oculta o degradê padrão
+                if (bannerGradient) bannerGradient.classList.add('hidden');
+
+            } else {
+                // Estado padrão (sem imagem)
+                bannerBg.style.backgroundImage = '';
+
+                // Reseta efeitos
+                bannerBg.classList.add('opacity-60', 'mix-blend-overlay');
+                bannerBg.classList.remove('opacity-100');
+
+                // Mostra o degradê padrão
+                if (bannerGradient) bannerGradient.classList.remove('hidden');
+            }
         }
 
         // Sobre
@@ -200,22 +240,27 @@ function updatePublicSite(data) {
             }
         }
 
+
         // Produtos
         const grid = document.getElementById('produtosGrid');
         if (grid) {
             if (data.produtos && data.produtos.length > 0) {
                 grid.innerHTML = data.produtos.map(p => `
-                    <div class="product-card">
-                        <div class="product-image" style="background-image: url('${p.imagem || 'https://via.placeholder.com/400'}'); background-position: ${p.foco || 'center'};"></div>
-                        <div class="product-info">
-                            <h3>${p.nome}</h3>
-                            <div class="product-price">${p.preco}</div>
-                            <p>${p.descricao || ''}</p>
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col h-full group">
+                        <div class="h-64 overflow-hidden relative">
+                            <div class="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-700" style="background-image: url('${p.imagem || 'https://via.placeholder.com/400'}'); background-position: ${p.foco || 'center'};"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </div>
+                        <div class="p-8 flex flex-col flex-grow relative">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">${p.nome}</h3>
+                            <div class="text-2xl font-bold text-secondary mb-4 font-mono tracking-tight">${p.preco}</div>
+                            <p class="text-gray-600 text-base leading-relaxed flex-grow border-t border-gray-100 pt-4">${p.descricao || ''}</p>
+                            <button class="w-full mt-6 py-3 bg-gray-50 text-gray-900 font-semibold rounded-xl hover:bg-primary hover:text-white transition-all border border-gray-200 hover:border-primary">Saber Mais</button>
                         </div>
                     </div>
                 `).join('');
             } else {
-                grid.innerHTML = ''; // Limpa se não houver produtos
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-300">Nenhum produto disponível no momento.</div>';
             }
         }
 
@@ -224,8 +269,8 @@ function updatePublicSite(data) {
         if (socialContainer) {
             if (data.socialLinks && data.socialLinks.length > 0) {
                 socialContainer.innerHTML = data.socialLinks.map(link => `
-                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon" title="${link.name}">
-                        ${link.icon || '📱'} 
+                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-400 hover:text-white transition-colors transform hover:scale-110" title="${link.name}">
+                        ${link.icon || '<i class="fas fa-link"></i>'} 
                     </a>
                 `).join('');
             } else {
@@ -239,6 +284,25 @@ function updatePublicSite(data) {
         console.error('❌ [UI] Erro ao atualizar:', error);
     }
 }
+
+// Mobile Menu Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.querySelector('button.hamburger');
+    const menu = document.getElementById('mobile-menu');
+
+    if (btn && menu) {
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Close menu when clicking a link
+        menu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
+    }
+});
 
 
 // ===== INICIALIZAÇÃO =====

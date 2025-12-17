@@ -102,9 +102,17 @@ export class ConfigManager {
         if (!cores) return;
 
         const root = document.documentElement;
-        Object.entries(cores).forEach(([key, value]) => {
-            root.style.setProperty(`--${key}`, value);
-        });
+
+        // Tailwind v3/v4 variable mapping
+        if (cores.primaria) {
+            root.style.setProperty('--primary', cores.primaria);
+            // Also set specific RGB values if needed by Tailwind config for opacity support
+            // root.style.setProperty('--color-primary', cores.primaria); 
+        }
+
+        if (cores.secundaria) {
+            root.style.setProperty('--secondary', cores.secundaria);
+        }
     }
 
     /**
@@ -156,33 +164,46 @@ export class ConfigManager {
      * Aplica configurações de módulos
      * @param {Object} modules - Configurações de módulos
      */
+    /**
+     * Aplica configurações de módulos
+     * @param {Object} modules - Configurações de módulos
+     */
     static applyModuleSettings(modules) {
         if (!modules) return;
 
-        const sections = ['sobre', 'produtos', 'contato'];
-        sections.forEach(section => {
-            const isEnabled = modules[section] ?? true;
-            const navItem = document.querySelector(`.nav-${section}`);
-            const sectionEl = document.getElementById(section);
+        // Mapeamento direto de chaves para IDs
+        const sectionMap = {
+            'sobre': 'sobre',
+            'produtos': 'produtos',
+            'contato': 'contato'
+        };
 
-            if (navItem) navItem.style.display = isEnabled ? '' : 'none';
-            if (sectionEl) sectionEl.style.display = isEnabled ? '' : 'none';
-        });
-    }
+        for (const [key, id] of Object.entries(sectionMap)) {
+            const isEnabled = modules[key] !== false; // Default to true
 
-    /**
-     * Aplica configurações da seção sobre
-     * @param {Object} sobre - Configurações da seção sobre
-     */
-    static applySobreSettings(sobre) {
-        if (!sobre) return;
+            // Toggle Section
+            const sectionEl = document.getElementById(id);
+            if (sectionEl) {
+                if (isEnabled) {
+                    sectionEl.classList.remove('hidden');
+                    sectionEl.style.display = ''; // Clear inline styles
+                } else {
+                    sectionEl.classList.add('hidden');
+                    sectionEl.style.display = 'none'; // Force hide
+                }
+            }
 
-        Helpers.setValue('sobreTextoPreview', sobre.texto, '', 'innerHTML');
-
-        const sobreImagem = document.getElementById('sobreImagemPreview');
-        if (sobreImagem && sobre.imagem) {
-            sobreImagem.style.backgroundImage = `url(${sobre.imagem})`;
-            sobreImagem.setAttribute('data-bg', sobre.imagem);
+            // Toggle Nav Items (Desktop & Mobile)
+            const navItems = document.querySelectorAll(`.nav-${key}`);
+            navItems.forEach(navItem => {
+                if (isEnabled) {
+                    navItem.classList.remove('hidden');
+                    navItem.style.display = '';
+                } else {
+                    navItem.classList.add('hidden');
+                    navItem.style.display = 'none';
+                }
+            });
         }
     }
 
@@ -204,7 +225,7 @@ export class ConfigManager {
         this.applyColorSettings(config.cores);
         this.applyContactSettings(config.contato);
         this.applyModuleSettings(config.modules);
-        this.applySobreSettings(config.sobre);
+
 
         globalCache.set('config', 'full', { hash: configHash, timestamp: Date.now() });
     }

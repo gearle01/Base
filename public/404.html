@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Página Não Encontrada</title>
+    <link rel="stylesheet" href="css/tailwind.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -51,6 +53,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -67,8 +70,15 @@
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
         }
 
         .error-icon {
@@ -79,8 +89,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .error-title {
@@ -350,10 +367,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="logo-section" id="logoSection"></div>
-        
+
         <div class="error-icon">😕</div>
         <div class="error-code">404</div>
         <h1 class="error-title">Página Não Encontrada</h1>
@@ -401,7 +419,7 @@
 
                 const db = firebase.firestore();
                 const clientId = 'cliente-001';
-                
+
                 // Carregar configurações
                 const [clientDoc, socialLinksDoc] = await Promise.all([
                     db.collection('site').doc(clientId).get(),
@@ -410,7 +428,7 @@
 
                 if (clientDoc.exists) {
                     const data = clientDoc.data();
-                    
+
                     // Aplicar cores do site
                     if (data.cores) {
                         document.documentElement.style.setProperty('--color-primary', data.cores.primaria || '#007bff');
@@ -501,4 +519,5 @@
         document.addEventListener('DOMContentLoaded', loadConfig);
     </script>
 </body>
+
 </html>

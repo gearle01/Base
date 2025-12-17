@@ -111,9 +111,8 @@ class FirebaseRealtimeManager {
 
         const ref = this.db.collection('site').doc(this.clientId);
         const doc = await ref.get();
-        if (!doc.exists) return null;
-
-        const data = doc.data();
+        // Return default structure if doc doesn't exist, to prevent null errors
+        const data = doc.exists ? doc.data() : {};
 
         // Load subcollections in parallel
         const [cores, contato, modules, sobre, social, prods] = await Promise.all([
@@ -125,12 +124,12 @@ class FirebaseRealtimeManager {
             ref.collection('produtos').get()
         ]);
 
-        data.cores = cores.data();
-        data.contato = contato.data();
-        data.modules = modules.data();
-        data.sobre = sobre.data();
-        data.socialLinks = social.data()?.links || [];
-        data.produtos = prods.docs.map(d => ({ id: d.id, ...d.data() }));
+        data.cores = cores.exists ? cores.data() : null;
+        data.contato = contato.exists ? contato.data() : null;
+        data.modules = modules.exists ? modules.data() : null;
+        data.sobre = sobre.exists ? sobre.data() : null;
+        data.socialLinks = social.exists ? (social.data()?.links || []) : [];
+        data.produtos = prods.empty ? [] : prods.docs.map(d => ({ id: d.id, ...d.data() }));
 
         return data;
     }

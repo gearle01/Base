@@ -54,51 +54,29 @@ function updateSaveStatus() {
   }
 }
 
-// ===== RENDERIZAÇÃO =====
 function renderProdutos() {
   const list = document.getElementById("produtosList");
-  if (!list) return;
-
-  list.innerHTML = state.produtos.map((p, i) => `
-    <div style="background: #f8f9fa; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <strong>${escapeHtml(p.nome)}</strong><br>
-            <small class="text-muted">${escapeHtml(p.preco)}</small>
+  if (list) {
+    list.innerHTML = state.produtos.map((p, i) => `
+    <div class="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+        <div class="w-16 h-16 bg-gray-100 rounded-lg bg-cover bg-center flex-shrink-0" 
+             style="background-image: url('${p.imagem || ''}')"></div>
+        
+        <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-gray-900 truncate">${escapeHtml(p.nome)}</h4>
+            <p class="text-sm text-gray-500 truncate">${escapeHtml(p.preco)}</p>
         </div>
-        <div class="btn-group">
-            <button class="btn btn-secondary btn-sm" onclick="editarProduto(${i})">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="removerProduto(${i})">🗑️</button>
+        
+        <div class="flex gap-2">
+            <button onclick="editarProduto(${i})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="removerProduto(${i})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
     </div>
   `).join("");
-}
-
-function renderSocialLinks() {
-  if (!Array.isArray(state.socialLinks)) state.socialLinks = [];
-  const list = document.getElementById("socialLinksList");
-  const empty = document.getElementById("socialEmptyState");
-
-  if (!list) return;
-
-  if (state.socialLinks.length === 0) {
-    list.innerHTML = "";
-    if (empty) empty.style.display = "block";
-  } else {
-    if (empty) empty.style.display = "none";
-    list.innerHTML = state.socialLinks.map((link, i) => `
-            <div class="social-link-item">
-                <div class="social-preview">
-                    <span class="social-name">${escapeHtml(link.name)}</span>
-                </div>
-                <div class="social-url">
-                    <a href="${escapeHtml(link.url)}" target="_blank">${escapeHtml(link.url)}</a>
-                </div>
-                <div class="social-actions">
-                    <button class="btn btn-primary" onclick="editSocialLink(${i})">Editar</button>
-                    <button class="btn btn-danger" onclick="removeSocialLink(${i})">Remover</button>
-                </div>
-            </div>
-        `).join("");
   }
 }
 
@@ -141,35 +119,56 @@ function getConfig() {
 }
 
 function loadConfig(config) {
-  console.log("📥 Carregando configurações...");
+  console.log("📥 Carregando configurações...", config);
   if (!config) return;
 
-  // Campos simples
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  // Helper para definir valores nos inputs
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = (val !== undefined && val !== null) ? val : '';
+  };
 
-  setVal('empresaNome', config.empresaNome);
-  setVal('logoType', config.logoType);
-  setVal('logoImageUrl', config.logoImageUrl);
-  setVal('faviconImageUrl', config.faviconImageUrl);
-  setVal('bannerTitulo', config.bannerTitulo);
-  setVal('bannerSubtitulo', config.bannerSubtitulo);
-  setVal('bannerImagem', config.bannerImagem);
+  // 1. Dados Principais (root)
+  // Se saveData salvou espalhado (flat), aqui pegamos direto.
+  // Se salvou aninhado em 'main', tentamos essa fallback.
+  const mainData = config.main || config;
 
-  if (config.global_settings) {
-    setVal('fontUrl', config.global_settings.fontUrl);
-    setVal('fontFamily', config.global_settings.fontFamily);
-  }
+  setVal('empresaNome', mainData.empresaNome);
+  setVal('logoType', mainData.logoType || 'text');
+  setVal('logoImageUrl', mainData.logoImageUrl);
+  setVal('faviconImageUrl', mainData.faviconImageUrl);
+  setVal('bannerTitulo', mainData.bannerTitulo);
+  setVal('bannerSubtitulo', mainData.bannerSubtitulo);
+  setVal('bannerImagem', mainData.bannerImagem);
 
+  // Atualiza visibilidade do upload de logo baseada no tipo
+  const logoType = mainData.logoType || 'text';
+  document.getElementById('logoImageInputGroup')?.classList.toggle('hidden', logoType !== 'image');
+
+  // 2. Configurações Globais
+  const globalSettings = mainData.global_settings || {};
+  setVal('fontUrl', globalSettings.fontUrl);
+  setVal('fontFamily', globalSettings.fontFamily);
+
+  // 3. Cores
   if (config.cores) {
-    setVal('corPrimaria', config.cores.primaria);
-    setVal('corSecundaria', config.cores.secundaria);
+    setVal('corPrimaria', config.cores.primaria || '#007bff');
+    setVal('corSecundaria', config.cores.secundaria || '#28a745');
   }
 
+  // 4. Seção Sobre
   if (config.sobre) {
     setVal('sobreTexto', config.sobre.texto);
     setVal('sobreImagem', config.sobre.imagem);
+    if (config.sobre.imagem) document.getElementById('sobrePreview').style.backgroundImage = `url(${config.sobre.imagem})`;
   }
 
+  // Previews principais
+  if (mainData.logoImageUrl) document.getElementById('logoPreview').style.backgroundImage = `url(${mainData.logoImageUrl})`;
+  if (mainData.faviconImageUrl) document.getElementById('faviconPreview').style.backgroundImage = `url(${mainData.faviconImageUrl})`;
+  if (mainData.bannerImagem) document.getElementById('bannerPreview').style.backgroundImage = `url(${mainData.bannerImagem})`;
+
+  // 5. Contato
   if (config.contato) {
     setVal('telefone', config.contato.telefone);
     setVal('telefone2', config.contato.telefone2);
@@ -178,27 +177,99 @@ function loadConfig(config) {
     setVal('latitude', config.contato.latitude);
     setVal('longitude', config.contato.longitude);
     const mapCheck = document.getElementById('mostrarMapa');
-    if (mapCheck) mapCheck.checked = config.contato.mostrarMapa;
+    if (mapCheck) mapCheck.checked = !!config.contato.mostrarMapa;
   }
 
-  if (config.modules) state.modules = config.modules;
+  // 6. Atualizar Estado Local
+  if (config.modules) state.modules = { ...state.modules, ...config.modules }; // Merge com defaults
   if (config.produtos) state.produtos = config.produtos;
   if (config.socialLinks) state.socialLinks = config.socialLinks;
 
-  // Switches
+  // 7. Atualizar UI dos Switches
   Object.keys(state.modules).forEach(mod => {
-    const sw = document.querySelector(`.switch[data-module="${mod}"]`);
-    if (sw) sw.classList.toggle('active', state.modules[mod]);
+    updateSwitchVisual(mod, state.modules[mod]);
   });
 
+  // 8. Renderizar Listas
   renderProdutos();
   renderSocialLinks();
+
+  // 9. Atualizar Preview
   update();
+}
+
+// ===== PREVIEW MODE =====
+window.setPreviewMode = (mode) => {
+  const container = document.getElementById('preview-card'); // Agora usamos ID direto
+  const btnDesktop = document.getElementById('btn-desktop');
+  const btnMobile = document.getElementById('btn-mobile');
+
+  if (!container) return;
+
+  if (mode === 'mobile') {
+    container.style.maxWidth = '393px'; // iPhone 15/16 width
+    container.style.height = '852px'; // Height constraint for better realism
+    container.style.maxHeight = '90vh'; // Ensure it fits in viewport
+    container.style.border = '12px solid #1f2937'; // Darker, sleeker bezel
+    container.style.borderRadius = '50px'; // More rounded corners like modern iPhones
+
+    btnMobile.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
+    btnMobile.classList.remove('text-gray-400');
+
+    btnDesktop.classList.remove('bg-white', 'shadow-sm', 'text-gray-700');
+    btnDesktop.classList.add('text-gray-400');
+  } else {
+    container.style.maxWidth = '100%';
+    container.style.height = '100%'; // Reset height
+    container.style.maxHeight = '100%';
+    container.style.border = '1px solid #e5e7eb'; // Default light border
+    container.style.borderRadius = '16px'; // Standard card radius
+
+    btnDesktop.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
+    btnDesktop.classList.remove('text-gray-400');
+
+    btnMobile.classList.remove('bg-white', 'shadow-sm', 'text-gray-700');
+    btnMobile.classList.add('text-gray-400');
+  }
+};
+
+// ===== SWITCHES LOGIC =====
+window.toggleModule = (mod) => {
+  state.modules[mod] = !state.modules[mod];
+  updateSwitchVisual(mod, state.modules[mod]);
+  markAsUnsaved();
+  update();
+};
+
+function updateSwitchVisual(mod, isActive) {
+  const btn = document.querySelector(`.module-switch[data-module="${mod}"]`);
+  if (!btn) return;
+
+  const thumb = btn.querySelector('.switch-thumb');
+
+  if (isActive) {
+    btn.classList.remove('bg-gray-300');
+    btn.classList.add('bg-blue-600');
+    thumb.classList.remove('translate-x-0');
+    thumb.classList.add('translate-x-6');
+  } else {
+    btn.classList.add('bg-gray-300');
+    btn.classList.remove('bg-blue-600');
+    thumb.classList.add('translate-x-0');
+    thumb.classList.remove('translate-x-6');
+  }
 }
 
 // ===== FIREBASE =====
 async function initializeFirebaseWithRealtimeUpdates() {
-  if (!window.firebaseManager) window.firebaseManager = new FirebaseRealtimeManager();
+  if (!window.firebaseManager) {
+    if (typeof FirebaseRealtimeManager === 'undefined') {
+      console.error("FirebaseRealtimeManager class not found. Check load order.");
+      return;
+    }
+    window.firebaseManager = new FirebaseRealtimeManager();
+  }
+
   await window.firebaseManager.init();
 
   const data = await window.firebaseManager.loadInitialData();
@@ -206,8 +277,8 @@ async function initializeFirebaseWithRealtimeUpdates() {
 
   // Subscribers
   window.firebaseManager.subscribeToDocument("site", "cliente-001", (d) => {
-    if (d.empresaNome) document.getElementById('empresaNome').value = d.empresaNome;
-    update();
+    console.log("🔄 Atualização recebida do Firebase:", d);
+    loadConfig(d);
   });
   // Adicione outros subscribers conforme necessário...
 }
@@ -301,7 +372,7 @@ window.handleImageUpload = async (e, targetId, previewId) => {
 
   showToast("Enviando...", "info");
   try {
-    const url = await window.firebaseManager.uploadImage(file, `uploads/${Date.now()}_${file.name}`);
+    const url = await window.firebaseManager.uploadImage(file, `uploads / ${Date.now()}_${file.name} `);
     document.getElementById(targetId).value = url;
 
     const prev = document.querySelector(previewId);
@@ -316,13 +387,30 @@ window.handleImageUpload = async (e, targetId, previewId) => {
 };
 
 // Modais e CRUD
+window.toggleModal = (modalId, show) => {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+
+  if (show) {
+    modal.classList.remove('hidden');
+    // Pequeno delay para permitir a transição
+    setTimeout(() => {
+      modal.classList.remove('opacity-0');
+      modal.querySelector('div').classList.remove('scale-95');
+    }, 10);
+  } else {
+    modal.classList.add('opacity-0');
+    modal.querySelector('div').classList.add('scale-95');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+    }, 300); // Tempo da transição
+  }
+}
+
 window.openProdutoModal = (idx) => {
-  // Lógica simplificada para abrir modal limpo ou com dados
-  const modal = document.getElementById('produtoModal');
   document.getElementById('produtoId').value = idx === -1 ? '' : idx;
 
   if (idx === -1) {
-    // Limpar campos...
     document.getElementById('produtoNome').value = '';
     document.getElementById('produtoPreco').value = '';
     document.getElementById('produtoDescricao').value = '';
@@ -336,10 +424,10 @@ window.openProdutoModal = (idx) => {
     document.getElementById('produtoImageUrl').value = p.imagem || '';
     if (p.imagem) document.getElementById('produtoPreview').style.backgroundImage = `url(${p.imagem})`;
   }
-  modal.style.display = 'block';
+  window.toggleModal('produtoModal', true);
 };
 
-window.closeProdutoModal = () => document.getElementById('produtoModal').style.display = 'none';
+window.closeProdutoModal = () => window.toggleModal('produtoModal', false);
 
 window.saveProduto = () => {
   const idx = document.getElementById('produtoId').value;
@@ -379,9 +467,6 @@ window.addSocialLink = () => {
 };
 
 window.editSocialLink = (index) => {
-  const modal = document.getElementById("socialLinkModal");
-  if (!modal) return;
-
   const indexInput = document.getElementById("currentSocialLinkIndex");
   const nameInput = document.getElementById("socialLinkName");
   const urlInput = document.getElementById("socialLinkUrl");
@@ -397,13 +482,10 @@ window.editSocialLink = (index) => {
     urlInput.value = link.url || "";
   }
 
-  modal.style.display = "block";
+  window.toggleModal('socialLinkModal', true);
 };
 
-window.closeSocialModal = () => {
-  const modal = document.getElementById("socialLinkModal");
-  if (modal) modal.style.display = "none";
-};
+window.closeSocialModal = () => window.toggleModal('socialLinkModal', false);
 
 window.saveSocialLinkChanges = () => {
   const indexInput = document.getElementById("currentSocialLinkIndex");

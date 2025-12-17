@@ -279,11 +279,21 @@ function updatePublicSite(data) {
         const socialContainer = document.querySelector('.social-icons-footer');
         if (socialContainer) {
             if (data.socialLinks && data.socialLinks.length > 0) {
-                socialContainer.innerHTML = data.socialLinks.map(link => `
+                socialContainer.innerHTML = data.socialLinks.map(link => {
+                    let iconClass = "fas fa-link";
+                    const lowerName = (link.name || "").toLowerCase();
+                    if (lowerName.includes("instagram")) iconClass = "fab fa-instagram";
+                    else if (lowerName.includes("facebook")) iconClass = "fab fa-facebook";
+                    else if (lowerName.includes("linkedin")) iconClass = "fab fa-linkedin";
+                    else if (lowerName.includes("twitter") || lowerName.includes("x")) iconClass = "fab fa-twitter";
+                    else if (lowerName.includes("youtube")) iconClass = "fab fa-youtube";
+                    else if (lowerName.includes("whatsapp")) iconClass = "fab fa-whatsapp";
+
+                    return `
                     <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-400 hover:text-white transition-colors transform hover:scale-110" title="${link.name}">
-                        ${link.icon || '<i class="fas fa-link"></i>'} 
+                        <i class="${iconClass}"></i> 
                     </a>
-                `).join('');
+                `}).join('');
             } else {
                 socialContainer.innerHTML = '';
             }

@@ -526,3 +526,50 @@ window.removeSocialLink = (index) => {
     markAsUnsaved();
   }
 };
+
+function renderSocialLinks() {
+  const list = document.getElementById("socialLinksList");
+  const emptyState = document.getElementById("socialEmptyState");
+
+  if (!list) return;
+
+  if (!state.socialLinks || state.socialLinks.length === 0) {
+    list.innerHTML = "";
+    if (emptyState) emptyState.classList.remove("hidden");
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add("hidden");
+
+  list.innerHTML = state.socialLinks.map((link, i) => {
+    let iconClass = "fas fa-link";
+    const lowerName = (link.name || "").toLowerCase();
+    if (lowerName.includes("instagram")) iconClass = "fab fa-instagram text-pink-600";
+    else if (lowerName.includes("facebook")) iconClass = "fab fa-facebook text-blue-600";
+    else if (lowerName.includes("linkedin")) iconClass = "fab fa-linkedin text-blue-700";
+    else if (lowerName.includes("twitter") || lowerName.includes("x")) iconClass = "fab fa-twitter text-blue-400";
+    else if (lowerName.includes("youtube")) iconClass = "fab fa-youtube text-red-600";
+    else if (lowerName.includes("whatsapp")) iconClass = "fab fa-whatsapp text-green-500";
+
+    return `
+    <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg group hover:shadow-sm transition-all">
+        <div class="flex items-center gap-3">
+             <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-lg">
+                 <i class="${iconClass}"></i>
+             </div>
+             <div>
+                 <h4 class="text-sm font-bold text-gray-900">${escapeHtml(link.name)}</h4>
+                 <a href="${escapeHtml(link.url)}" target="_blank" class="text-xs text-blue-500 hover:underline truncate max-w-[150px] block">${escapeHtml(link.url)}</a>
+             </div>
+        </div>
+        <div class="flex gap-1">
+            <button onclick="editSocialLink(${i})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="removeSocialLink(${i})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+  `}).join("");
+}

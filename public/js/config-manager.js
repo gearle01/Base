@@ -53,7 +53,7 @@ export class ConfigManager {
         const isHotjar = code.includes('static.hotjar.com');
 
         if (!(isGoogleAnalytics || isFacebookPixel || isHotjar)) {
-            console.warn('⚠️ Código de rastreamento não reconhecido');
+            // console.warn('⚠️ Código de rastreamento não reconhecido');
             return;
         }
 
@@ -216,7 +216,7 @@ export class ConfigManager {
         const configHash = JSON.stringify(config);
 
         // if (cached && cached.hash === configHash) {
-        //     console.log('📦 Usando configurações em cache (Disabled for consistency)');
+        //     // console.log('📦 Usando configurações em cache (Disabled for consistency)');
         //     // return; // Force apply to ensure code updates (like toggles) run
         // }
 

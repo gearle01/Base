@@ -19,6 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link id="dynamic-favicon" rel="icon" type="image/png" href="images/favicon.png">
 </head>
 
 <body class="bg-gray-50 font-sans text-gray-700 antialiased overflow-hidden h-screen flex flex-col">
@@ -471,9 +472,10 @@
                     class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Descrição Curta</label>
-                <textarea id="produtoDescricao" rows="3"
-                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Detalhes do Produto</label>
+                <textarea id="produtoDescricao" rows="5"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar"
+                    placeholder="Descreva os detalhes completos do produto..."></textarea>
             </div>
 
             <div class="pt-2">
@@ -515,7 +517,68 @@
         </div>
     </div>
 
-    <div id="toastContainer"></div>
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="hidden" style="position: fixed; inset: 0; z-index: 9999;">
+        <!-- Backdrop -->
+        <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"></div>
+
+        <!-- Modal Container -->
+        <div
+            style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+            <div
+                style="background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); width: 100%; max-width: 360px; padding: 24px; animation: modalIn 0.2s ease-out;">
+                <!-- Icon -->
+                <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                    <div
+                        style="width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-exclamation-triangle" style="color: #EF4444; font-size: 24px;"></i>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <h3 id="confirmModalTitle"
+                    style="font-size: 20px; font-weight: 700; color: #111827; text-align: center; margin-bottom: 8px;">
+                    Confirmar Ação</h3>
+
+                <!-- Message -->
+                <p id="confirmModalMessage"
+                    style="color: #6B7280; text-align: center; margin-bottom: 24px; font-size: 14px;">Tem certeza que
+                    deseja continuar?</p>
+
+                <!-- Buttons -->
+                <div style="display: flex; gap: 12px;">
+                    <button id="confirmModalCancel"
+                        style="flex: 1; padding: 12px 16px; background: #F3F4F6; color: #374151; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: background 0.2s;"
+                        onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='#F3F4F6'">
+                        Cancelar
+                    </button>
+                    <button id="confirmModalConfirm"
+                        style="flex: 1; padding: 12px 16px; background: #EF4444; color: white; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 14px rgba(239,68,68,0.4);"
+                        onmouseover="this.style.background='#DC2626'" onmouseout="this.style.background='#EF4444'">
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+
+    <div id="toastContainer"
+        style="position: fixed; top: 80px; right: 20px; z-index: 99999; display: flex; flex-direction: column; align-items: flex-end;">
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>

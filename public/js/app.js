@@ -28,6 +28,108 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+// Modal de Confirmação Personalizado
+function showConfirmModal(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmModalTitle');
+    const messageEl = document.getElementById('confirmModalMessage');
+    const confirmBtn = document.getElementById('confirmModalConfirm');
+    const cancelBtn = document.getElementById('confirmModalCancel');
+
+    if (!modal) {
+      // Fallback para confirm nativo se o modal não existir
+      resolve(confirm(message));
+      return;
+    }
+
+    // Configurar textos
+    titleEl.textContent = title || 'Confirmar Ação';
+    messageEl.textContent = message || 'Tem certeza que deseja continuar?';
+
+    // Mostrar modal
+    modal.classList.remove('hidden');
+
+    // Handlers
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      confirmBtn.removeEventListener('click', handleConfirm);
+      cancelBtn.removeEventListener('click', handleCancel);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+  });
+}
+
+// ========== FUNÇÕES DE DEBUG ==========
+// Execute no console: debugShowProducts()
+window.debugShowProducts = async () => {
+  console.log("🔍 Buscando produtos no Firebase...");
+  const ref = firebase.firestore().collection('site').doc('cliente-001').collection('produtos');
+  const snap = await ref.get();
+  console.log(`📦 ${snap.docs.length} produtos encontrados:`);
+  snap.docs.forEach((doc, i) => {
+    console.log(`  ${i + 1}. [${doc.id}]`, doc.data());
+  });
+  console.log("📋 State local:", state.produtos);
+  return snap.docs;
+};
+
+// Execute no console: debugDeleteProduct('nome do produto')
+window.debugDeleteProduct = async (nomeProduto) => {
+  console.log(`🗑️ Procurando produto "${nomeProduto}" para excluir...`);
+  const ref = firebase.firestore().collection('site').doc('cliente-001').collection('produtos');
+  const snap = await ref.get();
+
+  let deletedCount = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (data.nome && data.nome.toLowerCase().includes(nomeProduto.toLowerCase())) {
+      console.log(`  ❌ Excluindo: ${data.nome} [${doc.id}]`);
+      await doc.ref.delete();
+      deletedCount++;
+    }
+  }
+
+  if (deletedCount > 0) {
+    console.log(`✅ ${deletedCount} produto(s) excluído(s) do Firebase!`);
+    console.log("🔄 Recarregando dados...");
+    const freshData = await window.firebaseManager.loadInitialData();
+    if (freshData) loadConfig(freshData);
+    console.log("✅ Dados recarregados!");
+  } else {
+    console.log(`⚠️ Nenhum produto com nome "${nomeProduto}" encontrado.`);
+  }
+};
+
+// Execute no console: debugClearAllProducts()
+window.debugClearAllProducts = async () => {
+  console.log("🗑️ EXCLUINDO TODOS OS PRODUTOS do Firebase...");
+  const ref = firebase.firestore().collection('site').doc('cliente-001').collection('produtos');
+  const snap = await ref.get();
+
+  for (const doc of snap.docs) {
+    console.log(`  ❌ Excluindo: ${doc.id}`);
+    await doc.ref.delete();
+  }
+
+  state.produtos = [];
+  renderProdutos();
+  update();
+  console.log("✅ Todos os produtos excluídos!");
+};
+
 function update() {
   const iframe = document.getElementById("preview-iframe");
   if (iframe) {
@@ -119,7 +221,7 @@ function getConfig() {
 }
 
 function loadConfig(config) {
-  console.log("📥 Carregando configurações...", config);
+  // console.log("📥 Carregando configurações...", config);
   if (!config) return;
 
   // Helper para definir valores nos inputs
@@ -165,7 +267,11 @@ function loadConfig(config) {
 
   // Previews principais
   if (mainData.logoImageUrl) document.getElementById('logoPreview').style.backgroundImage = `url(${mainData.logoImageUrl})`;
-  if (mainData.faviconImageUrl) document.getElementById('faviconPreview').style.backgroundImage = `url(${mainData.faviconImageUrl})`;
+  if (mainData.faviconImageUrl) {
+    document.getElementById('faviconPreview').style.backgroundImage = `url(${mainData.faviconImageUrl})`;
+    const favLink = document.getElementById('dynamic-favicon');
+    if (favLink) favLink.href = mainData.faviconImageUrl;
+  }
   if (mainData.bannerImagem) document.getElementById('bannerPreview').style.backgroundImage = `url(${mainData.bannerImagem})`;
 
   // 5. Contato
@@ -182,7 +288,10 @@ function loadConfig(config) {
 
   // 6. Atualizar Estado Local
   if (config.modules) state.modules = { ...state.modules, ...config.modules }; // Merge com defaults
-  if (config.produtos) state.produtos = config.produtos;
+  if (config.produtos) {
+    console.log(`🔄 loadConfig recebeu ${config.produtos.length} produtos:`, config.produtos.map(p => p.nome));
+    state.produtos = config.produtos;
+  }
   if (config.socialLinks) state.socialLinks = config.socialLinks;
 
   // 7. Atualizar UI dos Switches
@@ -191,6 +300,7 @@ function loadConfig(config) {
   });
 
   // 8. Renderizar Listas
+  console.log(`🖼️ Renderizando ${state.produtos.length} produtos:`, state.produtos.map(p => p.nome));
   renderProdutos();
   renderSocialLinks();
 
@@ -264,7 +374,7 @@ function updateSwitchVisual(mod, isActive) {
 async function initializeFirebaseWithRealtimeUpdates() {
   if (!window.firebaseManager) {
     if (typeof FirebaseRealtimeManager === 'undefined') {
-      console.error("FirebaseRealtimeManager class not found. Check load order.");
+      // console.error("FirebaseRealtimeManager class not found. Check load order.");
       return;
     }
     window.firebaseManager = new FirebaseRealtimeManager();
@@ -275,12 +385,22 @@ async function initializeFirebaseWithRealtimeUpdates() {
   const data = await window.firebaseManager.loadInitialData();
   if (data) loadConfig(data);
 
-  // Subscribers
-  window.firebaseManager.subscribeToDocument("site", "cliente-001", (d) => {
-    console.log("🔄 Atualização recebida do Firebase:", d);
-    loadConfig(d);
+  const isAdmin = window.location.pathname.includes('admin');
+
+  // Subscriber em tempo real
+  window.firebaseManager.subscribeToDocument("site", "cliente-001", async (d) => {
+    if (window._ignoreRemoteUpdates) return;
+
+    if (isAdmin) {
+      // No admin: Buscar dados frescos do servidor quando houver atualização
+      console.log("🔄 [Admin] Atualização detectada, buscando dados do servidor...");
+      const freshData = await window.firebaseManager.loadInitialData();
+      if (freshData) loadConfig(freshData);
+    } else {
+      // No site público: Usar dados que chegaram (cache OK)
+      loadConfig(d);
+    }
   });
-  // Adicione outros subscribers conforme necessário...
 }
 
 async function saveConfig() {
@@ -290,6 +410,10 @@ async function saveConfig() {
   }
 
   showSaving();
+
+  // Ativar proteção contra sobrescrita por atualizações remotas
+  window._ignoreRemoteUpdates = true;
+
   try {
     const config = getConfig();
 
@@ -317,15 +441,22 @@ async function saveConfig() {
     updateSaveStatus();
     showSaved();
     showToast("Salvo com sucesso!", "success");
+
+    // Desativar proteção após 3 segundos
+    setTimeout(() => {
+      window._ignoreRemoteUpdates = false;
+    }, 3000);
+
   } catch (e) {
-    console.error(e);
+    window._ignoreRemoteUpdates = false;
+    // console.error(e);
     showToast("Erro ao salvar.", "error");
   }
 }
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("🚀 App Iniciado");
+  // console.log("🚀 App Iniciado");
 
   try {
     // 1. Inicia Firebase
@@ -341,10 +472,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. Verifica usuário e carrega dados
     const user = await window.authManager.waitUntilReady();
     if (user) {
-      console.log("✅ Usuário detectado:", user.email);
+      // console.log("✅ Usuário detectado:", user.email);
       await initializeFirebaseWithRealtimeUpdates();
     } else {
-      console.log("🚫 Nenhum usuário ativo. Aguardando AuthManager redirecionar...");
+      // console.log("🚫 Nenhum usuário ativo. Aguardando AuthManager redirecionar...");
       // NÃO REDIRECIONAR AQUI MANUALMENTE PARA EVITAR LOOP
       // O AuthManager já fará isso se for necessário.
     }
@@ -352,7 +483,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 4. Mapa é inicializado pelo script inline no admin.html
 
   } catch (e) {
-    console.error("Erro fatal:", e);
+    // console.error("Erro fatal:", e);
   }
 });
 
@@ -447,12 +578,69 @@ window.saveProduto = () => {
   update(); // Atualiza o preview
 };
 
-window.removerProduto = (index) => {
-  if (confirm("Tem certeza que deseja remover este produto?")) {
-    state.produtos.splice(index, 1);
-    renderProdutos();
-    markAsUnsaved();
-    update(); // Atualiza o preview
+window.removerProduto = async (index) => {
+  const confirmed = await showConfirmModal(
+    "Excluir Produto",
+    "Tem certeza que deseja excluir este item? Esta ação não poderá ser desfeita."
+  );
+
+  if (confirmed) {
+    const produto = state.produtos[index];
+
+    try {
+      // Excluir diretamente no Firebase usando o ID do documento
+      if (produto && produto.id) {
+        const ref = firebase.firestore()
+          .collection('site')
+          .doc('cliente-001')
+          .collection('produtos')
+          .doc(produto.id);
+
+        await ref.delete();
+        console.log(`✅ Produto "${produto.nome}" excluído do Firebase [${produto.id}]`);
+      } else {
+        // Fallback: buscar pelo nome e excluir
+        const ref = firebase.firestore()
+          .collection('site')
+          .doc('cliente-001')
+          .collection('produtos');
+        const snap = await ref.get();
+
+        for (const doc of snap.docs) {
+          const data = doc.data();
+          if (data.nome === produto.nome) {
+            await doc.ref.delete();
+            console.log(`✅ Produto "${produto.nome}" excluído do Firebase [${doc.id}]`);
+            break;
+          }
+        }
+      }
+
+      // Atualizar state local e UI
+      state.produtos.splice(index, 1);
+      renderProdutos();
+      update();
+      showToast("Produto excluído com sucesso!", "success");
+
+    } catch (e) {
+      console.error("Erro ao excluir produto:", e);
+      showToast("Erro ao excluir. Tente novamente.", "error");
+    }
+  }
+};
+
+// Função para forçar sincronização com Firebase
+window.forceRefresh = async () => {
+  showToast("Sincronizando...", "info");
+  window._ignoreRemoteUpdates = false;
+  try {
+    const freshData = await window.firebaseManager.loadInitialData();
+    if (freshData) {
+      loadConfig(freshData);
+      showToast("Dados atualizados!", "success");
+    }
+  } catch (e) {
+    showToast("Erro ao sincronizar.", "error");
   }
 };
 
@@ -519,11 +707,35 @@ window.saveSocialLinkChanges = () => {
   showToast("Rede social salva!", "success");
 };
 
-window.removeSocialLink = (index) => {
-  if (confirm("Remover?")) {
-    state.socialLinks.splice(index, 1);
-    renderSocialLinks();
-    markAsUnsaved();
+window.removeSocialLink = async (index) => {
+  const confirmed = await showConfirmModal(
+    "Remover Rede Social",
+    "Tem certeza que deseja remover esta rede social?"
+  );
+
+  if (confirmed) {
+    try {
+      // Remover do state local
+      state.socialLinks.splice(index, 1);
+
+      // Salvar diretamente no Firebase
+      const ref = firebase.firestore()
+        .collection('site')
+        .doc('cliente-001')
+        .collection('social_links')
+        .doc('data');
+
+      await ref.set({ links: state.socialLinks }, { merge: false });
+      console.log("✅ Redes sociais atualizadas no Firebase");
+
+      // Atualizar UI
+      renderSocialLinks();
+      showToast("Rede social removida!", "success");
+
+    } catch (e) {
+      console.error("Erro ao remover rede social:", e);
+      showToast("Erro ao remover. Tente novamente.", "error");
+    }
   }
 };
 
@@ -542,31 +754,61 @@ function renderSocialLinks() {
   if (emptyState) emptyState.classList.add("hidden");
 
   list.innerHTML = state.socialLinks.map((link, i) => {
-    let iconClass = "fas fa-link";
-    const lowerName = (link.name || "").toLowerCase();
-    if (lowerName.includes("instagram")) iconClass = "fab fa-instagram text-pink-600";
-    else if (lowerName.includes("facebook")) iconClass = "fab fa-facebook text-blue-600";
-    else if (lowerName.includes("linkedin")) iconClass = "fab fa-linkedin text-blue-700";
-    else if (lowerName.includes("twitter") || lowerName.includes("x")) iconClass = "fab fa-twitter text-blue-400";
-    else if (lowerName.includes("youtube")) iconClass = "fab fa-youtube text-red-600";
-    else if (lowerName.includes("whatsapp")) iconClass = "fab fa-whatsapp text-green-500";
+    // Extrai nome da URL se não tiver nome definido
+    let displayName = link.name || link.nome || "";
+    if (!displayName || displayName === "undefined") {
+      // Tenta extrair da URL
+      try {
+        const url = new URL(link.url || link.link || "");
+        const host = url.hostname.replace("www.", "");
+        if (host.includes("instagram")) displayName = "Instagram";
+        else if (host.includes("facebook")) displayName = "Facebook";
+        else if (host.includes("linkedin")) displayName = "LinkedIn";
+        else if (host.includes("twitter") || host.includes("x.com")) displayName = "X (Twitter)";
+        else if (host.includes("youtube")) displayName = "YouTube";
+        else if (host.includes("whatsapp") || host.includes("wa.me")) displayName = "WhatsApp";
+        else if (host.includes("tiktok")) displayName = "TikTok";
+        else if (host.includes("telegram") || host.includes("t.me")) displayName = "Telegram";
+        else displayName = host.split(".")[0].charAt(0).toUpperCase() + host.split(".")[0].slice(1);
+      } catch (e) {
+        displayName = "Link";
+      }
+    }
+
+    // Mapeamento de ícones expandido
+    const lowerName = displayName.toLowerCase();
+    let iconClass = "fas fa-link text-gray-500";
+    let iconBg = "bg-gray-100";
+
+    if (lowerName.includes("instagram")) { iconClass = "fab fa-instagram"; iconBg = "bg-gradient-to-br from-purple-500 to-pink-500 text-white"; }
+    else if (lowerName.includes("facebook")) { iconClass = "fab fa-facebook-f"; iconBg = "bg-blue-600 text-white"; }
+    else if (lowerName.includes("linkedin")) { iconClass = "fab fa-linkedin-in"; iconBg = "bg-blue-700 text-white"; }
+    else if (lowerName.includes("twitter") || lowerName.includes("x")) { iconClass = "fab fa-x-twitter"; iconBg = "bg-black text-white"; }
+    else if (lowerName.includes("youtube")) { iconClass = "fab fa-youtube"; iconBg = "bg-red-600 text-white"; }
+    else if (lowerName.includes("whatsapp")) { iconClass = "fab fa-whatsapp"; iconBg = "bg-green-500 text-white"; }
+    else if (lowerName.includes("tiktok")) { iconClass = "fab fa-tiktok"; iconBg = "bg-black text-white"; }
+    else if (lowerName.includes("telegram")) { iconClass = "fab fa-telegram"; iconBg = "bg-blue-500 text-white"; }
+    else if (lowerName.includes("pinterest")) { iconClass = "fab fa-pinterest"; iconBg = "bg-red-600 text-white"; }
+    else if (lowerName.includes("discord")) { iconClass = "fab fa-discord"; iconBg = "bg-indigo-600 text-white"; }
+
+    const linkUrl = link.url || link.link || "#";
 
     return `
-    <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg group hover:shadow-sm transition-all">
+    <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl group hover:shadow-md hover:border-gray-300 transition-all">
         <div class="flex items-center gap-3">
-             <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-lg">
+             <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center text-lg shadow-sm">
                  <i class="${iconClass}"></i>
              </div>
-             <div>
-                 <h4 class="text-sm font-bold text-gray-900">${escapeHtml(link.name)}</h4>
-                 <a href="${escapeHtml(link.url)}" target="_blank" class="text-xs text-blue-500 hover:underline truncate max-w-[150px] block">${escapeHtml(link.url)}</a>
+             <div class="min-w-0">
+                 <h4 class="text-sm font-bold text-gray-900">${escapeHtml(displayName)}</h4>
+                 <a href="${escapeHtml(linkUrl)}" target="_blank" class="text-xs text-blue-500 hover:underline truncate max-w-[180px] block">${escapeHtml(linkUrl)}</a>
              </div>
         </div>
         <div class="flex gap-1">
-            <button onclick="editSocialLink(${i})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+            <button onclick="editSocialLink(${i})" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
                 <i class="fas fa-edit"></i>
             </button>
-            <button onclick="removeSocialLink(${i})" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+            <button onclick="removeSocialLink(${i})" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remover">
                 <i class="fas fa-trash"></i>
             </button>
         </div>

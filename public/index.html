@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link id="dynamic-favicon" rel="icon" type="image/png" href="images/favicon.png">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -140,7 +141,7 @@
                         <!-- Imagem com Aspect Ratio Livre (Controlado) -->
                         <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-transparent flex justify-center">
                             <img id="sobreImagemPreview" src="" alt="Sobre Nós"
-                                class="w-auto h-auto max-h-[400px] object-contain block hidden">
+                                class="w-auto h-auto max-h-[800px] object-contain block hidden">
                         </div>
                     </div>
                 </div>
@@ -260,6 +261,59 @@
         class="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:brightness-110 transition-all hover:scale-110 flex items-center justify-center w-16 h-16 whatsapp-fab">
         <i class="fab fa-whatsapp text-3xl"></i>
     </a>
+
+    <!-- Product Details Modal -->
+    <div id="product-modal" class="hidden" style="position: fixed; inset: 0; z-index: 9999;">
+        <!-- Background backdrop -->
+        <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);"
+            onclick="closeProductModal()"></div>
+
+        <!-- Modal container - centered -->
+        <div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;"
+            onclick="if(event.target === this) closeProductModal()">
+
+            <!-- Modal card -->
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200 overflow-hidden relative"
+                style="max-height: 90vh; display: flex; flex-direction: column;">
+
+                <!-- Close button -->
+                <button type="button" onclick="closeProductModal()"
+                    style="position: absolute; top: 12px; right: 12px; z-index: 50;"
+                    class="text-gray-600 hover:text-gray-900 bg-white shadow-lg rounded-full p-2.5 transition-all hover:scale-110 border border-gray-200">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <!-- Scrollable content -->
+                <div style="overflow-y: auto; flex: 1;">
+                    <!-- Image Section -->
+                    <div id="modal-image-container" class="w-full bg-gray-900 flex items-center justify-center"
+                        style="height: 220px;">
+                        <img id="modal-product-image" src="" alt="Produto"
+                            style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+
+                    <!-- Content Section -->
+                    <div class="p-6">
+                        <h3 id="modal-product-name" class="text-2xl font-bold text-gray-900 mb-2">Nome do Produto</h3>
+                        <p id="modal-product-price" class="text-xl font-bold text-green-600 mb-4">R$ 0,00</p>
+
+                        <div class="text-gray-600 leading-relaxed mb-6" style="max-height: 200px; overflow-y: auto;">
+                            <p id="modal-product-description">Descrição do produto...</p>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100">
+                            <a href="#contato" onclick="closeProductModal()"
+                                class="flex w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg hover:bg-blue-700 transition-all">
+                                <i class="fab fa-whatsapp mr-2 text-lg"></i> Tenho Interesse
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="js/modules.js" defer></script>

@@ -5,7 +5,7 @@
  * 1. A ordem das linhas no 'fetch' listener foi corrigida para evitar o 'ReferenceError'.
  */
 
-const CACHE_NAME = 'site-cache-v3';
+const CACHE_NAME = 'site-cache-v4';
 const URLS_TO_CACHE = [
     '/',
     '/index.html',
@@ -17,6 +17,14 @@ const URLS_TO_CACHE = [
     '/js/smart-cache.js',
     '/js/firebase-config.js',
     '/js/purify.min.js',
+    '/js/app.js',
+    '/js/toast.js',
+];
+
+// URLs que NUNCA devem ser cacheadas (painel admin)
+const NO_CACHE_URLS = [
+    '/admin.html',
+    '/admin',
 ];
 
 // URLs externas que NÃO devem ser cacheadas (CORS issues)
@@ -97,6 +105,13 @@ self.addEventListener('fetch', (event) => {
 
     if (isExternalDomain) {
         console.log(`[SW] Ignorando cache para: ${url.hostname}`);
+        return;
+    }
+
+    // ✅ NÃO CACHEAR: Painel Admin (sempre dados frescos)
+    const isNoCache = NO_CACHE_URLS.some(path => url.pathname.includes(path));
+    if (isNoCache) {
+        console.log(`[SW] Sem cache para admin: ${url.pathname}`);
         return;
     }
 

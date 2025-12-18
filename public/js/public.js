@@ -12,14 +12,17 @@
 
 import { globalCache } from './smart-cache.js';
 
-console.log('🚀 [public.js] Iniciando...');
+// console.log('🚀 [public.js] Iniciando...');
+
+// Variável global para armazenar produtos carregados (para o modal)
+let currentProducts = [];
 
 /**
  * Mostra conteúdo padrão se nenhum dado for carregado
  * (Função movida para o topo para clareza)
  */
 function showDefaultContent() {
-    console.log('📋 Mostrando conteúdo padrão');
+    // console.log('📋 Mostrando conteúdo padrão');
 
     document.title = "Site Profissional"; // Título padrão
     document.getElementById('bannerH1').textContent = 'Bem-vindo ao GSM';
@@ -90,10 +93,10 @@ function safeShow(id, shouldShow) {
  * (A lógica de cores e módulos foi movida para config-manager.js)
  */
 function updatePublicSite(data) {
-    console.log('🎨 [UI] Atualizando interface...', data);
+    // console.log('🎨 [UI] Atualizando interface...', data);
 
     if (!data) {
-        console.warn('⚠️ [UI] Dados vazios recebidos em updatePublicSite');
+        // console.warn('⚠️ [UI] Dados vazios recebidos em updatePublicSite');
         return;
     }
 
@@ -116,6 +119,13 @@ function updatePublicSite(data) {
         // Título da Página e Logo
         const siteTitle = (data.empresaNome && data.empresaNome.trim() !== '') ? data.empresaNome : "Site Profissional";
         document.title = siteTitle;
+
+        // Favicon Handling
+        const faviconLink = document.getElementById('dynamic-favicon');
+        if (faviconLink && (data.faviconImageUrl || (data.main && data.main.faviconImageUrl))) {
+            const faviconUrl = data.faviconImageUrl || data.main.faviconImageUrl;
+            faviconLink.href = faviconUrl;
+        }
 
         // Logo Handling (Supports .logo-element class and legacy #logo id)
         let logoElements = Array.from(document.querySelectorAll('.logo-element'));
@@ -256,7 +266,10 @@ function updatePublicSite(data) {
         const grid = document.getElementById('produtosGrid');
         if (grid) {
             if (data.produtos && data.produtos.length > 0) {
-                grid.innerHTML = data.produtos.map(p => `
+                // Atualiza a lista global de produtos
+                currentProducts = data.produtos;
+
+                grid.innerHTML = data.produtos.map((p, index) => `
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col h-full group">
                         <div class="h-64 overflow-hidden relative">
                             <div class="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-700" style="background-image: url('${p.imagem || 'https://via.placeholder.com/400'}'); background-position: ${p.foco || 'center'};"></div>
@@ -265,8 +278,8 @@ function updatePublicSite(data) {
                         <div class="p-8 flex flex-col flex-grow relative">
                             <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">${p.nome}</h3>
                             <div class="text-2xl font-bold text-secondary mb-4 font-mono tracking-tight">${p.preco}</div>
-                            <p class="text-gray-600 text-base leading-relaxed flex-grow border-t border-gray-100 pt-4">${p.descricao || ''}</p>
-                            <button class="w-full mt-6 py-3 bg-gray-50 text-gray-900 font-semibold rounded-xl hover:bg-primary hover:text-white transition-all border border-gray-200 hover:border-primary">Saber Mais</button>
+                            <p class="text-gray-600 text-base leading-relaxed flex-grow border-t border-gray-100 pt-4 cursor-pointer" onclick="window.openProductModal(${index})">${(p.descricao || '').substring(0, 100)}${p.descricao && p.descricao.length > 100 ? '...' : ''}</p>
+                            <button onclick="window.openProductModal(${index})" class="w-full mt-6 py-3 bg-gray-50 text-gray-900 font-semibold rounded-xl hover:bg-primary hover:text-white transition-all border border-gray-200 hover:border-primary">Saber Mais</button>
                         </div>
                     </div>
                 `).join('');
@@ -280,18 +293,34 @@ function updatePublicSite(data) {
         if (socialContainer) {
             if (data.socialLinks && data.socialLinks.length > 0) {
                 socialContainer.innerHTML = data.socialLinks.map(link => {
-                    let iconClass = "fas fa-link";
-                    const lowerName = (link.name || "").toLowerCase();
-                    if (lowerName.includes("instagram")) iconClass = "fab fa-instagram";
-                    else if (lowerName.includes("facebook")) iconClass = "fab fa-facebook";
-                    else if (lowerName.includes("linkedin")) iconClass = "fab fa-linkedin";
-                    else if (lowerName.includes("twitter") || lowerName.includes("x")) iconClass = "fab fa-twitter";
-                    else if (lowerName.includes("youtube")) iconClass = "fab fa-youtube";
-                    else if (lowerName.includes("whatsapp")) iconClass = "fab fa-whatsapp";
+                    // Verificar tanto 'name' quanto 'nome' (compatibilidade)
+                    const socialName = (link.name || link.nome || "").toLowerCase().trim();
+
+                    // Mapeamento expandido de ícones
+                    let iconClass = "fas fa-link"; // fallback
+
+                    if (socialName.includes("instagram")) iconClass = "fab fa-instagram";
+                    else if (socialName.includes("facebook")) iconClass = "fab fa-facebook-f";
+                    else if (socialName.includes("linkedin")) iconClass = "fab fa-linkedin-in";
+                    else if (socialName.includes("twitter") || socialName.includes("x")) iconClass = "fab fa-x-twitter";
+                    else if (socialName.includes("youtube")) iconClass = "fab fa-youtube";
+                    else if (socialName.includes("whatsapp")) iconClass = "fab fa-whatsapp";
+                    else if (socialName.includes("tiktok")) iconClass = "fab fa-tiktok";
+                    else if (socialName.includes("telegram")) iconClass = "fab fa-telegram";
+                    else if (socialName.includes("pinterest")) iconClass = "fab fa-pinterest";
+                    else if (socialName.includes("discord")) iconClass = "fab fa-discord";
+                    else if (socialName.includes("github")) iconClass = "fab fa-github";
+                    else if (socialName.includes("spotify")) iconClass = "fab fa-spotify";
+                    else if (socialName.includes("twitch")) iconClass = "fab fa-twitch";
+                    else if (socialName.includes("email") || socialName.includes("e-mail")) iconClass = "fas fa-envelope";
+                    else if (socialName.includes("site") || socialName.includes("website")) iconClass = "fas fa-globe";
+
+                    const displayName = link.name || link.nome || "Link";
+                    const linkUrl = link.url || link.link || "#";
 
                     return `
-                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-400 hover:text-white transition-colors transform hover:scale-110" title="${link.name}">
-                        <i class="${iconClass}"></i> 
+                    <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="social-icon text-gray-400 hover:text-white transition-colors transform hover:scale-110" title="${displayName}">
+                        <i class="${iconClass}"></i>
                     </a>
                 `}).join('');
             } else {
@@ -305,6 +334,61 @@ function updatePublicSite(data) {
         console.error('❌ [UI] Erro ao atualizar:', error);
     }
 }
+
+// ===== MODAL DE PRODUTOS =====
+window.openProductModal = (index) => {
+    if (!currentProducts || !currentProducts[index]) return;
+
+    const product = currentProducts[index];
+
+    // Limpar campos
+    document.getElementById('modal-product-name').textContent = '';
+    document.getElementById('modal-product-price').textContent = '';
+    document.getElementById('modal-product-description').textContent = '';
+
+    // Preencher dados de texto
+    if (product.nome) document.getElementById('modal-product-name').textContent = product.nome;
+    if (product.preco) document.getElementById('modal-product-price').textContent = product.preco;
+    document.getElementById('modal-product-description').textContent = product.descricao || 'Sem descrição.';
+
+    // Mostrar/Ocultar Container da Imagem com tratamento de erro
+    const imgContainer = document.getElementById('modal-image-container');
+    const imgEl = document.getElementById('modal-product-image');
+
+    // Reset handlers
+    imgEl.onload = null;
+    imgEl.onerror = null;
+
+    if (product.imagem && product.imagem.trim() !== '') {
+        // Ocultar se der erro ao carregar
+        imgEl.onerror = function () {
+            if (imgContainer) imgContainer.classList.add('hidden');
+        };
+        // Garantir visualização se carregar ok
+        imgEl.onload = function () {
+            if (imgContainer) imgContainer.classList.remove('hidden');
+        };
+
+        imgEl.src = product.imagem;
+        if (imgContainer) imgContainer.classList.remove('hidden');
+    } else {
+        imgEl.src = '';
+        if (imgContainer) imgContainer.classList.add('hidden');
+    }
+
+    // Mostrar modal
+    const modal = document.getElementById('product-modal');
+    modal.classList.remove('hidden');
+    // Prevent scrolling
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeProductModal = () => {
+    const modal = document.getElementById('product-modal');
+    modal.classList.add('hidden');
+    // Restore scrolling
+    document.body.style.overflow = '';
+};
 
 // Mobile Menu Logic
 document.addEventListener('DOMContentLoaded', () => {
@@ -328,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('📄 [DOM] Pronto, iniciando carregamento...');
+    // console.log('📄 [DOM] Pronto, iniciando carregamento...');
 
     // 0. Feedback Visual Imediato
     if (window.skeletonLoader) {
@@ -338,10 +422,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Comunicação do Iframe (para o Admin)
     window.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'updateConfig') {
-            console.log('🔄 [Preview] Configuração recebida do admin');
-            console.log('📦 [Preview] ConfigManager disponível?', typeof window.ConfigManager);
-            console.log('📦 [Preview] Helpers disponível?', typeof window.Helpers);
-            console.log('📦 [Preview] Dados recebidos:', event.data.data);
+            // console.log('🔄 [Preview] Configuração recebida do admin');
+            // console.log('📦 [Preview] ConfigManager disponível?', typeof window.ConfigManager);
+            // console.log('📦 [Preview] Helpers disponível?', typeof window.Helpers);
+            // console.log('📦 [Preview] Dados recebidos:', event.data.data);
 
             // Garantir que o DOM está pronto antes de aplicar
             if (document.readyState === 'loading') {
@@ -360,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // 1. Verificar se os managers globais existem
         if (!window.firebaseManager || !window.ConfigManager) {
-            console.error('❌ Faltam managers essenciais (firebaseManager ou ConfigManager).');
+            // console.error('❌ Faltam managers essenciais (firebaseManager ou ConfigManager).');
             // Tentar carregar o firebaseManager se não estiver presente
             if (!window.firebaseManager && typeof FirebaseRealtimeManager !== 'undefined') {
                 window.firebaseManager = new FirebaseRealtimeManager();
@@ -375,25 +459,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         // A) Tentar Cache Primeiro
         const cached = globalCache.get('config', 'full');
         if (cached && cached.data) {
-            console.log('⚡ [Cache] Usando dados em cache para renderização imediata');
+            // console.log('⚡ [Cache] Usando dados em cache para renderização imediata');
             updatePublicSite(cached.data);
             if (window.skeletonLoader) window.skeletonLoader.hideAll();
         }
 
         // B) Buscar Dados Atualizados (Background)
-        console.log('📡 [public.js] Buscando dados atualizados do Firebase...');
+        // console.log('📡 [public.js] Buscando dados atualizados do Firebase...');
         const config = await window.firebaseManager.loadInitialData();
 
-        console.log('🔍 [DEBUG] Config recebido do Firebase:', config);
-        console.log('🔍 [DEBUG] Produtos no config:', config?.produtos);
+        // console.log('🔍 [DEBUG] Config recebido do Firebase:', config);
+        // console.log('🔍 [DEBUG] Produtos no config:', config?.produtos);
 
         if (!config) {
             // Se não temos config e não tínhamos cache, é um erro crítico
             if (!cached) throw new Error("Configuração não recebida do firebaseManager");
-            console.warn('⚠️ [public.js] Falha ao buscar dados novos, mantendo cache.');
+            // console.warn('⚠️ [public.js] Falha ao buscar dados novos, mantendo cache.');
         } else {
             // C) Atualizar UI com dados novos
-            console.log('📥 [public.js] Dados atualizados recebidos. Atualizando UI...');
+            // console.log('📥 [public.js] Dados atualizados recebidos. Atualizando UI...');
 
             // Salvar no cache para a próxima vez
             const configHash = JSON.stringify(config);
@@ -406,7 +490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
     } catch (error) {
-        console.error('❌ Erro geral no public.js:', error);
+        // console.error('❌ Erro geral no public.js:', error);
         // Só mostra default se não conseguiu renderizar NADA (nem cache)
         // Verificamos se o título ainda é o default ou se algo falhou drasticamente
         if (document.title === "Site Profissional" && !document.getElementById('bannerH1').textContent) {
@@ -416,4 +500,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-console.log('✅ [public.js] Carregado e refatorado');
+// console.log('✅ [public.js] Carregado e refatorado');

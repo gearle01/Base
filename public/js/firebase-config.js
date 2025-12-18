@@ -46,12 +46,24 @@ window.initializeFirebase = async function (retryCount = 0) {
       console.log('Firestore settings já aplicadas ou erro ignorável:', e.message);
     }
 
-    // 5. Persistência Offline
-    try {
-      await db.enablePersistence({ synchronizeTabs: true });
-      console.log('✅ Persistência offline ativada');
-    } catch (err) {
-      // Ignora erros comuns de persistência
+    // 5. Persistência Offline - DESABILITADA NO ADMIN para evitar problemas de cache
+    const isAdminPage = window.location.pathname.includes('admin');
+    if (!isAdminPage) {
+      try {
+        await db.enablePersistence({ synchronizeTabs: true });
+        console.log('✅ Persistência offline ativada');
+      } catch (err) {
+        // Ignora erros comuns de persistência
+      }
+    } else {
+      console.log('ℹ️ [Admin] Persistência offline desabilitada');
+      // Limpar cache do Firestore no admin
+      try {
+        await db.clearPersistence();
+        console.log('✅ Cache do Firestore limpo');
+      } catch (e) {
+        // Ignora se não conseguir limpar
+      }
     }
 
     return {
